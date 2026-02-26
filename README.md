@@ -1,5 +1,7 @@
 # AIPipeline
 
+**GitHub:** https://github.com/iurii-izman/AIPipeline
+
 AI-native delivery pipeline for solo development: Linear, Notion, GitHub, Cursor, n8n, Sentry, Telegram. Fedora COSMIC Atomic, 8 GB RAM.
 
 ## Master plan
