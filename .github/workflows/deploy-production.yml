@@ -1,0 +1,14 @@
+# Placeholder: deploy to production. Replace with real job when ready.
+name: Deploy Production
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  deploy-production:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "Production deploy not configured yet"

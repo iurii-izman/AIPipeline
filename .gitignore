@@ -1,0 +1,22 @@
+# Secrets — never commit
+.env
+.env.local
+.env.*.local
+*.pem
+.secrets/
+
+# Dependencies and build
+node_modules/
+dist/
+build/
+*.log
+npm-debug.log*
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Optional: local overrides
+.cursor/mcp.local.json

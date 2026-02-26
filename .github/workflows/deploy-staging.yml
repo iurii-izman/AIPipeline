@@ -1,0 +1,14 @@
+# Placeholder: deploy to staging. Replace with real job when staging exists.
+name: Deploy Staging
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [staging]
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "Staging deploy not configured yet"

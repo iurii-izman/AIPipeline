@@ -1,0 +1,14 @@
+{
+  "name": "aipipeline",
+  "version": "0.1.0",
+  "description": "AI-native delivery pipeline scaffold",
+  "private": true,
+  "scripts": {
+    "lint": "node -e \"require('./src/index')\"",
+    "build": "node -e \"require('./src/index')\"",
+    "test": "node tests/smoke.test.js"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
