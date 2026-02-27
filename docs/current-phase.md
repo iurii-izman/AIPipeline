@@ -9,18 +9,19 @@
 - **Фаза 0.5:** проверка среды, мини-интервью, Ready/Setup списки, план реализован.
 - **Скелет репо:** .github (PR/issue templates, CI, deploy stubs), .cursor (mcp.json, rules, commands), .claude (agents, CLAUDE.md), docs (runbooks, гайды, keyring, audit), scripts (system-check, load-env-from-keyring, run-n8n).
 - **Keyring и аудит:** [keyring-credentials.md](keyring-credentials.md), [audit-and-history.md](audit-and-history.md); токены/OAuth, инвентарь ключей.
-- **Toolbox:** контейнер `aipipeline` создан. Внутри него по умолчанию нет Node/Podman — они на хосте. Чтобы иметь Node в toolbox: `toolbox enter aipipeline` → `./scripts/setup-toolbox-aipipeline.sh`. Claude Code: алиас `claude` в ~/.bashrc (npx) на хосте.
+- **Toolbox:** контейнер `aipipeline` создан; Node в toolbox установлен (`./scripts/setup-toolbox-aipipeline.sh`). Claude Code: алиас `claude` в ~/.bashrc (npx) на хосте.
+- **Keyring:** в связке AIPipeline уже лежат **GitHub PAT**, **Linear API Key**, **Notion token** (инвентарь в [keyring-credentials.md](keyring-credentials.md)). Права — максимальные где задаётся.
 
 ---
 
-## Текущий фокус: Фаза 1 (Day-0)
+## Текущий фокус: Stage 2 (MCP-автоматизация) + остаток Day-0
 
-Конвейер пока не подключён к живым сервисам. Нужно по порядку:
+**Сделано по ключам:** GitHub PAT, Linear, Notion — в keyring. Репо инициализирован (git, первый коммит).
 
-1. **GitHub** — создать репо (или использовать существующий), запушить этот scaffold, branch protection, labels, **PAT** → в keyring ([keyring-credentials.md](keyring-credentials.md)).
-2. **Linear** — workspace, проект, workflow и labels, интеграция с GitHub, **API Key** → keyring.
-3. **Notion** — workspace, Delivery Hub (базы + шаблоны из [notion-templates.md](notion-templates.md)), **Internal Integration token** → keyring.
-4. **Cursor** — Integrations (GitHub, Linear), env из keyring (`./scripts/load-env-from-keyring.sh --cursor`), MCP Refresh.
+**Дальше (максимум на автопилоте):**
+1. Запускать Cursor с env из keyring: `./scripts/load-env-from-keyring.sh --cursor` (на хосте). MCP Refresh → зелёные Notion, GitHub, Linear.
+2. **Агент с MCP** выполняет по [stage2-mcp-automation.md](stage2-mcp-automation.md): GitHub (labels, branch protection), Linear (проект, workflow, labels), Notion (Delivery Hub, базы, шаблоны). Всё по лучшим практикам и PIPELINE.
+3. Остаток Day-0: Cursor Integrations (GitHub/Linear OAuth в браузере), Sentry, Telegram, n8n — по [day0-runbook.md](day0-runbook.md).
 5. **Sentry** — проект, DSN (при необходимости в keyring); Sentry MCP — OAuth в Cursor.
 6. **Telegram** — бот, группа, **token + Chat ID** → keyring.
 7. **n8n** — Podman ([runbook-n8n.md](runbook-n8n.md)), credentials в UI; при желании логин/пароль n8n тоже в keyring.
