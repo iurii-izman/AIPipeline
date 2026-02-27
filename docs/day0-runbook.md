@@ -20,9 +20,10 @@ Checklist to bring the pipeline online. Do in order; each step may require creat
 ## 3. Notion
 
 - [ ] Create workspace (or use existing).
-- [ ] Create Delivery Hub page; add databases: Meetings, Specs, Decisions, Integrations, Risks & Issues, Access Matrix, Sprint Log (see [notion-delivery-hub.md](notion-delivery-hub.md)).
-- [ ] Add templates: Meeting, Spec (RFC), Integration Mapping, Runbook, Decision Record — текст в [notion-templates.md](notion-templates.md).
-- [ ] Settings → Connections → New integration (Internal); copy token. Share pages/databases with integration. **В keyring** (service: notion.so, user: aipipeline) или в `.env` как `NOTION_TOKEN`.
+- [ ] Settings → Connections → New integration (Internal); copy token → **keyring** (server: notion.so, user: aipipeline).
+- [ ] Create **root page** "AIPipeline — Delivery Hub"; share it with the integration (… → Connections).
+- [ ] Run `NOTION_DELIVERY_HUB_PAGE_ID=<uuid> ./scripts/notion-create-delivery-hub-structure.sh` to create sub-pages (Specs, Meetings, Runbooks, etc.). UUID = page ID from the Notion URL.
+- [ ] (Optional) Add databases and templates per [notion-delivery-hub.md](notion-delivery-hub.md), [notion-templates.md](notion-templates.md).
 
 ## 4. Cursor
 
