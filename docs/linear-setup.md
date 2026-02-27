@@ -1,34 +1,47 @@
 # Linear — setup
 
-Create workspace and project as below. Full workflow and labels in [PIPELINE.md](../PIPELINE.md) Phase 3.
+**Organization:** AIPipeline  
+**Team:** AIPipeline (key: `AIP`)  
+**Project:** AIPipeline Phase 1 — Day-0 Setup  
+**URL:** https://linear.app/aipipeline
 
-## Workflow states
+## Workflow states (actual)
 
 ```
-Triage → Backlog → Ready → In Progress → In Review → Blocked → Done → Cancelled
+Backlog → Todo → In Progress → In Review → Done → Canceled → Duplicate
 ```
 
-## Labels
+## Labels (actual — 13 total)
 
-**Technical:** `integration`, `data-mapping`, `auth`, `retries`, `observability`, `security`, `docs`, `devops`, `bugfix`, `feature`, `refactor`
-
-**Priority (incidents):** `bug-critical`, `bug-major`, `bug-minor`
-
-**AI readiness:** `agent-ready`, `needs-human`, `needs-review`
-
-**Domain (adjust per project):** e.g. `crm`, `payments`, `warehouse`, `delivery`, `analytics`
+| Name | Color | Matches GitHub |
+|------|-------|----------------|
+| Bug | #EB5757 | bug |
+| Feature | #BB87FC | feature |
+| Improvement | #4EA7FC | enhancement |
+| P0-Critical | #b60205 | P0-Critical |
+| P1-High | #d93f0b | P1-High |
+| P2-Medium | #fbca04 | P2-Medium |
+| P3-Low | #0e8a16 | P3-Low |
+| Infra | #006b75 | infra |
+| AI Agent | #5319e7 | ai-agent |
+| Security | #ee0701 | security |
+| Tech Debt | #c5def5 | tech-debt |
+| Blocked | #b60205 | blocked |
+| Documentation | #0075ca | documentation |
 
 ## GitHub integration
 
-1. Linear → Settings → Integrations → GitHub → Authorize.
-2. Select repo(s).
-3. Enable: "Move issue to In Progress when PR opened", "Move to Done when PR merged".
-4. Branch format: `{issueIdentifier}-{title}` (e.g. `ENG-123-fix-auth`).
-5. Test: create issue → create branch/PR → check auto-link and status change.
+Connected via Linear Settings → Integrations → GitHub (both org-level and personal).
+
+Recommended automations:
+- "Move issue to In Progress when PR opened"
+- "Move to Done when PR merged"
+- Branch format: `{issueIdentifier}-{title}` (e.g. `AIP-5-notion-setup`)
 
 ## API key
 
-Settings → API → Personal API keys → Create. Put in `.env` as `LINEAR_API_KEY`.
+In keyring: Label `AIPipeline — Linear`, Server: `linear.app`, User: `aipipeline`.  
+Loaded via `scripts/load-env-from-keyring.sh` → `LINEAR_API_KEY`.
 
 ## Issue template (Agent-Ready)
 
