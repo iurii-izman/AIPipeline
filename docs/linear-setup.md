@@ -1,8 +1,8 @@
 # Linear — setup
 
-**Organization:** AIPipeline  
-**Team:** AIPipeline (key: `AIP`)  
-**Project:** AIPipeline Phase 1 — Day-0 Setup  
+**Organization:** AIPipeline
+**Team:** AIPipeline (key: `AIP`)
+**Project:** AIPipeline Phase 1 — Day-0 Setup
 **URL:** https://linear.app/aipipeline
 
 ## Workflow states (actual)
@@ -40,7 +40,7 @@ Recommended automations:
 
 ## API key
 
-In keyring: Label `AIPipeline — Linear`, Server: `linear.app`, User: `aipipeline`.  
+In keyring: Label `AIPipeline — Linear`, Server: `linear.app`, User: `aipipeline`.
 Loaded via `scripts/load-env-from-keyring.sh` → `LINEAR_API_KEY`.
 
 ## Issue template (Agent-Ready)
