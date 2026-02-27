@@ -1,7 +1,7 @@
 # Project Charter
 
-**Project:** AIPipeline  
-**Context:** Solo developer, Fedora COSMIC Atomic, 8 GB RAM.  
+**Project:** AIPipeline
+**Context:** Solo developer, Fedora COSMIC Atomic, 8 GB RAM.
 **Philosophy:** Each tool is a specialist; AI agents are the glue; human is strategist and final reviewer.
 
 ## Goals
