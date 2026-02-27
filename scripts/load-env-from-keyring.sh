@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Load MCP and n8n env vars from libsecret keyring.
 # Usage:
-#   source scripts/load-env-from-keyring.sh   # then run: cursor .
-#   ./scripts/load-env-from-keyring.sh --cursor  # load and launch Cursor
+#   source scripts/load-env-from-keyring.sh   # then run cursor from this terminal
+#   ./scripts/load-env-from-keyring.sh --cursor  # load env, then start Cursor if in PATH, else drop to shell — start Cursor from it
 # See docs/keyring-credentials.md for store/lookup attributes (service, user).
 
 set -e
@@ -10,9 +10,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 _load() {
-  local var="$1" service="$2" user="$3"
+  local var="$1" svc="$2" user="$3"
   local val
-  val=$(secret-tool lookup service "$service" user "$user" 2>/dev/null) || true
+  # COSMIC/Qt keychain stores "server", not "service"; try both for compat.
+  val=$(secret-tool lookup server "$svc" user "$user" 2>/dev/null) || true
+  if [[ -z "$val" ]]; then
+    val=$(secret-tool lookup service "$svc" user "$user" 2>/dev/null) || true
+  fi
   if [[ -n "$val" ]]; then
     export "$var=$val"
   fi
@@ -34,5 +38,28 @@ _load SENTRY_DSN sentry.io aipipeline
 
 if [[ "${1:-}" == "--cursor" ]]; then
   cd "$REPO_ROOT"
-  cursor .
+  CURSOR_CMD=""
+  if command -v cursor &>/dev/null; then
+    CURSOR_CMD="cursor"
+  elif [[ -n "${CURSOR_APPIMAGE:-}" && -x "$CURSOR_APPIMAGE" ]]; then
+    CURSOR_CMD="$CURSOR_APPIMAGE"
+  else
+    for dir in "/var/home/user/Apps" "$HOME/Apps" "$HOME/.local/bin"; do
+      if [[ -d "$dir" ]]; then
+        CURSOR_APP=$(find "$dir" -maxdepth 1 -name 'Cursor*.AppImage' -type f 2>/dev/null | head -1)
+        if [[ -n "$CURSOR_APP" && -x "$CURSOR_APP" ]]; then
+          CURSOR_CMD="$CURSOR_APP"
+          break
+        fi
+      fi
+    done
+  fi
+  if [[ -n "$CURSOR_CMD" ]]; then
+    exec "$CURSOR_CMD" .
+  else
+    echo "Env loaded. Cursor is not in PATH and no AppImage found in ~/Apps or ~/.local/bin."
+    echo "Start Cursor from THIS terminal so it gets the env, e.g.:"
+    echo "  /var/home/user/Apps/Cursor-2.4.37-x86_64.AppImage ."
+    exec bash
+  fi
 fi

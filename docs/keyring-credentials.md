@@ -23,9 +23,9 @@
 
 | Секрет | Label | User | Server | Как получить | В keyring |
 |--------|--------|------|--------|--------------|-----------|
-| GitHub PAT | `AIPipeline — GitHub PAT` | твой_github_логин или `aipipeline` | `github.com` | GitHub → Settings → Developer settings → PAT (scope: repo, read:org) | ☐ |
-| Linear API Key | `AIPipeline — Linear API Key` | твой_email или `aipipeline` | `linear.app` | Linear → Settings → API → Personal API keys | ☐ |
-| Notion token | `AIPipeline — Notion Integration Token` | `aipipeline` или имя integration | `notion.so` | Notion → Settings → Integrations → Internal Integration → token | ☐ |
+| GitHub PAT | `AIPipeline — GitHub PAT` | твой_github_логин или `aipipeline` | `github.com` | GitHub → Settings → Developer settings → PAT (scope: repo, read:org) | ☑ |
+| Linear API Key | `AIPipeline — Linear API Key` | твой_email или `aipipeline` | `linear.app` | Linear → Settings → API → Personal API keys | ☑ |
+| Notion token | `AIPipeline — Notion` / `AIPipeline — Notion Integration Token` | `aipipeline` или имя integration | `notion.so` | Notion → Internal Integration → token | ☑ |
 | Telegram Bot Token | `AIPipeline — Telegram Bot Token` | username бота (например `aipipeline_delivery_bot`) | `api.telegram.org` | @BotFather → /newbot → token | ☐ |
 | Telegram Chat ID | `AIPipeline — Telegram Chat ID` | название группы/канала или `aipipeline-alerts` | `api.telegram.org` | getUpdates после сообщения в группе или из n8n | ☐ |
 | n8n Basic Auth User | `AIPipeline — n8n Basic Auth User` | логин для n8n UI | `localhost:5678` или `n8n` | задаёшь при первом запуске n8n | ☐ |
@@ -36,33 +36,39 @@
 
 ---
 
-## Как хранить (CLI) — чтобы скрипт мог достать
+## Как хранить — чтобы скрипт мог достать
 
-В libsecret поиск идёт по **атрибутам**. Чтобы скрипт `scripts/load-env-from-keyring.sh` мог подставить переменные, при сохранении через CLI используй **service** и **user** (в GUI — поля Server и User заполняй так же, тогда поиск по ним может работать, если приложение маппит их в service/user):
+В libsecret поиск идёт по **атрибутам**. COSMIC / Qt keychain GUI сохраняет поля как атрибут `server` (не `service`). Скрипт `scripts/load-env-from-keyring.sh` сначала ищет по `server`, а если не нашёл — по `service`, поэтому работают оба варианта.
+
+### Через GUI (COSMIC / Seahorse)
+
+Заполни поля **Server** и **User** точно по шаблону ниже. Пример: Server: `github.com`, User: `aipipeline`. Записи автоматически получат атрибут `server` и `user`, по которым ищет скрипт.
+
+### Через CLI (secret-tool)
 
 ```bash
-# Пример: GitHub PAT
-secret-tool store --label="AIPipeline — GitHub PAT" service github.com user aipipeline
+# GitHub PAT
+secret-tool store --label="AIPipeline — GitHub PAT" server github.com user aipipeline
 # (введёшь пароль/токен в промпт)
 
 # Linear API Key
-secret-tool store --label="AIPipeline — Linear API Key" service linear.app user aipipeline
+secret-tool store --label="AIPipeline — Linear API Key" server linear.app user aipipeline
 
 # Notion token
-secret-tool store --label="AIPipeline — Notion Integration Token" service notion.so user aipipeline
+secret-tool store --label="AIPipeline — Notion Integration Token" server notion.so user aipipeline
 
 # Telegram Bot Token
-secret-tool store --label="AIPipeline — Telegram Bot Token" service api.telegram.org user aipipeline_delivery_bot
+secret-tool store --label="AIPipeline — Telegram Bot Token" server api.telegram.org user aipipeline_delivery_bot
 
 # Telegram Chat ID (значение — число, например -1001234567890)
-secret-tool store --label="AIPipeline — Telegram Chat ID" service api.telegram.org user aipipeline-alerts
+secret-tool store --label="AIPipeline — Telegram Chat ID" server api.telegram.org user aipipeline-alerts
 
 # n8n Basic Auth (логин и пароль — две отдельные записи)
-secret-tool store --label="AIPipeline — n8n Basic Auth User" service n8n user aipipeline
-secret-tool store --label="AIPipeline — n8n Basic Auth Password" service n8n user aipipeline-password
+secret-tool store --label="AIPipeline — n8n Basic Auth User" server n8n user aipipeline
+secret-tool store --label="AIPipeline — n8n Basic Auth Password" server n8n user aipipeline-password
 ```
 
-Если создаёшь записи только в GUI (Seahorse): заполни **Server** и **User** теми же значениями (например Server: `github.com`, User: `aipipeline`), чтобы при наличии маппинга в service/user работал `secret-tool lookup service github.com user aipipeline`.
+> **Важно:** CLI-шаблоны выше используют `server` (не `service`), чтобы быть совместимыми с GUI-записями. Если ранее ключи создавались с `service`, скрипт всё равно их найдёт (fallback).
 
 ## Как использовать с Cursor / скриптами
 
@@ -80,8 +86,10 @@ secret-tool store --label="AIPipeline — n8n Basic Auth Password" service n8n u
 
 *Обновляй этот блок при каждом добавлении/удалении записи. Агент при добавлении ключа помечает здесь, что занесено — так всегда можно вернуться по истории.*
 
-- Пока записей нет — добавляются по [day0-runbook.md](day0-runbook.md) (GitHub PAT, Linear API Key, Notion token, Telegram bot + Chat ID, n8n auth, при необходимости Sentry DSN).
-- После добавления: строка вида «GitHub PAT (service: github.com, user: aipipeline)», «Linear API Key (service: linear.app, user: aipipeline)» и т.д.
+- **GitHub PAT** — AIPipeline — GitHub PAT (server: github.com). Права: repo, при необходимости read:org.
+- **Linear API Key** — AIPipeline — Linear (server: linear.app, user: aipipeline). Права: максимальные для workspace.
+- **Notion** — AIPipeline — Notion (server: notion.so). Internal Integration token; выдать доступ к страницам/базам Delivery Hub.
+- Остальные (Telegram, n8n, Sentry) — добавить по [day0-runbook.md](day0-runbook.md) при настройке.
 
 ---
 
