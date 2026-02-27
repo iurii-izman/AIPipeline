@@ -14,30 +14,34 @@
 
 ---
 
-## Текущий фокус: Stage 2 (MCP-автоматизация) + остаток Day-0
+## Текущий фокус: завершение Day-0
 
-**Сделано по ключам:** GitHub PAT, Linear, Notion — в keyring. Репо инициализирован (git, первый коммит).
+**Выполнено автоматически (агент):**
+- Keyring fix: скрипт `load-env-from-keyring.sh` теперь ищет по атрибуту `server` (совместимость с COSMIC/Qt keychain `org.qt.keychain`), fallback на `service`.
+- **GitHub:** Ruleset обновлён (защита только main, owner bypass), labels (19 шт.), pre-commit.ci config. PR #1 merged (keyring fix), PR #7 merged (pre-commit).
+- **Linear:** Labels (13 шт., совпадают с GitHub), проект «AIPipeline Phase 1 — Day-0 Setup», issues AIP-5..AIP-10. GitHub integration подключена.
+- **GitHub Issues:** #2 (Notion setup), #3 (Telegram), #4 (Linear sync), #5 (n8n), #6 (pre-commit — closed).
 
-**Дальше (максимум на автопилоте):**
-1. Запускать Cursor с env из keyring: `./scripts/load-env-from-keyring.sh --cursor` (на хосте). MCP Refresh → зелёные Notion, GitHub, Linear.
-2. **Агент с MCP** выполняет по [stage2-mcp-automation.md](stage2-mcp-automation.md): GitHub (labels, branch protection), Linear (проект, workflow, labels), Notion (Delivery Hub, базы, шаблоны). Всё по лучшим практикам и PIPELINE.
-3. Остаток Day-0: Cursor Integrations (GitHub/Linear OAuth в браузере), Sentry, Telegram, n8n — по [day0-runbook.md](day0-runbook.md).
-5. **Sentry** — проект, DSN (при необходимости в keyring); Sentry MCP — OAuth в Cursor.
-6. **Telegram** — бот, группа, **token + Chat ID** → keyring.
-7. **n8n** — Podman ([runbook-n8n.md](runbook-n8n.md)), credentials в UI; при желании логин/пароль n8n тоже в keyring.
+**Дальше (нужно участие пользователя):**
+1. **Notion:** создать root-страницу «AIPipeline — Delivery Hub», расшарить с интеграцией AIPipeline → тогда агент создаст sub-pages (GitHub #2 / AIP-5).
+2. **Telegram:** бот через @BotFather, группа, token + Chat ID → keyring (GitHub #3 / AIP-6).
+3. **Sentry:** проект, DSN → keyring; Sentry MCP — OAuth в Cursor.
+4. **n8n:** `scripts/run-n8n.sh` → Podman, настройка workflows в UI (GitHub #5 / AIP-8).
+5. **Перезапуск Cursor** через `aipipeline-cursor` — чтобы MCP серверы Linear/Notion/Telegram получили env с ключами.
 
 Полный чек-лист: [day0-runbook.md](day0-runbook.md).
 
 ---
 
-## Что только ты можешь сделать
+## Что только пользователь может сделать
 
-- Создать аккаунты/workspace в GitHub, Linear, Notion, Sentry, Telegram.
-- Выдать токены и сохранить их в keyring (по шаблону в keyring-credentials) или дать агенту команду «добавь в keyring» после того как создашь запись вручную — тогда агент обновит инвентарь в keyring-credentials.
-- OAuth в Cursor (GitHub, Linear, Sentry MCP) — в браузере.
-- Первый запуск n8n и настройка workflow в UI.
+- **Notion:** создать root-страницу и расшарить с integration.
+- **Telegram:** создать бота и группу, сохранить токены в keyring.
+- **Sentry:** создать проект, получить DSN.
+- **n8n:** первый запуск и конфигурация workflows в UI.
+- **Перезапуск Cursor** через `aipipeline-cursor` после добавления новых ключей в keyring.
 
-Всё остальное (доки, скрипты, правила, шаблоны) уже в репо; агент может дополнять по запросу.
+Всё остальное (доки, скрипты, labels, issues, правила, шаблоны) автоматизировано агентом.
 
 ---
 
