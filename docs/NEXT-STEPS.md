@@ -30,6 +30,8 @@
 - **UAT evidence (n8n/GitHub/Linear):** [uat-evidence-2026-02-28.md](uat-evidence-2026-02-28.md).
 - **Выбор стабильного HTTPS endpoint (после UAT):** [stable-https-options.md](stable-https-options.md).
 - **Реализация stable endpoint через Cloudflare Tunnel:** [cloudflare-tunnel-setup.md](cloudflare-tunnel-setup.md).
+- **Операционная проверка stable endpoint:** `./scripts/check-stable-endpoint.sh`.
+- **Автозапуск cloudflared (user systemd):** `./scripts/install-cloudflared-user-service.sh`.
 - **Оставшиеся работы до полного соответствия ТЗ:** [tz-remaining-work.md](tz-remaining-work.md).
 
 ---

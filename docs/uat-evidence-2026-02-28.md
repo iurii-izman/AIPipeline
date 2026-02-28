@@ -17,6 +17,13 @@ Workflow ID: `41jAGQw9qAMs52dN`
 | `/deploy staging` | 111 | 2026-02-28T17:06:03.689Z | success | Telegram Send |
 | `/standup` | 103 | 2026-02-28T16:51:44.906Z | success | Telegram Send |
 
+Дополнительный проход после переключения на stable endpoint (`https://n8n.aipipeline.cc`):
+
+| Command | Execution ID | Started (UTC) | Status | Last node |
+|---------|--------------|---------------|--------|-----------|
+| `/status` | 117 | 2026-02-28T19:22:33.116Z | success | Telegram Send |
+| `/deploy staging` | 118 | 2026-02-28T19:22:45.980Z | success | Telegram Send |
+
 ## Deploy evidence (GitHub Actions)
 
 - Workflow: `deploy-staging.yml`
@@ -26,6 +33,14 @@ Workflow ID: `41jAGQw9qAMs52dN`
 - Conclusion: `success`
 - Ref/branch: `main`
 - URL: https://github.com/iurii-izman/AIPipeline/actions/runs/22525091790
+
+После stable endpoint cutover:
+- Run ID: `22527352114`
+- Created: `2026-02-28T19:22:46Z`
+- Status: `completed`
+- Conclusion: `success`
+- Ref/branch: `main`
+- URL: https://github.com/iurii-izman/AIPipeline/actions/runs/22527352114
 
 ## Linear evidence for `/create`
 
@@ -39,3 +54,4 @@ Workflow ID: `41jAGQw9qAMs52dN`
 
 1. Исторические ошибки в ранних execution (до фиксов) закрыты коммитами WF-5 hotfix.
 2. Текущий UAT проход по ключевым командам WF-5 подтверждён успешными execution/run артефактами.
+3. Stable Cloudflare endpoint (`n8n.aipipeline.cc`) отвечает по HTTPS (`HTTP 200`) и используется в runtime webhook URL.

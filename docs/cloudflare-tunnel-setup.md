@@ -10,6 +10,8 @@
 2. перезапускает n8n с `WEBHOOK_URL=<stable-url>/`,
 3. автообновляет GitHub webhook WF-2,
 4. пытается автообновить Sentry webhook WF-3.
+- Скрипт health-проверки: `scripts/check-stable-endpoint.sh`.
+- Скрипт для user-level systemd автозапуска: `scripts/install-cloudflared-user-service.sh`.
 
 ## Что нужно руками (блоком, один раз)
 
@@ -43,19 +45,35 @@ source scripts/load-env-from-keyring.sh
 ./scripts/run-n8n-with-cloudflared.sh --daemon
 ```
 
+Опционально (рекомендуется): включить автозапуск cloudflared через user systemd:
+```bash
+./scripts/install-cloudflared-user-service.sh
+```
+
 ## Проверки после запуска
 
 1. `./scripts/health-check-env.sh`
-2. Проверить webhook URL:
+2. `./scripts/check-stable-endpoint.sh`
+3. Проверить webhook URL:
    - GitHub: `.../webhook/wf2-github-pr`
    - Sentry: `.../webhook/wf3-sentry-webhook`
-3. Telegram UAT:
+4. Telegram UAT:
    - `/status`
    - `/deploy staging`
-4. Тест PR webhook:
+5. Тест PR webhook:
 ```bash
 curl -X POST "$CLOUDFLARE_PUBLIC_BASE_URL/webhook/wf2-github-pr" -H 'Content-Type: application/json' -d '{"action":"opened","number":1,"repository":{"full_name":"owner/repo"},"pull_request":{"html_url":"https://example","head":{"ref":"AIP-11-test"},"merged":false}}'
 ```
+
+## Фактический статус (2026-02-28)
+
+- Stable URL: `https://n8n.aipipeline.cc`
+- `curl -I https://n8n.aipipeline.cc` -> `HTTP/2 200`
+- Telegram:
+  - `/status` -> success (execution `117`)
+  - `/deploy staging` -> success (execution `118`)
+- GitHub Actions deploy run:
+  - `22527352114` (success)
 
 ## Rollback
 

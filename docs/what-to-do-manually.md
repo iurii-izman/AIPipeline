@@ -97,6 +97,9 @@ source scripts/load-env-from-keyring.sh
 
 Подробный runbook: [cloudflare-tunnel-setup.md](cloudflare-tunnel-setup.md).
 
+Текущий статус: stable endpoint `https://n8n.aipipeline.cc` уже активен.  
+Дальше вручную обычно нужно только поддерживать DNS/domain и при необходимости ротировать tunnel token.
+
 ---
 
 ## Синхронизация JSON в репо
