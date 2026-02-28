@@ -26,6 +26,10 @@
   - `profile-acceptance-check.sh` для process-level acceptance checklist по `core/extended/full`;
   - `evidence-sync-cycle.sh` для регулярной синхронизации evidence в Notion Sprint Log (+ optional Linear closure);
   - `operations-access-matrix.md` для ownership/rotation/audit trail сервисных аккаунтов и bot-профилей.
+- Critical incident hardening внедрён:
+  - WF-3 выделяет `db_timeout_cascade` как отдельный P0 incident type;
+  - Linear/Telegram уведомления для DB timeout cascade содержат immediate actions;
+  - добавлен runbook `docs/sentry-db-timeout-cascade-runbook.md`.
 
 ## Операционные проверки
 

@@ -209,7 +209,10 @@ const sev = String(obj?.severity || '').toLowerCase();
 const severity = sev === 'critical' ? 'critical' : 'non_critical';
 const confidence = Number.isFinite(Number(obj?.confidence)) ? Number(obj.confidence) : 0.6;
 const reason = (obj?.reason || 'LLM classification fallback').toString().slice(0, 180);
-return [{ json: { ...base, severity, confidence, reason, classifiedBy: 'llm' } }];`,
+const mergedText = ((base.title || '') + ' ' + (base.payloadSnippet || '') + ' ' + reason).toLowerCase();
+const isDbCascade = /(database|db).{0,40}(timeout|timed out|connection pool|too many connections|exhausted)/i.test(mergedText) && /(cascade|spike|retry storm|saturation|overload)/i.test(mergedText);
+const incidentType = isDbCascade ? 'db_timeout_cascade' : (severity === 'critical' ? 'critical_generic' : 'non_critical');
+return [{ json: { ...base, severity, confidence, reason, classifiedBy: 'llm', incidentType } }];`,
       },
     },
     {
@@ -221,13 +224,19 @@ return [{ json: { ...base, severity, confidence, reason, classifiedBy: 'llm' } }
       parameters: {
         jsCode: `const base = $input.first().json;
 const t = (base.title || '').toLowerCase();
+const p = (base.payloadSnippet || '').toLowerCase();
+const combined = (t + ' ' + p).trim();
 const l = (base.level || '').toLowerCase();
 const criticalSignals = ['fatal', 'outofmemory', 'oom', 'db down', 'payment', 'auth', 'timeout cascade', 'panic', 'crash loop'];
-const hit = criticalSignals.find(s => t.includes(s));
-const severity = (l === 'fatal' || hit) ? 'critical' : 'non_critical';
-const reason = hit ? ('keyword: ' + hit) : ('level=' + l);
+const dbCascadeRegex = /(database|db).{0,40}(timeout|timed out|connection pool|too many connections|exhausted)/i;
+const cascadeRegex = /(cascade|spike|retry storm|saturation|overload)/i;
+const dbCascadeHit = dbCascadeRegex.test(combined) && cascadeRegex.test(combined);
+const hit = dbCascadeHit ? 'db_timeout_cascade' : criticalSignals.find(s => combined.includes(s));
+const severity = (l === 'fatal' || Boolean(hit)) ? 'critical' : 'non_critical';
+const incidentType = dbCascadeHit ? 'db_timeout_cascade' : (severity === 'critical' ? 'critical_generic' : 'non_critical');
+const reason = hit ? ('signal: ' + hit) : ('level=' + l);
 const confidence = severity === 'critical' ? 0.74 : 0.64;
-return [{ json: { ...base, severity, confidence, reason, classifiedBy: 'heuristic' } }];`,
+return [{ json: { ...base, severity, confidence, reason, classifiedBy: 'heuristic', incidentType } }];`,
       },
     },
     {
@@ -282,8 +291,8 @@ return [{ json: { ...base, severity, confidence, reason, classifiedBy: 'heuristi
         resource: "issue",
         operation: "create",
         teamId: "={{ $env.LINEAR_TEAM_ID }}",
-        title: "=CRITICAL Sentry: {{ $json.title }}",
-        description: "=Severity: {{ $json.severity }} ({{ $json.classifiedBy }}, conf={{ $json.confidence }})\\nReason: {{ $json.reason }}\\nLevel: {{ $json.level }}\\nProject: {{ $json.project }}\\nURL: {{ $json.url }}\\nFingerprint: {{ $json.fingerprint }}\\n\\nPayload:\\n{{ $json.payloadSnippet }}",
+        title: "={{ $json.incidentType === 'db_timeout_cascade' ? ('P0 DB timeout cascade: ' + $json.title) : ('CRITICAL Sentry: ' + $json.title) }}",
+        description: "=Severity: {{ $json.severity }} ({{ $json.classifiedBy }}, conf={{ $json.confidence }})\\nIncident type: {{ $json.incidentType || 'n/a' }}\\nReason: {{ $json.reason }}\\nLevel: {{ $json.level }}\\nProject: {{ $json.project }}\\nURL: {{ $json.url }}\\nFingerprint: {{ $json.fingerprint }}\\n\\nImmediate actions:\\n1) Check DB saturation (pool/connections/latency).\\n2) Verify error-rate trend in Sentry and n8n alerts.\\n3) Trigger rollback or traffic reduction if cascade persists.\\n\\nPayload:\\n{{ $json.payloadSnippet }}",
         additionalFields: { priority: 1 },
       },
       credentials: { linearApi: { name: "AIPipeline Linear" } },
@@ -313,7 +322,9 @@ return [{ json: { ...base, severity, confidence, reason, classifiedBy: 'heuristi
         jsCode: `const src = $('If critical').first().json;
 const err = $json.error || null;
 if (!err) {
-  return [{ json: { text: '🚨 *CRITICAL* Sentry\\n' + src.title + '\\nLevel: ' + src.level + '\\nClassifier: ' + src.classifiedBy + ' (' + src.confidence + ')\\nReason: ' + src.reason + '\\nLinear: ' + ($json.identifier || $json.id || 'created') + '\\n' + (src.url || '') } }];
+  const preface = src.incidentType === 'db_timeout_cascade' ? '🚨 *P0 DB timeout cascade*' : '🚨 *CRITICAL* Sentry';
+  const actions = src.incidentType === 'db_timeout_cascade' ? '\\nActions: check DB pool saturation, rollback/throttle if trend grows.' : '';
+  return [{ json: { text: preface + '\\n' + src.title + '\\nLevel: ' + src.level + '\\nClassifier: ' + src.classifiedBy + ' (' + src.confidence + ')\\nReason: ' + src.reason + '\\nLinear: ' + ($json.identifier || $json.id || 'created') + actions + '\\n' + (src.url || '') } }];
 }
 const status = Number(err.statusCode ?? err.status ?? err.httpCode ?? err.code ?? 0);
 const body = err.responseBody ?? err.body ?? err.data ?? '';
@@ -323,7 +334,8 @@ const detail = (typeof err.message === 'string' && err.message)
   || JSON.stringify(err);
 const msg = String(detail).slice(0, 300);
 const rateLimited = status === 429 || /429|rate\\s*limit|too many requests/i.test(String(status) + ' ' + msg);
-return [{ json: { text: '🚨 *CRITICAL* Sentry\\n' + src.title + '\\nLevel: ' + src.level + '\\nClassifier: ' + src.classifiedBy + ' (' + src.confidence + ')\\nReason: ' + src.reason + '\\n⚠️ Linear create failed' + (rateLimited ? ' (rate-limited)' : '') + ': ' + msg + '\\n' + (src.url || ''), linearFailed: true, rateLimited, linearReason: msg } }];`,
+const preface = src.incidentType === 'db_timeout_cascade' ? '🚨 *P0 DB timeout cascade*' : '🚨 *CRITICAL* Sentry';
+return [{ json: { text: preface + '\\n' + src.title + '\\nLevel: ' + src.level + '\\nClassifier: ' + src.classifiedBy + ' (' + src.confidence + ')\\nReason: ' + src.reason + '\\n⚠️ Linear create failed' + (rateLimited ? ' (rate-limited)' : '') + ': ' + msg + '\\n' + (src.url || ''), linearFailed: true, rateLimited, linearReason: msg } }];`,
       },
     },
     {

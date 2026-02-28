@@ -24,6 +24,8 @@
    Статус: выполнено.
 4. Rate-limit handling для Sentry/Linear/Notion/GitHub APIs.
    Статус: выполнено (включая status-aware parsing в WF-2/WF-3/WF-4/WF-5).
+5. Critical Sentry incident response pattern for DB timeout cascade.
+   Статус: выполнено (WF-3 `incidentType=db_timeout_cascade` + runbook `docs/sentry-db-timeout-cascade-runbook.md`).
 
 ## B2) Engineering baseline (code quality + typed integration)
 
