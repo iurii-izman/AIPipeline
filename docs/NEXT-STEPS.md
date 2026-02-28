@@ -61,11 +61,14 @@
   - `source scripts/load-env-from-keyring.sh && node scripts/sync-closure-evidence.js --title \"Closure sync\" --summary \"WF evidence synced\" --linear AIP-11 --state-type completed`
 - Регулярный evidence cycle (weekly):
   - `./scripts/evidence-sync-cycle.sh --profile full --title "Weekly operations evidence"`
+- Closure sync audit (GitHub PRs ↔ Linear state):
+  - `source scripts/load-env-from-keyring.sh && node scripts/audit-linear-github-closure.js --write-markdown --fail-on-mismatch`
 
 ## Что остаётся до полного closure
 
-1. Синхронизировать финальный PR/коммиты с закрытыми задачами Linear.
-2. Поддерживать регулярный цикл evidence-sync в Notion Sprint Log/Runbook.
+1. Поддерживать регулярный цикл evidence-sync в Notion Sprint Log/Runbook.
+2. Поддерживать closure audit (`audit-linear-github-closure.js`) в регулярном цикле.
+3. NotebookLM: weekly UI upload source-bundle (manual-only).
 
 ## Рабочий цикл дальше
 

@@ -9,7 +9,7 @@
 2. Зафиксировать новые execution evidence для WF-2…WF-7 в Notion Sprint Log/Runbook.
    Статус: выполнено (Notion Sprint Log запись создана 2026-02-28).
 3. Закрыть соответствующие задачи в Linear с привязкой PR/коммитов.
-   Статус: в работе (операционный процесс, зависит от текущих PR/коммитов).
+   Статус: выполнено (closure audit `scripts/audit-linear-github-closure.js`, отчёт `.out/linear-github-closure-audit.md`, mismatches=0).
 
 ## B) Functional hardening (phase-6 production patterns)
 
@@ -60,6 +60,7 @@
 
 1. Поддерживать актуальность runbook/SSoT после ручных правок workflow в n8n UI (обязательный export в repo).
 2. Обновить `docs/delivery-pipeline-compliance.md` по итогам post-hardening regression и последующих изменений.
+   Статус: выполнено (включая AIP-12/AIP-16 и closure-audit section).
 3. Отдельной задачей довести профили/сервисные аккаунты/ботов до целевого операционного стандарта 100% (access matrix + ownership + rotation + audit trail).
    Статус: выполнено (`docs/operations-access-matrix.md`, `docs/operations-profiles.md`, `scripts/profile-acceptance-check.sh`, `scripts/evidence-sync-cycle.sh`).
 

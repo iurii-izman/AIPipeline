@@ -75,6 +75,10 @@
   - `stack-control.sh`, `configure-github-webhook-wf2.js`, `register-sentry-webhook.js` пишут audit events;
   - `stack-health-report.sh` теперь включает `alerts probe`;
   - Grafana dashboard `AIPipeline Overview` расширен панелями `Error Signal`, `DLQ/Workflow Failures`, `Audit Trail`.
+- **Closure sync audit (2026-03-01):**
+  - добавлен `scripts/audit-linear-github-closure.js` (проверка merged PR с `Closes AIP-XX` против state в Linear);
+  - сгенерирован отчёт `.out/linear-github-closure-audit.md`;
+  - текущий результат: `referenced_not_done = 0`.
 - **Доки:** runbooks (в т.ч. [linear-phase3-runbook.md](linear-phase3-runbook.md), [n8n-workflows/README.md](n8n-workflows/README.md), [live-uat-telegram.md](live-uat-telegram.md)), гайды по Notion/Sentry/n8n (step-by-step), keyring, Linear, MCP, audit, и consolidated backlog [tz-remaining-work.md](tz-remaining-work.md).
 
 ---
@@ -117,6 +121,7 @@
 | Operations profiles/services/bots governance (access matrix + acceptance + evidence cycle) | ✅ |
 | Critical Sentry incident hardening (`db_timeout_cascade`) | ✅ |
 | Observability alerting + audit stream | ✅ |
+| Linear ↔ GitHub closure sync audit | ✅ |
 | WF-4: digest + optional Notion Sprint Log write (`NOTION_SPRINT_LOG_DATABASE_ID`) | ✅ |
 | WF-5: команды `/status`, `/help`, `/tasks`, `/errors`, `/search`, `/create`, `/deploy`, `/standup` | ✅ (нужны env/credentials) |
 | WF-6: отправка reminder только если есть обновления в Notion за 7 дней | ✅ |

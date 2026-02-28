@@ -98,11 +98,14 @@
 | DLQ parking + replay runbook | ✅ (`WF-7`, `docs/dlq-replay-runbook.md`) |
 | Live UAT + post-hardening evidence | ✅ (`docs/live-uat-telegram.md`, `docs/uat-evidence-2026-02-28.md`) |
 | Notion Sprint Log evidence sync | ✅ |
+| Critical pattern hardening: `db_timeout_cascade` (WF-3) | ✅ (`docs/sentry-db-timeout-cascade-runbook.md`) |
+| Observability alert checks + audit trail stream | ✅ (`scripts/check-observability-alerts.sh`, `.runtime-logs/audit.log`, Grafana `Audit Trail`) |
+| Linear ↔ GitHub closure audit (Closes AIP-XX consistency) | ✅ (`scripts/audit-linear-github-closure.js`, `.out/linear-github-closure-audit.md`) |
 
 ---
 
 ## План действий (оставшееся)
 
 1. Поддерживать env completeness в n8n для всех веток WF-5 (`LINEAR_TEAM_ID`, `SENTRY_*`, `GITHUB_*`, `NOTION_TOKEN`).
-2. Для advanced observability: поддерживать Grafana/Loki stack и алертинг политику.
-3. Поддерживать evidence-sync в Notion Sprint Log после каждого live regression.
+2. Поддерживать evidence-sync в Notion Sprint Log после каждого live regression.
+3. NotebookLM: выполнять UI upload source-bundle по weekly cadence (единственный manual-only шаг без публичного API).
