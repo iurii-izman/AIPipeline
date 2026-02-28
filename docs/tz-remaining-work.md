@@ -5,6 +5,7 @@
 ## A) Blocking / must-have before “production-ready”
 
 1. Добавить `OPENAI_API_KEY` в keyring/env для включения LLM-ветки WF-3 (сейчас fallback).
+   Статус: остаётся открытым (в `health-check` всё ещё `OPENAI_API_KEY: MISSING`).
 2. Прогнать живой UAT из реального Telegram-чата по командам:
    - `/tasks`, `/errors`, `/search test`, `/create test issue`, `/deploy staging`, `/standup`.
    Статус: выполнено (см. `docs/live-uat-telegram.md`).
