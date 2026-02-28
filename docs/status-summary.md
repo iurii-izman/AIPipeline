@@ -28,7 +28,7 @@
 
 - **N8N_API_KEY в keyring:** если нужен вызов n8n API из скриптов — запись с User: `aipipeline-api`, Server: `n8n` (см. [keyring-credentials.md](keyring-credentials.md)).
 - **Sentry MCP в Cursor:** MCP → Add remote `https://mcp.sentry.dev/mcp` → OAuth в браузере.
-- **Проверки:** в Cursor — «find recent specs in Notion» (выполнено: поиск через MCP, спеки в Specs); в Telegram — `/status` (если есть workflow); открыть PR — BugBot и Linear link.
+- **Проверки:** в Cursor — «find recent specs in Notion» (выполнено); в Telegram — `/status` (если есть workflow); открыть PR — ветка `chore/verify-pr-bugbot-linear` запушена, создать PR по ссылке в [NEXT-STEPS.md](NEXT-STEPS.md).
 
 ---
 
