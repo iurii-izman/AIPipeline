@@ -32,8 +32,10 @@
 | n8n Basic Auth Password | `AIPipeline — n8n Basic Auth Password` | `aipipeline-password` | `n8n` | пароль для входа в UI n8n | ☑ |
 | n8n API Key (опц.) | `AIPipeline — N8n API` | `aipipeline-api` | `n8n` | n8n → Settings → API → Create API Key (для вызова API/workflow извне). Чтобы скрипт подхватывал как `N8N_API_KEY`, в записи должны быть **User:** `aipipeline-api`, **Server:** `n8n`. | ☑ |
 | Sentry DSN (опц.) | `AIPipeline — Sentry DSN` | `aipipeline` | `sentry.io` | Sentry → Project → Client Keys (DSN) | ☑ |
+| Sentry Auth Token (опц.) | `AIPipeline — Sentry Auth Token` | `aipipeline-auth` | `sentry.io` | Sentry → Settings → Auth Tokens → Create (scope **project:write**). Нужен для авторегистрации webhook через `scripts/register-sentry-webhook.js` (после добавления — запустить ngrok, выставить WEBHOOK_BASE_URL и скрипт). | ☐ |
+| ngrok authtoken (опц.) | `AIPipeline — ngrok` | `aipipeline` | `ngrok.com` | [dashboard.ngrok.com](https://dashboard.ngrok.com/get-started/your-authtoken) — для скрипта `run-n8n-with-ngrok.sh` (Telegram webhook по HTTPS) | ☑ |
 
-**Примечание:** Sentry MCP использует OAuth (логин в браузере), в keyring его хранить не обязательно. В keyring — DSN для SDK в коде и для n8n, если нужен.
+**Примечание:** Sentry MCP использует OAuth (логин в браузере), в keyring его хранить не обязательно. В keyring — DSN для SDK в коде и для n8n, если нужен. **Sentry Auth Token** — только для автоматической регистрации webhook (WF-3) через API.
 
 ### GitHub PAT: права для MCP и git (один токен на всё)
 
@@ -110,12 +112,12 @@ secret-tool store --label="AIPipeline — N8n API" server n8n user aipipeline-ap
 - **GitHub PAT** — AIPipeline — GitHub PAT (server: github.com). Права: repo, при необходимости read:org.
 - **Linear API Key** — AIPipeline — Linear (server: linear.app, user: aipipeline). Права: максимальные для workspace.
 - **Notion** — AIPipeline — Notion (server: notion.so). Internal Integration token; выдать доступ к страницам/базам Delivery Hub.
-- Остальные (Telegram, n8n, Sentry) — добавить по [day0-runbook.md](day0-runbook.md) при настройке.
+- Остальные (Telegram, n8n, Sentry) — добавить по [archive/day0-runbook.md](archive/day0-runbook.md) при настройке.
 
 ---
 
 ## Ссылки
 
 - [mcp-enable-howto.md](mcp-enable-howto.md) — какие переменные нужны для MCP.
-- [day0-runbook.md](day0-runbook.md) — порядок настройки и получения токенов.
+- [archive/day0-runbook.md](archive/day0-runbook.md) — порядок настройки и получения токенов.
 - PIPELINE.md — Приложение Б (безопасность, секреты только в env/keyring).

@@ -20,3 +20,6 @@ Thumbs.db
 
 # Optional: local overrides
 .cursor/mcp.local.json
+
+# Optional: ngrok binary (see docs/n8n-setup-step-by-step.md § 4.7)
+.bin/

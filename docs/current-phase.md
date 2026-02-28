@@ -16,40 +16,26 @@
 
 ---
 
-## Текущий фокус: завершение Day-0
+## Текущий фокус: после Фазы 4 (ведение задач, донастройки)
 
-**Выполнено автоматически (агент):**
-- Keyring fix: скрипт `load-env-from-keyring.sh` теперь ищет по атрибуту `server` (совместимость с COSMIC/Qt keychain `org.qt.keychain`), fallback на `service`.
-- **GitHub:** Ruleset обновлён (защита только main, owner bypass), labels (19 шт.), pre-commit.ci config. PR #1 merged (keyring fix), PR #7 merged (pre-commit).
-- **Linear:** Labels (13 шт., совпадают с GitHub), проект «AIPipeline Phase 1 — Day-0 Setup», issues AIP-5..AIP-10. GitHub integration подключена.
-- **GitHub Issues:** #2 (Notion setup), #3 (Telegram), #4 (Linear sync), #5 (n8n), #6 (pre-commit — closed).
+**Day-0, Фазы 2, 3 и 4 завершены.** Фаза 4: /health, /status, WF-1…WF-6 активны. Фаза 3 (ведение задач): приоритеты проставлены AIP-1…AIP-10 через Linear MCP; опционально — labels в UI, описание Agent-Ready при взятии в работу. Фаза 3: runbook [linear-phase3-runbook.md](linear-phase3-runbook.md) — workflow (Backlog → Todo → In Progress → In Review → Done), labels, шаблон Agent-Ready, процесс ведения задач; linear-setup.md синхронизирован с Phase 3.
 
-**Дополнительно сделано агентом (автопилот):**
-- Linear: в тикеты AIP-5..AIP-8 добавлены описания и ссылки на GitHub issues.
-- Notion: скрипт `notion-create-delivery-hub-structure.sh` (идемпотентный — при повторном запуске не создаёт дубликаты). Пользователь создал root-страницу и запустил скрипт; агент удалил дубликаты подстраниц в Notion через API и добавил в скрипт проверку «уже есть» → SKIP.
-- Доки: [notion-delivery-hub.md](notion-delivery-hub.md), [notion-setup-step-by-step.md](notion-setup-step-by-step.md), [day0-runbook.md](day0-runbook.md), [mcp-enable-howto.md](mcp-enable-howto.md); в `.env.example` — `NOTION_DELIVERY_HUB_PAGE_ID`.
-
-**Day-0 завершён.** Опционально: Sentry MCP в Cursor (remote `https://mcp.sentry.dev/mcp`, OAuth); N8N_API_KEY в keyring (User: `aipipeline-api`, Server: `n8n`) для вызова n8n API; проверки из [day0-runbook.md](day0-runbook.md) (Notion, /status, PR).
-
-Краткий итог списком: [status-summary.md](status-summary.md). Полный чек-лист: [day0-runbook.md](day0-runbook.md).
+Краткий итог: [status-summary.md](status-summary.md). Linear: [linear-phase3-runbook.md](linear-phase3-runbook.md); Day-0: [archive/day0-runbook.md](archive/day0-runbook.md).
 
 ---
 
-## Что только пользователь может сделать (опционально)
+## Опционально (пользователь)
 
-- **Sentry MCP:** OAuth в Cursor (MCP → Add remote).
-- **N8N_API_KEY:** если нужен вызов n8n API из скриптов — запись в keyring с User: `aipipeline-api`, Server: `n8n`.
-- **Проверки Day-0:** запрос к Notion, /status в Telegram, открыть PR (BugBot, Linear).
-
-Всё остальное (доки, скрипты, labels, issues, правила, шаблоны) автоматизировано агентом.
+- **Telegram /status:** WF-5 активен; для ответа: ngrok (`run-n8n-with-ngrok.sh`) + приложение `./scripts/start-app-with-keyring.sh` (или `PORT=3000 npm start`; со keyring в ответе env flags = true).
+- Остальное (Sentry MCP, N8N_API_KEY, проверки Notion/PR) уже сделано.
 
 ---
 
 ## После Day-0
 
 - **Фаза 2 (выполнена):** наполнять Notion по шаблонам. Агент создал через MCP: Specs — Health check & env verification, MCP and env (Cursor), n8n workflow WF-1 (alerts); Meetings — Phase 2 kickoff; Runbooks — n8n (Podman); Integration Mapping — Linear↔GitHub, Notion↔Cursor MCP; Decision Records — Secrets in keyring, Branch naming {LINEAR-ID}-{short-desc}, PR required for main; Quick Links заполнены ранее.
-- **Фаза 3:** вести задачи в Linear по workflow и labels.
-- **Фаза 4+:** добавлять код/интеграции, подключать n8n workflow (WF-1…WF-6), при необходимости NotebookLM.
+- **Фаза 3 (выполнена):** runbook [linear-phase3-runbook.md](linear-phase3-runbook.md); приоритеты и labels (linear-apply-labels.js); в AIP-7 и AIP-8 добавлено описание по шаблону Agent-Ready (примеры при взятии в работу).
+- **Фаза 4+:** GET /health, /status, тесты, sync credentials, **run-n8n-with-ngrok.sh**, **start-app-with-keyring.sh**. **WF-1…WF-6 все активны.** Ngrok: authtoken из keyring один раз в конфиг — `source scripts/load-env-from-keyring.sh && ./.bin/ngrok config add-authtoken "$NGROK_AUTHTOKEN"`. WF-3: Webhook в Sentry — вручную (URL в Alerts) или `./scripts/register-sentry-webhook.sh` — [what-to-do-manually.md](what-to-do-manually.md).
 
 Проверка среды: `./scripts/system-check.sh` (на **хосте** — полная картина: Node, Podman, Flatpak; **внутри toolbox** — среда контейнера; чтобы в toolbox был Node — см. `./scripts/setup-toolbox-aipipeline.sh`).
 Проверка окружения (keyring, приложение, n8n): `./scripts/health-check-env.sh`.

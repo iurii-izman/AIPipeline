@@ -18,4 +18,4 @@
 ## References
 
 - [PIPELINE.md](../PIPELINE.md) — full blueprint.
-- [day0-runbook.md](day0-runbook.md) — setup checklist.
+- [archive/day0-runbook.md](archive/day0-runbook.md) — setup checklist (архив).

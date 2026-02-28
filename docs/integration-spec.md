@@ -15,6 +15,7 @@ Integrations between pipeline tools. Entity mapping and API details go in Notion
 | Sentry | n8n      | Webhook → workflow → Telegram + Linear issue |
 | Telegram | n8n     | Commands → workflows → Linear/GitHub/Notion/Sentry |
 | n8n    | Linear, GitHub, Notion, Telegram, Sentry | Workflow actions |
+| n8n    | App (this repo) | HTTP GET /health, GET /status (pipeline status for WF-5 /status or monitoring) |
 
 ## Auth and secrets
 
@@ -25,4 +26,4 @@ Integrations between pipeline tools. Entity mapping and API details go in Notion
 ## References
 
 - [PIPELINE.md](../PIPELINE.md) — Слой 2 (MCP), Слой 3 (n8n), Фаза 1.
-- [day0-runbook.md](day0-runbook.md) — setup order.
+- [archive/day0-runbook.md](archive/day0-runbook.md) — порядок настройки (архив).

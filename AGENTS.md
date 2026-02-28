@@ -10,7 +10,7 @@
 
 ## Текущее состояние
 
-**Day-0 завершён.** Конвейер поднят: GitHub (repo, ruleset, labels, CI), Linear (проект, labels), Notion (Delivery Hub, подстраницы), Cursor MCP (Notion, GitHub, Linear, Telegram, filesystem), Sentry (DSN, SDK), n8n (keyring, контейнер Podman, UI). Все ключи в keyring по docs/keyring-credentials.md.
+**Day-0, Фаза 2, 3 и 4 завершены.** GET /health, /status, тесты; **WF-1…WF-6 все активны.** Linear: приоритеты и labels; AIP-7 и AIP-8 закрыты через PR #12 и #13 (Closes AIP-XX). При взятии задачи: ветка `AIP-XX-short-desc`, в PR — `Closes AIP-XX`. WF-3 webhook в Sentry зарегистрирован. Детали: [docs/what-to-do-manually.md](docs/what-to-do-manually.md).
 
 ## Что читать
 
@@ -33,3 +33,17 @@
 - **Правила:** `.cursor/rules`; секреты только в keyring/env; не коммитить `.env` и токены.
 - **Документация:** каталог `docs/`; единый список следующих шагов — docs/README.md и docs/NEXT-STEPS.md.
 - **План:** PIPELINE.md; **что сделано:** docs/status-summary.md; **навигация:** docs/README.md; **проверка окружения:** `./scripts/health-check-env.sh`.
+
+---
+
+## Промпт для нового чата (скопируй целиком)
+
+```
+Проект: AIPipeline — AI-native delivery pipeline (PIPELINE.md). Solo, Fedora COSMIC Atomic. Source of truth: Linear (задачи), Notion (спеки, ADR), GitHub (код). Секреты в keyring; env: source scripts/load-env-from-keyring.sh или aipipeline-cursor.
+
+Текущее состояние: Day-0, Фазы 2–4 завершены. GitHub, Linear, Notion, Cursor MCP (все 6 зелёные), Sentry (DSN, SDK, MCP OAuth), n8n (Podman, credentials из keyring), WF-1…WF-6 все активны. /status: ./scripts/start-app-with-keyring.sh + ngrok (./.bin/ngrok http 5678 или run-n8n-with-ngrok.sh). Ngrok один раз: ./scripts/configure-ngrok-from-keyring.sh.
+
+Следующий шаг: вести задачи в Linear (Фаза 3 runbook), при необходимости донастроить WF в n8n UI. Детали: docs/NEXT-STEPS.md, docs/what-to-do-manually.md.
+
+Действуй по AGENTS.md: прочитай docs/status-summary.md и docs/NEXT-STEPS.md; выполни ./scripts/health-check-env.sh; доработки делай сам; после изменений обнови status-summary и при необходимости current-phase. Правила: .cursor/rules; секреты только keyring/env; не коммитить .env. Документация: docs/; следующий шаг — docs/NEXT-STEPS.md.
+```

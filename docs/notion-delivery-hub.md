@@ -42,4 +42,4 @@ Create the Delivery Hub in Notion as below. Full structure in [PIPELINE.md](../P
 ## References
 
 - [PIPELINE.md](../PIPELINE.md) — Фаза 2 (templates text).
-- [day0-runbook.md](day0-runbook.md) — step 3.
+- [archive/day0-runbook.md](archive/day0-runbook.md) — step 3.

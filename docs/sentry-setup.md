@@ -36,4 +36,4 @@ Sentry is a **remote MCP** (OAuth). In Cursor: Settings → MCP → add server, 
 ## References
 
 - [PIPELINE.md](../PIPELINE.md) — Фаза 1.7, Слой 3 WF-3.
-- [day0-runbook.md](day0-runbook.md) — step 6.
+- [archive/day0-runbook.md](archive/day0-runbook.md) — step 6.

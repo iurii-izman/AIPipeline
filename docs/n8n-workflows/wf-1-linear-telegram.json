@@ -1,0 +1,29 @@
+{
+  "name": "WF-1: Linear → Telegram (AIPipeline)",
+  "nodes": [
+    {
+      "id": "c3d4e5f6-0001-4000-8000-000000000001",
+      "name": "When clicking 'Test workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0]
+    },
+    {
+      "id": "c3d4e5f6-0002-4000-8000-000000000002",
+      "name": "Placeholder: add Linear + IF + Telegram",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [220, 0],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"info\": \"Add: Linear Trigger or Cron+Linear API → IF status In Review/Blocked → Telegram Send. See docs/n8n-workflows/README.md WF-1.\"\n}"
+      }
+    }
+  ],
+  "connections": {
+    "When clicking 'Test workflow'": {
+      "main": [[{ "node": "Placeholder: add Linear + IF + Telegram", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {}
+}

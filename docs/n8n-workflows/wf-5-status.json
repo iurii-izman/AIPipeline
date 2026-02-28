@@ -1,0 +1,31 @@
+{
+  "name": "WF-5: Telegram /status (AIPipeline)",
+  "nodes": [
+    {
+      "id": "a1b2c3d4-0001-4000-8000-000000000001",
+      "name": "When clicking 'Test workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0]
+    },
+    {
+      "id": "a1b2c3d4-0002-4000-8000-000000000002",
+      "name": "Set status message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [220, 0],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"status\": \"ok\",\n  \"message\": \"Pipeline status: run /status in Telegram after adding Telegram Trigger + IF nodes. See docs/n8n-workflows/README.md.\"\n}"
+      }
+    }
+  ],
+  "connections": {
+    "When clicking 'Test workflow'": {
+      "main": [
+        [{ "node": "Set status message", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {}
+}

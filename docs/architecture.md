@@ -19,9 +19,13 @@ Observe:   Sentry (errors) + n8n (alerts → Telegram)
 
 MCP servers (see `.cursor/mcp.json`): Notion, GitHub, Linear, Telegram, filesystem. Secrets via `${env:VAR}`. Sentry: remote MCP (OAuth).
 
+## App (Node)
+
+When `PORT` is set, the app serves HTTP: **GET /health** (ok, timestamp), **GET /status** (pipeline status: env flags, n8n reachable). Use from n8n (HTTP Request node) or for monitoring. See [runbook.md](runbook.md).
+
 ## n8n
 
-Self-hosted on Podman (port 5678). Workflows: Linear → Telegram, GitHub PR → Linear, Sentry → Telegram + Linear, daily digest, Telegram command center, Notion → NotebookLM reminder.
+Self-hosted on Podman (port 5678). Workflows: Linear → Telegram, GitHub PR → Linear, Sentry → Telegram + Linear, daily digest, Telegram command center, Notion → NotebookLM reminder. Workflow JSONs in [n8n-workflows/README.md](n8n-workflows/README.md); import via `./scripts/import-n8n-workflow.sh` or `import-all-n8n-workflows.sh`.
 
 ## Constraints
 

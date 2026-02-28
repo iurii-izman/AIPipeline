@@ -18,6 +18,7 @@ npm run build           # build
 
 source scripts/load-env-from-keyring.sh        # load secrets from GNOME keyring into shell
 ./scripts/load-env-from-keyring.sh --cursor    # write .env for Cursor MCP
+./scripts/start-app-with-keyring.sh            # start app with keyring env (GET /health, /status with env flags)
 ./scripts/run-n8n.sh                           # start n8n in Podman
 ./scripts/system-check.sh                     # verify environment
 ```
@@ -74,7 +75,7 @@ n8n (self-hosted in Podman) is the automation hub. MCP servers connect tools: No
 | File | Purpose |
 |------|---------|
 | `PIPELINE.md` | Full blueprint: phases 0–7, MCP, n8n workflows |
-| `docs/day0-runbook.md` | Day-0 setup checklist |
+| `docs/archive/day0-runbook.md` | Day-0 setup checklist (архив) |
 | `docs/runbook.md` | Code review, MCP, n8n, health checks |
 | `docs/definition-of-done.md` | DoR/DoD and naming conventions |
 | `docs/keyring-credentials.md` | Keyring inventory and token list |

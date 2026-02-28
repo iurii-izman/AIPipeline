@@ -18,7 +18,7 @@
 3. Обнови docs/current-phase.md — что сделано по пунктам выше; при необходимости docs/keyring-credentials.md (инвентарь).
 4. Что нельзя сделать через MCP (OAuth в браузере, создание репо, Telegram/Sentry/n8n) — оформи как короткий чек-лист "осталось вручную" в current-phase или в комментарии пользователю.
 
-Правила: .cursor/rules (workflow, coding-standards, integration-standards, docs-policy); секреты только в keyring/env; не коммитить .env и токены. Документация проекта — в docs/; runbook — docs/runbook.md, docs/day0-runbook.md.
+Правила: .cursor/rules (workflow, coding-standards, integration-standards, docs-policy); секреты только в keyring/env; не коммитить .env и токены. Документация проекта — в docs/; runbook — docs/runbook.md; Day-0 — docs/archive/day0-runbook.md.
 ```
 
 ---
