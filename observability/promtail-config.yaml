@@ -17,4 +17,3 @@ scrape_configs:
           job: aipipeline
           host: local
           __path__: /var/log/aipipeline/*.log
-
