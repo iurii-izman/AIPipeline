@@ -70,3 +70,11 @@
 - `source scripts/load-env-from-keyring.sh`
 - `./scripts/health-check-env.sh`
 - smoke test `/status`, `/errors`, `/deploy staging`
+
+## Scope verification checklist (workflow alerting aware)
+
+1. GitHub: `Actions: Read and write` достаточно для `/deploy`; лишние repo scopes не выдавать.
+2. Linear: только нужная команда/проекты, issue read/write.
+3. Notion: integration shared только с Sprint Log и нужными search pages/databases.
+4. Sentry: `project:read` достаточно для `/errors`; `project:write` только если реально используется webhook auto-registration.
+5. После изменения scopes проверить, что WF-2…WF-5 отдают fallback alerts (а не silent failures) при access-denied.

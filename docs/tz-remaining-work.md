@@ -9,7 +9,7 @@
 2. Зафиксировать новые execution evidence для WF-2…WF-7 в Notion Sprint Log/Runbook.
    Статус: выполнено (Notion Sprint Log запись создана 2026-02-28).
 3. Закрыть соответствующие задачи в Linear с привязкой PR/коммитов.
-   Статус: частично выполнено (`AIP-11` переведён в Done, добавлен closure comment).
+   Статус: в работе (операционный процесс, зависит от текущих PR/коммитов).
 
 ## B) Functional hardening (phase-6 production patterns)
 
@@ -23,12 +23,25 @@
    - Notion write fail (WF-4).
    Статус: выполнено.
 4. Rate-limit handling для Sentry/Linear/Notion/GitHub APIs.
+   Статус: выполнено (включая status-aware parsing в WF-2/WF-3/WF-4/WF-5).
+
+## B2) Engineering baseline (code quality + typed integration)
+
+1. TypeScript strict scaffold + coexistence strategy JS/TS.
+   Статус: выполнено.
+2. Real quality gates (ESLint/Prettier/typecheck/Vitest/coverage).
+   Статус: выполнено.
+3. Pilot typed integration module (Linear client) + resilience primitives.
+   Статус: выполнено.
+4. Second typed integration module (Notion client) с idempotent create strategy.
+   Статус: выполнено.
+5. Config schema validation via `zod` with fail-fast startup errors.
    Статус: выполнено.
 
 ## C) Observability and security gaps
 
 1. Централизованный сбор логов (Loki/ELK) для app + n8n.
-   Статус: остаётся открытым (optional advanced).
+   Статус: выполнено (optional advanced baseline: локальный Grafana/Loki/Promtail стек).
 2. Dashboard/alerts:
    - error rate WF-3;
    - failed executions WF-2…WF-7;
@@ -41,14 +54,19 @@
 
 ## D) Documentation and process closure
 
-1. Добавить новый hardening evidence (execution IDs и примеры replay) в Notion Sprint Log.
-2. Обновить `docs/delivery-pipeline-compliance.md` по итогам уже выполненного post-hardening regression.
+1. Поддерживать актуальность runbook/SSoT после ручных правок workflow в n8n UI (обязательный export в repo).
+2. Обновить `docs/delivery-pipeline-compliance.md` по итогам post-hardening regression и последующих изменений.
+3. Отдельной задачей довести профили/сервисные аккаунты/ботов до целевого операционного стандарта 100% (access matrix + ownership + rotation + audit trail).
+   Статус: выполнено (`docs/operations-access-matrix.md`, `docs/operations-profiles.md`, `scripts/profile-acceptance-check.sh`, `scripts/evidence-sync-cycle.sh`).
 
 ## E) Optional (from ТЗ)
 
 1. Grafana + Loki stack.
+   Статус: выполнено (Podman stack + run/check scripts + Grafana provisioning).
 2. n8n MCP mode enable/verify in Cursor.
+   Статус: выполнено (`n8n-mcp` добавлен в `.cursor/mcp.json`).
 3. Полный NotebookLM контур:
    - notebook + sources;
    - FAQ/Briefing sync process;
    - weekly refresh.
+   Статус: выполнено частично (source-bundle automation + playbook + weekly process есть; notebook UI upload остаётся manual).

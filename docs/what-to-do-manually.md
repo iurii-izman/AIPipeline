@@ -70,6 +70,15 @@ WF-6 теперь отправляет reminder только если нашёл
 
 Нужен `NOTION_TOKEN` в n8n env.
 
+Для полного NotebookLM контура:
+
+1. Сформировать актуальный source-bundle:
+   ```bash
+   ./scripts/notebooklm-build-source-bundle.sh
+   ```
+2. Загрузить/обновить файлы из `./.out/notebooklm-sources/` в NotebookLM notebook (UI).
+3. При необходимости зафиксировать evidence в Sprint Log.
+
 ---
 
 ## WF-7 (DLQ parking + replay)
@@ -133,3 +142,21 @@ source scripts/load-env-from-keyring.sh
 ```
 
 Это обновит `docs/n8n-workflows/wf-*.json` под фактическое runtime состояние.
+
+---
+
+## Operations profiles: ручной governance цикл
+
+Автоматизировано:
+
+- `./scripts/profile-acceptance-check.sh full`
+- `./scripts/evidence-sync-cycle.sh --profile full`
+
+Остаётся вручную:
+
+1. Ротация credential в UI провайдеров (GitHub/Linear/Notion/Sentry/Telegram/Cloudflare).
+2. Обновление ключей в keyring (без `.env` и без коммита секретов).
+3. Еженедельный запуск evidence-cycle + фиксация ссылки на Sprint Log.
+4. При закрытии operational issue добавить `--linear AIP-XX` в `evidence-sync-cycle.sh`, чтобы closure в Linear и Sprint Log были синхронизированы в одном цикле.
+
+Детали ownership/rotation/audit trail: [operations-access-matrix.md](operations-access-matrix.md).

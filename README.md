@@ -40,7 +40,7 @@ Telegram (бот, Chat ID) и MCP — в [docs/keyring-credentials.md](docs/keyr
 - **Observe:** Sentry (errors), n8n (alerts → Telegram)
 - **Control:** Telegram bot (notifications, commands)
 
-MCP: Notion, GitHub, Linear, Telegram, filesystem (`.cursor/mcp.json`). Секреты только из env (keyring).
+MCP: Notion, GitHub, Linear, Telegram, n8n-mcp, filesystem (`.cursor/mcp.json`). Секреты только из env (keyring).
 
 ## Local setup
 
@@ -55,6 +55,12 @@ MCP: Notion, GitHub, Linear, Telegram, filesystem (`.cursor/mcp.json`). Секр
 - `npm run status` или `./scripts/health-check-env.sh` — проверка keyring, приложения, n8n
 - `./scripts/system-check.sh` — среда (OS, Node, Podman, toolbox)
 - `npm run lint` / `npm run build` / `npm test` (smoke + health server test)
+- `./scripts/run-observability-stack.sh start|stop|status` — optional advanced stack (Grafana/Loki/Promtail)
+- `./scripts/check-observability-stack.sh` — health-check observability stack
+- `./scripts/start-app-with-keyring-logs.sh` / `./scripts/stream-n8n-logs.sh` — лог-файлы для Loki ingestion
+- `./scripts/notebooklm-build-source-bundle.sh` — собрать NotebookLM source bundle + FAQ + manifest
+- `./scripts/stack-control.sh {start|stop|restart|status} [core|extended|full]` — единое управление сервисными профилями
+- `./scripts/stack-health-report.sh [--markdown]` — единый health report по app/n8n/observability/cloudflared/env readiness
 - **`./scripts/start-app-with-keyring.sh`** — запуск приложения с env из keyring (GET /health, /status с env flags true)
 - `PORT=3000 npm start` — HTTP server без keyring (GET /health, GET /status для n8n/Telegram)
 - `./scripts/run-n8n.sh` — запуск n8n в Podman

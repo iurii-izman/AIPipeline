@@ -32,6 +32,29 @@ Source of truth for workflow JSON: `docs/n8n-workflows/*.json`.
   - Telegram success / Linear fail
   - Linear success / Telegram fail
   - Notion write fail (WF-4)
+- normalized failure classification in failover messages:
+  - `rate-limited`
+  - `upstream failure`
+  - `graphql logical failure` (WF-2)
+
+### Partial-failure matrix
+
+| Workflow | Primary failure | Fallback behavior | DLQ |
+|----------|------------------|-------------------|-----|
+| WF-2 | Linear update fail | Telegram still sends merged PR result with failure class | ✅ |
+| WF-2 | Telegram send fail | execution continues with parked event | ✅ |
+| WF-3 | Linear create fail | Telegram still sends incident summary + failure reason | ✅ |
+| WF-3 | Telegram send fail | execution continues with parked event | ✅ |
+| WF-4 | Notion write fail | digest already sent to Telegram + explicit Notion fail alert | ✅ |
+| WF-4 | Telegram send fail | execution continues with parked event | ✅ |
+| WF-5 | command branch integration fail | user gets fallback response (`rate-limited` when detected) | Telegram send fail only |
+
+### Rate-limit operator action
+
+1. Check n8n execution details and identify upstream (`Linear`, `Notion`, `Sentry`, `GitHub`, `Telegram`).
+2. Confirm retry exhaustion (`maxTries=4`).
+3. Inspect parked payload in WF-7.
+4. Replay via `/webhook/wf-dlq-replay` after cooldown.
 
 ---
 

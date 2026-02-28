@@ -107,8 +107,14 @@ const workflow = {
       parameters: {
         jsCode: `const err = $json.error || null;
 if (!err) return [{ json: { telegramFailed: false } }];
-const msg = String(err.message || err.description || JSON.stringify(err)).slice(0, 320);
-const rateLimited = /429|rate\\s*limit|too many requests/i.test(msg);
+const status = Number(err.statusCode ?? err.status ?? err.httpCode ?? err.code ?? 0);
+const body = err.responseBody ?? err.body ?? err.data ?? '';
+const detail = (typeof err.message === 'string' && err.message)
+  || (typeof err.description === 'string' && err.description)
+  || (typeof body === 'string' ? body : JSON.stringify(body))
+  || JSON.stringify(err);
+const msg = String(detail).slice(0, 320);
+const rateLimited = status === 429 || /429|rate\\s*limit|too many requests/i.test(String(status) + ' ' + msg);
 return [{ json: { telegramFailed: true, rateLimited, reason: msg } }];`,
       },
     },
@@ -193,8 +199,14 @@ return [{ json: { telegramFailed: true, rateLimited, reason: msg } }];`,
       parameters: {
         jsCode: `const err = $json.error || null;
 if (!err) return [{ json: { notionFailed: false } }];
-const msg = String(err.message || err.description || JSON.stringify(err)).slice(0, 320);
-const rateLimited = /429|rate\\s*limit|too many requests/i.test(msg);
+const status = Number(err.statusCode ?? err.status ?? err.httpCode ?? err.code ?? 0);
+const body = err.responseBody ?? err.body ?? err.data ?? '';
+const detail = (typeof err.message === 'string' && err.message)
+  || (typeof err.description === 'string' && err.description)
+  || (typeof body === 'string' ? body : JSON.stringify(body))
+  || JSON.stringify(err);
+const msg = String(detail).slice(0, 320);
+const rateLimited = status === 429 || /429|rate\\s*limit|too many requests/i.test(String(status) + ' ' + msg);
 return [{ json: { notionFailed: true, rateLimited, reason: msg } }];`,
       },
     },

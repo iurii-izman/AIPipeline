@@ -395,7 +395,7 @@
         -400
       ],
       "parameters": {
-        "jsCode": "const err = $json.error || null;\nif (!err) return [{ json: { linearFailed: false, rateLimited: false, reason: '' } }];\nconst msg = String(err.message || err.description || JSON.stringify(err)).slice(0, 360);\nconst rateLimited = /429|rate\\s*limit|too many requests/i.test(msg);\nreturn [{ json: { linearFailed: true, rateLimited, reason: msg } }];"
+        "jsCode": "const body = $json.body || {};\nconst err = $json.error || body.error || null;\nconst gqlErrors = Array.isArray(body.errors) ? body.errors : [];\nconst mutation = body.data?.issueUpdate || null;\nif (!err && gqlErrors.length === 0 && mutation?.success !== false) {\n  return [{ json: { linearFailed: false, rateLimited: false, reason: '', failureClass: '' } }];\n}\nconst firstGraphQLError = gqlErrors[0];\nconst rawStatus = Number(\n  err?.statusCode ?? err?.status ?? err?.httpCode ?? body.status ?? body.statusCode ?? 0\n);\nconst detail =\n  (typeof err?.message === 'string' && err.message) ||\n  (typeof err?.description === 'string' && err.description) ||\n  (typeof firstGraphQLError?.message === 'string' && firstGraphQLError.message) ||\n  (mutation?.success === false ? 'Linear mutation returned success=false' : '') ||\n  JSON.stringify(err || firstGraphQLError || body);\nconst reason = String(detail).slice(0, 360);\nconst haystack = String(rawStatus || '') + ' ' + reason;\nconst rateLimited = rawStatus === 429 || /429|rate\\s*limit|too many requests/i.test(haystack);\nconst failureClass = rateLimited\n  ? 'rate-limited'\n  : (gqlErrors.length > 0 || mutation?.success === false)\n    ? 'graphql logical failure'\n    : 'upstream failure';\nreturn [{ json: { linearFailed: true, rateLimited, reason, failureClass } }];"
       }
     },
     {
@@ -467,7 +467,7 @@
             {
               "name": "text",
               "type": "string",
-              "value": "=✅ PR #{{ $('Extract PR payload').first().json.number }} merged: {{ $('Extract PR payload').first().json.title }}\\n{{ $('Extract PR payload').first().json.url }}\\n⚠️ Linear update failed{{ $('Assess Linear update result').first().json.rateLimited ? ' (rate-limited)' : '' }}: {{ $('Assess Linear update result').first().json.reason || 'unknown error' }}"
+              "value": "=✅ PR #{{ $('Extract PR payload').first().json.number }} merged: {{ $('Extract PR payload').first().json.title }}\\n{{ $('Extract PR payload').first().json.url }}\\n⚠️ Linear update failed ({{ $('Assess Linear update result').first().json.failureClass || ($('Assess Linear update result').first().json.rateLimited ? 'rate-limited' : 'upstream failure') }}): {{ $('Assess Linear update result').first().json.reason || 'unknown error' }}"
             }
           ]
         },
@@ -579,7 +579,7 @@
         -100
       ],
       "parameters": {
-        "jsCode": "const err = $json.error || null;\nif (!err) return [{ json: { telegramFailed: false } }];\nconst msg = String(err.message || err.description || JSON.stringify(err)).slice(0, 360);\nconst rateLimited = /429|rate\\s*limit|too many requests/i.test(msg);\nreturn [{ json: { telegramFailed: true, rateLimited, reason: msg } }];"
+        "jsCode": "const err = $json.error || null;\nif (!err) return [{ json: { telegramFailed: false } }];\nconst status = Number(err.statusCode ?? err.status ?? err.httpCode ?? err.code ?? 0);\nconst body = err.responseBody ?? err.body ?? err.data ?? '';\nconst detail = (typeof err.message === 'string' && err.message)\n  || (typeof err.description === 'string' && err.description)\n  || (typeof body === 'string' ? body : JSON.stringify(body))\n  || JSON.stringify(err);\nconst msg = String(detail).slice(0, 360);\nconst rateLimited = status === 429 || /429|rate\\s*limit|too many requests/i.test(String(status) + ' ' + msg);\nreturn [{ json: { telegramFailed: true, rateLimited, reason: msg } }];"
       }
     },
     {

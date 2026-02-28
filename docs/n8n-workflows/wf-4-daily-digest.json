@@ -100,7 +100,7 @@
         -80
       ],
       "parameters": {
-        "jsCode": "const err = $json.error || null;\nif (!err) return [{ json: { telegramFailed: false } }];\nconst msg = String(err.message || err.description || JSON.stringify(err)).slice(0, 320);\nconst rateLimited = /429|rate\\s*limit|too many requests/i.test(msg);\nreturn [{ json: { telegramFailed: true, rateLimited, reason: msg } }];"
+        "jsCode": "const err = $json.error || null;\nif (!err) return [{ json: { telegramFailed: false } }];\nconst status = Number(err.statusCode ?? err.status ?? err.httpCode ?? err.code ?? 0);\nconst body = err.responseBody ?? err.body ?? err.data ?? '';\nconst detail = (typeof err.message === 'string' && err.message)\n  || (typeof err.description === 'string' && err.description)\n  || (typeof body === 'string' ? body : JSON.stringify(body))\n  || JSON.stringify(err);\nconst msg = String(detail).slice(0, 320);\nconst rateLimited = status === 429 || /429|rate\\s*limit|too many requests/i.test(String(status) + ' ' + msg);\nreturn [{ json: { telegramFailed: true, rateLimited, reason: msg } }];"
       }
     },
     {
@@ -243,7 +243,7 @@
         120
       ],
       "parameters": {
-        "jsCode": "const err = $json.error || null;\nif (!err) return [{ json: { notionFailed: false } }];\nconst msg = String(err.message || err.description || JSON.stringify(err)).slice(0, 320);\nconst rateLimited = /429|rate\\s*limit|too many requests/i.test(msg);\nreturn [{ json: { notionFailed: true, rateLimited, reason: msg } }];"
+        "jsCode": "const err = $json.error || null;\nif (!err) return [{ json: { notionFailed: false } }];\nconst status = Number(err.statusCode ?? err.status ?? err.httpCode ?? err.code ?? 0);\nconst body = err.responseBody ?? err.body ?? err.data ?? '';\nconst detail = (typeof err.message === 'string' && err.message)\n  || (typeof err.description === 'string' && err.description)\n  || (typeof body === 'string' ? body : JSON.stringify(body))\n  || JSON.stringify(err);\nconst msg = String(detail).slice(0, 320);\nconst rateLimited = status === 429 || /429|rate\\s*limit|too many requests/i.test(String(status) + ' ' + msg);\nreturn [{ json: { notionFailed: true, rateLimited, reason: msg } }];"
       }
     },
     {

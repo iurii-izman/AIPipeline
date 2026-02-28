@@ -22,6 +22,8 @@
 | [keyring-credentials.md](keyring-credentials.md) | Keyring: список записей, атрибуты (User/Server), CLI, как обновить пароль |
 | [mcp-enable-howto.md](mcp-enable-howto.md) | Как включить MCP в Cursor (env из keyring, aipipeline-cursor), типичные ошибки |
 | [runbook.md](runbook.md) | Операции: code review, MCP, n8n, setup guides, релизы |
+| [operations-profiles.md](operations-profiles.md) | Единые профили запуска сервисов (`core/extended/full`) и stack health report |
+| [operations-access-matrix.md](operations-access-matrix.md) | Ownership/rotation/audit trail для service accounts и bot-профилей |
 | [releases.md](releases.md) | Версионирование, теги, чек-лист перед релизом (alpha/beta/stable) |
 | [archive/day0-runbook.md](archive/day0-runbook.md) | Day-0 чек-лист (архив; фаза завершена) |
 
@@ -54,7 +56,9 @@
 | [architecture.md](architecture.md) | Архитектура конвейера |
 | [data-mapping.md](data-mapping.md) | Маппинг данных между инструментами |
 | [observability.md](observability.md) | Baseline наблюдаемости: логи, correlationId, алерты, апгрейды |
+| [observability-stack-grafana-loki.md](observability-stack-grafana-loki.md) | Optional advanced: локальный Grafana/Loki/Promtail стек и smoke |
 | [token-least-privilege.md](token-least-privilege.md) | Минимальные scopes/permissions для GitHub/Linear/Notion/Sentry/Telegram |
+| [notebooklm-playbook.md](notebooklm-playbook.md) | Optional advanced: NotebookLM source bundle, weekly refresh и operating cadence |
 | [live-uat-telegram.md](live-uat-telegram.md) | Живой UAT для Telegram команд, WF-2 PR webhook, OPENAI_API_KEY, стабильный HTTPS |
 | [stable-https-options.md](stable-https-options.md) | Сравнение вариантов стабильного HTTPS endpoint (плюсы/минусы, рейтинг) |
 | [cloudflare-tunnel-setup.md](cloudflare-tunnel-setup.md) | Пошаговая миграция на Cloudflare Tunnel (stable URL) |

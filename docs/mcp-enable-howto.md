@@ -1,6 +1,6 @@
-# Как включить MCP (GitHub, Linear, Notion) в Cursor
+# Как включить MCP (GitHub, Linear, Notion, n8n) в Cursor
 
-Чтобы агент в Cursor имел доступ к API GitHub, Linear и Notion через MCP, нужны переменные окружения с токенами. Ключи уже в keyring — их нужно подставить в env **до** запуска Cursor.
+Чтобы агент в Cursor имел доступ к API GitHub, Linear, Notion и n8n через MCP, нужны переменные окружения с токенами. Ключи уже в keyring — их нужно подставить в env **до** запуска Cursor.
 
 ## Вариант 1: Одна команда из любой папки (рекомендуется)
 
@@ -29,8 +29,8 @@ aipipeline-cursor
    cd /var/home/user/Projects/AIPipeline && ./scripts/load-env-from-keyring.sh --cursor
    ```
    Скрипт сам ищет Cursor: сначала в PATH, потом `CURSOR_APPIMAGE`, затем `Cursor*.AppImage` в каталогах `~/Apps`, `~/.local/bin`. Если найден — запускает его с env. Если нет — загрузит env и откроет shell; **запусти Cursor вручную из этого же терминала** (например через команду из меню приложений или полный путь к AppImage), чтобы процесс Cursor унаследовал переменные.
-4. Cursor запустится с уже подставленными `GITHUB_PERSONAL_ACCESS_TOKEN`, `LINEAR_API_KEY`, `NOTION_TOKEN`. Открой проект AIPipeline.
-5. В Cursor: **Settings** (Ctrl+,) → **MCP** → **Refresh**. Должны стать зелёными: Notion, GitHub, Linear, filesystem. **Telegram** остаётся красным, пока не добавишь бота и Chat ID в keyring (см. [keyring-credentials.md](keyring-credentials.md)); можно временно отключить сервер Telegram в настройках MCP или оставить как есть — остальные MCP работают.
+4. Cursor запустится с уже подставленными `GITHUB_PERSONAL_ACCESS_TOKEN`, `LINEAR_API_KEY`, `NOTION_TOKEN`, `N8N_API_KEY` и `N8N_URL`. Открой проект AIPipeline.
+5. В Cursor: **Settings** (Ctrl+,) → **MCP** → **Refresh**. Должны стать зелёными: Notion, GitHub, Linear, n8n-mcp, filesystem. **Telegram** остаётся красным, пока не добавишь бота и Chat ID в keyring (см. [keyring-credentials.md](keyring-credentials.md)); можно временно отключить сервер Telegram в настройках MCP или оставить как есть — остальные MCP работают.
 6. Новый чат с агентом в этом проекте будет видеть MCP и сможет выполнять задачи из docs/README.md (раздел «Следующие шаги»). Этап настройки GitHub/Linear/Notion выполнен, см. [archive/stage2-mcp-automation.md](archive/stage2-mcp-automation.md) для справки.
 
 ## Вариант 3: Профиль терминала «AIPipeline (env)»
@@ -48,7 +48,7 @@ aipipeline-cursor
 ## Проверка
 
 - В чате с агентом: «Покажи мои Linear workspace» или «Найди в Notion страницы с Delivery Hub». Если MCP подключён, агент сможет вызвать инструменты и вернуть результат.
-- Settings → MCP: у серверов Notion, GitHub, Linear статус должен быть зелёный.
+- Settings → MCP: у серверов Notion, GitHub, Linear, n8n-mcp статус должен быть зелёный.
 
 ## Если GitHub MCP не создаёт PR (Permission Denied)
 

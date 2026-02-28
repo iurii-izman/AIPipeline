@@ -19,10 +19,12 @@
 - retry/backoff policy на внешних API узлах WF-2/WF-3/WF-4/WF-5 (`retryOnFail`, `maxTries=4`, `waitBetweenTries=2000`)
 - `continueOnFail + alwaysOutputData` для fail-safe ветвления
 - rate-limit detection (`429`, `rate limit`, `too many requests`) в командах и интеграциях
+- status-aware rate-limit detection: используется `statusCode/status/httpCode` + regex fallback
 - partial-failure policy:
   - Linear fail / Telegram ok: явный fallback + parking в DLQ
   - Linear ok / Telegram fail: parking в DLQ
   - Notion write fail (WF-4): Telegram alert + parking в DLQ
+  - WF-2 failure classes в уведомлениях: `rate-limited` / `upstream failure` / `graphql logical failure`
 
 5. Centralized DLQ workflow:
 - `WF-7: DLQ Parking + Replay (AIPipeline)`
@@ -53,6 +55,10 @@
 | Workflow external API failure | WF-2/WF-3/WF-4/WF-5 -> WF-7 | Park in DLQ + Telegram alert |
 | WF-5 command failure | Telegram response + n8n execution | Return fallback message, inspect execution |
 | App unavailable | `/status` via WF-5 | Troubleshoot app/n8n/network |
+
+Workflow failure alerting policy:
+- Если интеграция упала, но Telegram доставка прошла: оператор получает incident summary прямо в чате.
+- Если Telegram доставка не прошла: событие всегда паркуется в WF-7 и требует replay/ручной проверки.
 
 ## SLO-lite (operational)
 

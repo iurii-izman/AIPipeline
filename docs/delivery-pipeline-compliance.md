@@ -14,7 +14,7 @@
 | Фаза 2 (Notion) | ✅ | Все страницы в скрипте; Onboarding — onboarding-guide.md |
 | Фаза 3 (Linear) | ✅ | Workflow, labels, Agent-Ready |
 | Фаза 4 (GitHub scaffold) | ✅ | deploy-staging/production реализованы как validate + webhook deploy (с dry-run fallback) |
-| Фаза 5 (NotebookLM) | ⚪ Ручное | WF-6 reminder есть; сам NotebookLM — пользователь |
+| Фаза 5 (NotebookLM) | 🟡 Частично автоматизировано | WF-6 reminder + source-bundle automation; UI upload в NotebookLM остаётся ручным |
 | Фаза 6 (Sprint 1) | ✅ | Hardening закрыт: retry/backoff, rate-limit handling, partial-failure policy, DLQ/replay |
 | Фаза 7 (DoR/DoD) | ✅ | definition-of-done.md |
 | WF-1…WF-7 | ✅ | Все workflow реализованы и активны, включая centralized DLQ/replay |
@@ -84,9 +84,9 @@
 
 | Элемент | Статус |
 |---------|--------|
-| Grafana + Loki | ❌ (опционально) |
-| n8n MCP в Cursor | ❌ (встроен в n8n) |
-| NotebookLM notebook | Ручная настройка пользователем |
+| Grafana + Loki | ✅ (Podman stack + provisioning) |
+| n8n MCP в Cursor | ✅ (`n8n-mcp`) |
+| NotebookLM notebook | 🟡 source-bundle/process automated, UI upload manual |
 
 ### Hardening and evidence (2026-02-28)
 
@@ -104,5 +104,5 @@
 ## План действий (оставшееся)
 
 1. Поддерживать env completeness в n8n для всех веток WF-5 (`LINEAR_TEAM_ID`, `SENTRY_*`, `GITHUB_*`, `NOTION_TOKEN`).
-2. Для advanced observability (опционально): Grafana/Loki + алерты.
+2. Для advanced observability: поддерживать Grafana/Loki stack и алертинг политику.
 3. Поддерживать evidence-sync в Notion Sprint Log после каждого live regression.

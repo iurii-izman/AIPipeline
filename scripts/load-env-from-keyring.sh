@@ -35,6 +35,7 @@ _load TELEGRAM_CHAT_ID api.telegram.org aipipeline-alerts
 _load N8N_BASIC_AUTH_USER n8n aipipeline
 _load N8N_BASIC_AUTH_PASSWORD n8n aipipeline-password
 _load N8N_API_KEY n8n aipipeline-api
+_load N8N_URL n8n aipipeline-url
 
 # Optional
 _load SENTRY_DSN sentry.io aipipeline
@@ -63,6 +64,10 @@ fi
 if [[ -z "${OPENAI_API_KEY:-}" ]]; then
   OPENAI_API_KEY="$(secret-tool lookup service aipipeline server openai.com key OPENAI_API_KEY 2>/dev/null || true)"
   export OPENAI_API_KEY
+fi
+
+if [[ -z "${N8N_URL:-}" ]]; then
+  export N8N_URL="http://localhost:5678"
 fi
 
 if [[ "${1:-}" == "--cursor" ]]; then

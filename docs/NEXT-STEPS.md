@@ -12,6 +12,20 @@
   - запущен centralized DLQ/replay workflow `WF-7`.
 - Runtime ↔ repo синхронизированы через `./scripts/export-n8n-workflows.sh` (включая `wf-7-dlq-parking.json`).
 - Доки обновлены: observability, DLQ replay runbook, least-privilege token scopes.
+- Engineering baseline внедрён:
+  - TypeScript strict scaffold + coexistence JS/TS;
+  - ESLint/Prettier + `typecheck` + Vitest + coverage gate.
+  - второй typed integration module (`notion-client`) добавлен по тому же стандарту (`resilience + typed errors + idempotency + tests`).
+- Optional advanced блок внедрён:
+  - локальный Grafana/Loki/Promtail стек;
+  - n8n MCP в Cursor (`n8n-mcp`);
+  - NotebookLM source-bundle automation + playbook.
+- Operations control plane внедрён:
+  - `stack-control.sh` для сервисных профилей;
+  - `stack-health-report.sh` для единого health snapshot;
+  - `profile-acceptance-check.sh` для process-level acceptance checklist по `core/extended/full`;
+  - `evidence-sync-cycle.sh` для регулярной синхронизации evidence в Notion Sprint Log (+ optional Linear closure);
+  - `operations-access-matrix.md` для ownership/rotation/audit trail сервисных аккаунтов и bot-профилей.
 
 ## Операционные проверки
 
@@ -23,13 +37,26 @@
   - `npm run lint && npm run build && npm test`
 - Проверка stable endpoint:
   - `./scripts/check-stable-endpoint.sh`
+- Проверка observability stack:
+  - `./scripts/check-observability-stack.sh`
+- Сборка NotebookLM source-bundle:
+  - `./scripts/notebooklm-build-source-bundle.sh`
+- Единый статус сервисных профилей:
+  - `./scripts/stack-control.sh status full`
+- Единый health snapshot:
+  - `./scripts/stack-health-report.sh --markdown`
+- Process-level acceptance checklist:
+  - `./scripts/profile-acceptance-check.sh full --markdown`
 - Автосинхронизация closure evidence (Notion + Linear):
   - `source scripts/load-env-from-keyring.sh && node scripts/sync-closure-evidence.js --title \"Closure sync\" --summary \"WF evidence synced\" --linear AIP-11 --state-type completed`
+- Регулярный evidence cycle (weekly):
+  - `./scripts/evidence-sync-cycle.sh --profile full --title "Weekly operations evidence"`
 
 ## Что остаётся до полного closure
 
-1. Синхронизировать финальный PR/коммиты с закрытыми задачами Linear (AIP-11 уже переведён в Done).
-2. Поддерживать регулярный цикл evidence-sync в Notion Sprint Log/Runbook (post-hardening запись за 2026-02-28 уже добавлена).
+1. Синхронизировать финальный PR/коммиты с закрытыми задачами Linear.
+2. Поддерживать регулярный цикл evidence-sync в Notion Sprint Log/Runbook.
+3. Опционально: третий typed integration module (`github-client`) для унификации runtime интеграций.
 
 ## Рабочий цикл дальше
 

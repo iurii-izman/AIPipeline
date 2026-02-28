@@ -315,8 +315,14 @@ const err = $json.error || null;
 if (!err) {
   return [{ json: { text: '🚨 *CRITICAL* Sentry\\n' + src.title + '\\nLevel: ' + src.level + '\\nClassifier: ' + src.classifiedBy + ' (' + src.confidence + ')\\nReason: ' + src.reason + '\\nLinear: ' + ($json.identifier || $json.id || 'created') + '\\n' + (src.url || '') } }];
 }
-const msg = String(err.message || err.description || JSON.stringify(err)).slice(0, 300);
-const rateLimited = /429|rate\\s*limit|too many requests/i.test(msg);
+const status = Number(err.statusCode ?? err.status ?? err.httpCode ?? err.code ?? 0);
+const body = err.responseBody ?? err.body ?? err.data ?? '';
+const detail = (typeof err.message === 'string' && err.message)
+  || (typeof err.description === 'string' && err.description)
+  || (typeof body === 'string' ? body : JSON.stringify(body))
+  || JSON.stringify(err);
+const msg = String(detail).slice(0, 300);
+const rateLimited = status === 429 || /429|rate\\s*limit|too many requests/i.test(String(status) + ' ' + msg);
 return [{ json: { text: '🚨 *CRITICAL* Sentry\\n' + src.title + '\\nLevel: ' + src.level + '\\nClassifier: ' + src.classifiedBy + ' (' + src.confidence + ')\\nReason: ' + src.reason + '\\n⚠️ Linear create failed' + (rateLimited ? ' (rate-limited)' : '') + ': ' + msg + '\\n' + (src.url || ''), linearFailed: true, rateLimited, linearReason: msg } }];`,
       },
     },
@@ -332,8 +338,14 @@ const err = $json.error || null;
 if (!err) {
   return [{ json: { text: '⚠️ *Sentry issue*\\n' + src.title + '\\nLevel: ' + src.level + '\\nClassifier: ' + src.classifiedBy + ' (' + src.confidence + ')\\nReason: ' + src.reason + '\\nLinear: ' + ($json.identifier || $json.id || 'created') + '\\n' + (src.url || '') } }];
 }
-const msg = String(err.message || err.description || JSON.stringify(err)).slice(0, 300);
-const rateLimited = /429|rate\\s*limit|too many requests/i.test(msg);
+const status = Number(err.statusCode ?? err.status ?? err.httpCode ?? err.code ?? 0);
+const body = err.responseBody ?? err.body ?? err.data ?? '';
+const detail = (typeof err.message === 'string' && err.message)
+  || (typeof err.description === 'string' && err.description)
+  || (typeof body === 'string' ? body : JSON.stringify(body))
+  || JSON.stringify(err);
+const msg = String(detail).slice(0, 300);
+const rateLimited = status === 429 || /429|rate\\s*limit|too many requests/i.test(String(status) + ' ' + msg);
 return [{ json: { text: '⚠️ *Sentry issue*\\n' + src.title + '\\nLevel: ' + src.level + '\\nClassifier: ' + src.classifiedBy + ' (' + src.confidence + ')\\nReason: ' + src.reason + '\\n⚠️ Linear create failed' + (rateLimited ? ' (rate-limited)' : '') + ': ' + msg + '\\n' + (src.url || ''), linearFailed: true, rateLimited, linearReason: msg } }];`,
       },
     },
@@ -411,8 +423,14 @@ return [{ json: { text: '⚠️ *Sentry issue*\\n' + src.title + '\\nLevel: ' + 
       parameters: {
         jsCode: `const err = $json.error || null;
 if (!err) return [{ json: { telegramFailed: false } }];
-const msg = String(err.message || err.description || JSON.stringify(err)).slice(0, 360);
-const rateLimited = /429|rate\\s*limit|too many requests/i.test(msg);
+const status = Number(err.statusCode ?? err.status ?? err.httpCode ?? err.code ?? 0);
+const body = err.responseBody ?? err.body ?? err.data ?? '';
+const detail = (typeof err.message === 'string' && err.message)
+  || (typeof err.description === 'string' && err.description)
+  || (typeof body === 'string' ? body : JSON.stringify(body))
+  || JSON.stringify(err);
+const msg = String(detail).slice(0, 360);
+const rateLimited = status === 429 || /429|rate\\s*limit|too many requests/i.test(String(status) + ' ' + msg);
 return [{ json: { telegramFailed: true, rateLimited, reason: msg } }];`,
       },
     },
