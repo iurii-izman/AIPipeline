@@ -39,7 +39,7 @@ Do not store secrets in repo; use n8n’s credential store or env.
 
 ## Workflows to import
 
-See **[n8n-workflows/README.md](n8n-workflows/README.md)** for WF-1…WF-6 (step-by-step for WF-1 and WF-5 /status). Import via API: `./scripts/import-n8n-workflow.sh [path/to/workflow.json]` (uses N8N_API_KEY). WF-5 заготовка: `docs/n8n-workflows/wf-5-status.json`. Create or import in n8n UI and connect credentials. Для ответа `/status` с полными флагами env (github, linear, …) запускай приложение через **`./scripts/start-app-with-keyring.sh`** (иначе в JSON будет `env.*: false`).
+See **[n8n-workflows/README.md](n8n-workflows/README.md)** for WF-1…WF-7 (including DLQ/replay WF-7). Import via API: `./scripts/import-n8n-workflow.sh [path/to/workflow.json]` (uses N8N_API_KEY). WF-5 заготовка: `docs/n8n-workflows/wf-5-status.json`. Create or import in n8n UI and connect credentials. Для ответа `/status` с полными флагами env (github, linear, …) запускай приложение через **`./scripts/start-app-with-keyring.sh`** (иначе в JSON будет `env.*: false`).
 
 **Telegram Trigger и HTTPS:** ошибка «An HTTPS URL must be provided for webhook» — Telegram принимает только HTTPS. На localhost: **`./scripts/run-n8n-with-ngrok.sh`** (ngrok + перезапуск n8n с WEBHOOK_URL; нужен ngrok authtoken в keyring или `ngrok config add-authtoken`). Подробно: [n8n-setup-step-by-step.md § 4.7](n8n-setup-step-by-step.md#47-telegram-webhook-https).
 

@@ -13,8 +13,8 @@
 |----------|------------|
 | [status-summary.md](status-summary.md) | Что сделано / не сделано, таблица статусов (SSoT) |
 | [current-phase.md](current-phase.md) | Текущий фокус и ссылки на status-summary, NEXT-STEPS |
-| [next-steps-step-by-step.md](next-steps-step-by-step.md) | **Пошагово дальше:** чек-лист и шаги 1–7 (WF-1…WF-6, Linear) |
-| [what-to-do-manually.md](what-to-do-manually.md) | Что обязательно сделать в n8n UI и в Sentry после скриптов WF-2…WF-6 |
+| [next-steps-step-by-step.md](next-steps-step-by-step.md) | **Пошагово дальше:** чек-лист apply/sync для WF-1…WF-7 и Linear |
+| [what-to-do-manually.md](what-to-do-manually.md) | Что обязательно сделать в n8n UI и внешних сервисах после скриптов WF-2…WF-7 |
 
 ### Настройка и операции
 | Документ | Назначение |
@@ -76,7 +76,6 @@
 Полный список: **[NEXT-STEPS.md](NEXT-STEPS.md)**. Кратко:
 
 - Day-0 и AIP-1…AIP-10 закрыты (PR #10, #12–#19 в main). CI зелёный; Linear ↔ GitHub по `Closes AIP-XX`.
-- **Фаза 3–4** ✅: приоритеты и labels в Linear; WF-1…WF-6 активны; при взятии новой задачи — ветка `AIP-XX-short-desc`, в PR — `Closes AIP-XX` ([linear-phase3-runbook.md](linear-phase3-runbook.md)).
 - **Фаза 3–4** ✅: приоритеты и labels в Linear; WF-1…WF-7 активны; при взятии новой задачи — ветка `AIP-XX-short-desc`, в PR — `Closes AIP-XX` ([linear-phase3-runbook.md](linear-phase3-runbook.md)).
 - Дальше: новые задачи из Linear, ведение по runbook; опционально — донастройка WF в n8n ([what-to-do-manually.md](what-to-do-manually.md)).
 

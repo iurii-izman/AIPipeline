@@ -69,7 +69,7 @@
 | n8n: keyring, run-n8n.sh, контейнер, первый вход, credentials в UI | ✅ |
 | N8N_API_KEY в keyring (опц.) | ✅ есть |
 | Verify (Notion, PR, /status, BugBot) | ✅ PR #10, #12–#19 (AIP-1…AIP-8) merged в main; CI green; Linear по Closes AIP-XX |
-| Phase 4: /health, /status, n8n WF-1…WF-6, update-wf5, sync credentials, ngrok + WF-5 active | ✅ |
+| Phase 4: /health, /status, n8n WF-1…WF-7, update-wf5, sync credentials, ngrok + WF-5 active | ✅ |
 | WF-5: URL /status → host.containers.internal, run-n8n.sh --add-host; секрет Telegram (403) — только без заголовка; start-app-with-keyring.sh для env flags в /status | ✅ |
 | Подсказки по WF-2, WF-3, WF-4, WF-6 (триггер, credentials, первый шаг) в docs/n8n-workflows/README.md | ✅ |
 | WF-1 (Linear → Telegram): ноды через update-wf1-linear-telegram.js, **включён (Active)** | ✅ |

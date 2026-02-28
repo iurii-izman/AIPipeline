@@ -1,91 +1,75 @@
 # Дальнейшие шаги пошагово
 
-**Фаза 4 завершена:** WF-1…WF-6 активны, credentials в n8n из keyring, ngrok — `./scripts/configure-ngrok-from-keyring.sh`. Ниже — чек-лист и опциональные донастройки.
+**Фаза 4+ завершена:** WF-1…WF-7 активны, hardening + DLQ/replay внедрены, evidence зафиксирован.
 
 ---
 
-## Шаг 1. (Уже сделано) Проверка окружения
+## Шаг 1. Проверка окружения
 
-- [x] `./scripts/health-check-env.sh` — keyring, приложение, n8n.
-- [x] В Telegram: `/status` — ответ с `env.*: true`, `n8n: "reachable"`.
-- [x] Приложение запущено через `./scripts/start-app-with-keyring.sh`, ngrok — через `./scripts/run-n8n-with-ngrok.sh`.
+```bash
+./scripts/health-check-env.sh
+./scripts/synthetic-health-status-check.sh
+```
 
----
+Ожидание: keyring/env `set`, n8n `200 OK`, `/health` и `/status` возвращают `200`.
 
-## Шаг 2. WF-1 (Linear → Telegram) — готов
+## Шаг 2. Применение workflow-изменений (если были правки)
 
-**Цель:** при статусе задачи In Review или Blocked — уведомление в Telegram (опрос каждые 10 мин).
+```bash
+source scripts/load-env-from-keyring.sh
+node scripts/update-wf1-linear-telegram.js
+node scripts/update-wf2-github-pr-linear.js
+node scripts/update-wf3-sentry-telegram.js
+node scripts/update-wf4-daily-digest.js
+node scripts/update-wf5-status-workflow.js
+node scripts/update-wf6-notion-reminder.js
+node scripts/update-wf7-dlq-parking.js
+```
 
-**Сделано:** скрипт `update-wf1-linear-telegram.js` выполнен, credentials привязаны (AIPipeline Linear, AIPipeline Telegram), Chat ID из keyring. WF-1 **включён (Active)**. При появлении в Linear задач в статусе In Review или Blocked они будут уходить в Telegram.
+## Шаг 3. Синхронизация runtime -> repo
 
-**Вариант B — вручную в n8n UI:**
+```bash
+source scripts/load-env-from-keyring.sh
+./scripts/export-n8n-workflows.sh
+```
 
-1. Открыть http://localhost:5678 → WF-1: Linear → Telegram.
-2. Удалить плейсхолдер. Добавить ноды:
-   - **Schedule Trigger** — правило `0 */10 * * *` (каждые 10 мин) или `0 9 * * 1-5` (будни 09:00).
-   - **Linear** — операция **Get Many** (issues), фильтр по проекту/team при необходимости.
-   - **IF** — условие: `status` равен "In Review" ИЛИ "Blocked" (или по `stateId`).
-   - **Telegram** — Send Message, Chat ID = `TELEGRAM_CHAT_ID` из keyring, текст: `🔄 {{ $json.title }} → {{ $json.state.name }}`.
-3. Соединить: Schedule → Linear → IF (true) → Telegram.
-4. В каждой ноде (Linear, Telegram) выбрать credential **AIPipeline Linear** / **AIPipeline Telegram**.
-5. Сохранить, включить (Active).
+Это обновляет `docs/n8n-workflows/wf-*.json` по фактическому runtime состоянию.
 
-Подробнее: [n8n-workflows/README.md](n8n-workflows/README.md) § WF-1.
+## Шаг 4. Live regression (Telegram)
 
----
+Команды для короткой операционной проверки:
 
-## Шаг 3. WF-2: GitHub PR → Telegram
+1. `/tasks`
+2. `/errors`
+3. `/search test`
+4. `/create test issue`
+5. `/deploy staging`
+6. `/standup`
 
-**Сделано скриптом:** `node scripts/update-wf2-github-pr-linear.js` — Schedule каждые 15 мин → GitHub: List PRs → Format digest → Telegram.
+Evidence обновлять в:
+- [live-uat-telegram.md](live-uat-telegram.md)
+- [uat-evidence-2026-02-28.md](uat-evidence-2026-02-28.md)
 
-**Вручную:** в n8n открыть WF-2, в ноде «GitHub: List PRs» выбрать credential **AIPipeline GitHub**, при необходимости поменять owner/repo; проверить Chat ID в Telegram; сохранить и включить (Active). Подробно: [what-to-do-manually.md](what-to-do-manually.md#wf-2-github-pr--telegram).
+## Шаг 5. Closure в системах
 
----
+1. Notion Sprint Log/Runbook: добавить запись с execution IDs и run links.
+2. Linear: закрыть релевантные задачи и оставить closure-комментарий со ссылками на evidence.
 
-## Шаг 4. WF-3: Sentry → Telegram + Linear
+## Шаг 6. Если есть инцидент
 
-**Сделано скриптом:** `node scripts/update-wf3-sentry-telegram.js` — Webhook → IF (error/fatal) → Linear: Create issue → Telegram.
-
-**Вручную (обязательно):** в n8n в ноде «Linear: Create issue» выбрать **Team**; включить workflow; скопировать Production Webhook URL из ноды «Sentry Webhook» и добавить его в **Sentry → Alerts → Webhook URL**. Подробно: [what-to-do-manually.md](what-to-do-manually.md#wf-3-sentry--telegram--linear).
-
----
-
-## Шаг 5. WF-4: Daily digest
-
-**Сделано скриптом:** `node scripts/update-wf4-daily-digest.js` — Schedule будни 09:00 → Linear: Get issues → Build digest → Telegram.
-
-**Вручную:** в n8n открыть WF-4, при необходимости привязать credentials и Chat ID, сохранить и включить (Active). Подробно: [what-to-do-manually.md](what-to-do-manually.md#wf-4-daily-digest).
-
----
-
-## Шаг 6. WF-6: Notion reminder
-
-**Сделано скриптом:** `node scripts/update-wf6-notion-reminder.js` — Schedule понедельник 10:00 → Set reminder → Telegram.
-
-**Вручную:** в n8n открыть WF-6, в Telegram-ноде выбрать credential и проверить Chat ID, сохранить и включить (Active). Подробно: [what-to-do-manually.md](what-to-do-manually.md#wf-6-notion-reminder).
-
----
-
-## Шаг 7. Ведение задач в Linear (Фаза 3)
-
-- Использовать workflow: Backlog → Todo → In Progress → In Review → Done.
-- Labels по [linear-phase3-runbook.md](linear-phase3-runbook.md).
-- Имена веток: `{LINEAR_ID}-{short-desc}`; PR привязывать к задаче.
-
----
+- Parking: `POST /webhook/wf-dlq-park`
+- Replay: `POST /webhook/wf-dlq-replay`
+- Runbook: [dlq-replay-runbook.md](dlq-replay-runbook.md)
 
 ## Краткий чек-лист
 
 | Шаг | Действие | Статус |
 |-----|----------|--------|
-| 1 | Проверка: health-check, /status в Telegram | ✅ |
-| 2 | WF-1: Linear → Telegram | ✅ включён |
-| 3 | WF-2: GitHub PR → Telegram | ✅ включён |
-| 4 | WF-3: Sentry → Linear + Telegram | ✅ включён; вручную: **Webhook URL в Sentry** |
-| 5 | WF-4: Daily digest | ✅ включён |
-| 6 | WF-6: Notion reminder | ✅ включён |
-| 7 | Ведение задач в Linear по runbook | Linear, GitHub |
+| 1 | health-check + synthetic probe | ✅ готово |
+| 2 | apply WF-1…WF-7 scripts | ✅ готово |
+| 3 | export runtime JSON | ✅ готово |
+| 4 | Telegram live regression | ✅ готово |
+| 5 | Notion/Linear closure | ✅ готово |
+| 6 | DLQ runbook/replay process | ✅ готово |
 
-**Что именно сделать вручную:** [what-to-do-manually.md](what-to-do-manually.md).
-
-Состояние окружения: `./scripts/health-check-env.sh`. Единый список: [NEXT-STEPS.md](NEXT-STEPS.md).
+Единый список следующих шагов: [NEXT-STEPS.md](NEXT-STEPS.md).
