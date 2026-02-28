@@ -63,11 +63,14 @@ jobs:
           echo "ref_name=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
           echo "sha_short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
       - name: Deploy via webhook (if configured)
-        if: ${{ secrets.DEPLOY_WEBHOOK_PRODUCTION != '' }}
         env:
           DEPLOY_WEBHOOK_PRODUCTION: ${{ secrets.DEPLOY_WEBHOOK_PRODUCTION }}
           DEPLOY_WEBHOOK_TOKEN_PRODUCTION: ${{ secrets.DEPLOY_WEBHOOK_TOKEN_PRODUCTION }}
         run: |
+          if [[ -z "$DEPLOY_WEBHOOK_PRODUCTION" ]]; then
+            echo "DEPLOY_WEBHOOK_PRODUCTION is not configured. Dry-run mode."
+            exit 0
+          fi
           PAYLOAD=$(cat <<JSON
           {
             "environment":"production",
@@ -81,15 +84,17 @@ jobs:
           )
           curl -fsSL -X POST "$DEPLOY_WEBHOOK_PRODUCTION" \
             -H "Content-Type: application/json" \
-            -H "Authorization: Bearer $DEPLOY_WEBHOOK_TOKEN_PRODUCTION" \
+            ${DEPLOY_WEBHOOK_TOKEN_PRODUCTION:+-H "Authorization: Bearer $DEPLOY_WEBHOOK_TOKEN_PRODUCTION"} \
             -d "$PAYLOAD"
       - name: Deployment summary
+        env:
+          DEPLOY_WEBHOOK_PRODUCTION: ${{ secrets.DEPLOY_WEBHOOK_PRODUCTION }}
         run: |
           {
             echo "### Production deploy"
             echo "- Ref: \`${{ steps.meta.outputs.ref_name }}\`"
             echo "- SHA: \`${{ steps.meta.outputs.sha_short }}\`"
-            if [[ -n "${{ secrets.DEPLOY_WEBHOOK_PRODUCTION }}" ]]; then
+            if [[ -n "$DEPLOY_WEBHOOK_PRODUCTION" ]]; then
               echo "- Mode: webhook deploy executed"
             else
               echo "- Mode: dry-run (DEPLOY_WEBHOOK_PRODUCTION not configured)"

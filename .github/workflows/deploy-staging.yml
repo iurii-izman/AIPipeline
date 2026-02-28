@@ -60,11 +60,14 @@ jobs:
           echo "ref_name=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
           echo "sha_short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
       - name: Deploy via webhook (if configured)
-        if: ${{ secrets.DEPLOY_WEBHOOK_STAGING != '' }}
         env:
           DEPLOY_WEBHOOK_STAGING: ${{ secrets.DEPLOY_WEBHOOK_STAGING }}
           DEPLOY_WEBHOOK_TOKEN_STAGING: ${{ secrets.DEPLOY_WEBHOOK_TOKEN_STAGING }}
         run: |
+          if [[ -z "$DEPLOY_WEBHOOK_STAGING" ]]; then
+            echo "DEPLOY_WEBHOOK_STAGING is not configured. Dry-run mode."
+            exit 0
+          fi
           PAYLOAD=$(cat <<JSON
           {
             "environment":"staging",
@@ -78,15 +81,17 @@ jobs:
           )
           curl -fsSL -X POST "$DEPLOY_WEBHOOK_STAGING" \
             -H "Content-Type: application/json" \
-            -H "Authorization: Bearer $DEPLOY_WEBHOOK_TOKEN_STAGING" \
+            ${DEPLOY_WEBHOOK_TOKEN_STAGING:+-H "Authorization: Bearer $DEPLOY_WEBHOOK_TOKEN_STAGING"} \
             -d "$PAYLOAD"
       - name: Deployment summary
+        env:
+          DEPLOY_WEBHOOK_STAGING: ${{ secrets.DEPLOY_WEBHOOK_STAGING }}
         run: |
           {
             echo "### Staging deploy"
             echo "- Ref: \`${{ steps.meta.outputs.ref_name }}\`"
             echo "- SHA: \`${{ steps.meta.outputs.sha_short }}\`"
-            if [[ -n "${{ secrets.DEPLOY_WEBHOOK_STAGING }}" ]]; then
+            if [[ -n "$DEPLOY_WEBHOOK_STAGING" ]]; then
               echo "- Mode: webhook deploy executed"
             else
               echo "- Mode: dry-run (DEPLOY_WEBHOOK_STAGING not configured)"
