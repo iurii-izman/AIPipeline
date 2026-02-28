@@ -64,4 +64,11 @@ See [runbook-n8n.md](runbook-n8n.md) for deploy and credentials.
 
 ---
 
+## 6. Релизы (alpha / beta / stable)
+
+- **Версионирование и теги:** см. [releases.md](releases.md).
+- **Перед релизом:** репозиторий чистый (только `main`, лишние ветки удалены локально и на origin), `npm test` и CI зелёные, версия в `package.json` обновлена, создан аннотированный тег `vX.Y.Z`, тег запушен на origin.
+
+---
+
 *Update this runbook when you add services or change the workflow.*

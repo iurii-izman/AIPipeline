@@ -29,9 +29,12 @@
 
 ---
 
-## После аудита и compliance
+## Выполнено (аудит и альфа)
 
-- **PR #11** (chore/phase2-notion-complete): аудит доки, compliance с delivery-pipeline.md, Notion (Risks & Issues, Access Matrix, Sprint Log, Guides), WF-5 /help, system-check Phase 0.5, onboarding-guide. Готов к ревью → после CI и одобрения — merge в main.
-- **Notion:** страницы Risks & Issues, Access Matrix, Sprint Log, Guides созданы в Delivery Hub (скрипт выполнен).
-- **WF-5:** обновление с /help отправлено в n8n; при сохранении n8n может требовать назначить Telegram credentials в UI → открыть WF-5, привязать AIPipeline Telegram к нодам, сохранить и включить.
-- **Дальше:** новые задачи из Linear по [linear-phase3-runbook.md](linear-phase3-runbook.md); ветка `AIP-XX-short-desc`, PR с `Closes AIP-XX`.
+- ~~**PR #11** (chore/phase2-notion-complete)~~ ✅ Смержен в main. Notion (Risks & Issues, Access Matrix, Sprint Log, Guides), WF-5 /help, onboarding-guide — выполнено.
+- **Репозиторий:** приведён к одному `main`, тег **v0.1.0-alpha.1** (альфа-релиз). Версия в package.json: 0.1.0-alpha.1. См. [releases.md](releases.md).
+
+## Дальше
+
+- Новые задачи из Linear по [linear-phase3-runbook.md](linear-phase3-runbook.md): ветка `AIP-XX-short-desc`, PR с `Closes AIP-XX`.
+- WF-5: при необходимости в n8n UI привязать Telegram credentials к нодам WF-5 и сохранить.

@@ -21,7 +21,8 @@
 |----------|------------|
 | [keyring-credentials.md](keyring-credentials.md) | Keyring: список записей, атрибуты (User/Server), CLI, как обновить пароль |
 | [mcp-enable-howto.md](mcp-enable-howto.md) | Как включить MCP в Cursor (env из keyring, aipipeline-cursor), типичные ошибки |
-| [runbook.md](runbook.md) | Операции: code review, MCP, n8n, setup guides |
+| [runbook.md](runbook.md) | Операции: code review, MCP, n8n, setup guides, релизы |
+| [releases.md](releases.md) | Версионирование, теги, чек-лист перед релизом (alpha/beta/stable) |
 | [archive/day0-runbook.md](archive/day0-runbook.md) | Day-0 чек-лист (архив; фаза завершена) |
 
 ### Сервисы (пошаговые гайды)

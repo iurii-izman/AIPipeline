@@ -4,7 +4,7 @@
 
 **Фаза 4 завершена.** Фаза 3: приоритеты и **labels** проставлены (MCP + `node scripts/linear-apply-labels.js`). При взятии задачи: описание Agent-Ready, ветка `AIP-XX-short-desc`, PR с `Closes AIP-XX` — см. [linear-phase3-runbook.md](linear-phase3-runbook.md), [definition-of-done.md](definition-of-done.md). Проверка: `./scripts/health-check-env.sh`.
 
-**Day-0 завершён.** Опционально: в keyring запись для `N8N_API_KEY` (User: `aipipeline-api`, Server: `n8n`); Sentry MCP в Cursor; проверки (Notion, /status, PR).
+**Day-0 завершён.** Репозиторий приведён к одному `main` (лишние ветки удалены локально и на origin). Альфа-релиз **v0.1.0-alpha.1**: тег на origin, версия в package.json `0.1.0-alpha.1`; чек-лист перед следующими релизами — [releases.md](releases.md). Опционально: в keyring запись для `N8N_API_KEY`; Sentry MCP в Cursor; проверки (Notion, /status, PR).
 
 ---
 
