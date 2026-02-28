@@ -37,6 +37,8 @@
    Статус: выполнено.
 5. Config schema validation via `zod` with fail-fast startup errors.
    Статус: выполнено.
+6. Third typed integration module (GitHub client) для workflow dispatch/runs с resilience + idempotent dispatch guard.
+   Статус: выполнено (`src/modules/github-client`, `tests/github-client.test.ts`).
 
 ## C) Observability and security gaps
 
