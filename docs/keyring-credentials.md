@@ -23,7 +23,7 @@
 
 | Секрет | Label | User | Server | Как получить | В keyring |
 |--------|--------|------|--------|--------------|-----------|
-| GitHub PAT | `AIPipeline — GitHub PAT` | твой_github_логин или `aipipeline` | `github.com` | GitHub → Settings → Developer settings → PAT (scope: repo, read:org) | ☑ |
+| GitHub PAT | `AIPipeline — GitHub PAT` | твой_github_логин или `aipipeline` | `github.com` | GitHub → Settings → Developer settings → PAT; права см. ниже | ☑ |
 | Linear API Key | `AIPipeline — Linear API Key` | твой_email или `aipipeline` | `linear.app` | Linear → Settings → API → Personal API keys | ☑ |
 | Notion token | `AIPipeline — Notion` / `AIPipeline — Notion Integration Token` | `aipipeline` или имя integration | `notion.so` | Notion → Internal Integration → token | ☑ |
 | Telegram Bot Token | `AIPipeline — Telegram Bot Token` или `AIPipelineTG_bot` | `aipipeline_delivery_bot` | `api.telegram.org` | @BotFather → /newbot → token | ☑ |
@@ -34,6 +34,17 @@
 | Sentry DSN (опц.) | `AIPipeline — Sentry DSN` | `aipipeline` | `sentry.io` | Sentry → Project → Client Keys (DSN) | ☑ |
 
 **Примечание:** Sentry MCP использует OAuth (логин в браузере), в keyring его хранить не обязательно. В keyring — DSN для SDK в коде и для n8n, если нужен.
+
+### GitHub PAT: права для MCP и git (один токен на всё)
+
+Один и тот же PAT используется для **git push** и для **GitHub MCP** (поиск, создание PR, комментарии). Если MCP при создании PR выдаёт «Permission Denied», скорее всего у токена нет прав на запись.
+
+- **Classic PAT** (Settings → Developer settings → Personal access tokens): включи scope **`repo`** (полный доступ к репозиториям: push, create/merge PR, issues) и при необходимости **`read:org`**. Этого достаточно для MCP и для `git push`.
+- **Fine-grained PAT** (Settings → Developer settings → Fine-grained tokens): для выбранного репо включи **Repository permissions**: «Pull requests: Read and write», «Contents: Read and write», «Metadata: Read». Тогда и MCP `create_pull_request`, и git будут работать.
+
+Расширять права текущего токена проще всего: GitHub → Settings → Developer settings → выбери токен → измени scopes / permissions → сохрани. Обновлять значение в keyring не нужно, пока токен не перевыпускаешь.
+
+**Альтернатива без смены PAT:** создавать PR вручную по ссылке из [NEXT-STEPS.md](NEXT-STEPS.md) или через CLI: `gh pr create` (если установлен `gh` и авторизован тем же токеном из keyring). См. [runbook.md](runbook.md) — fallback «PR через gh».
 
 ---
 

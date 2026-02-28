@@ -21,6 +21,8 @@ Review process: **BugBot (Cursor) + human (you)**. No other reviewers required.
 4. BugBot runs automatically on the PR; address its comments.
 5. You review and approve; merge when CI is green and DoD is met (see [definition-of-done.md](definition-of-done.md)).
 
+**Если GitHub MCP не создаёт PR (Permission Denied):** расширить права PAT — см. [keyring-credentials.md](keyring-credentials.md) (раздел «GitHub PAT: права для MCP»). Fallback: создать PR вручную по ссылке из [NEXT-STEPS.md](NEXT-STEPS.md) или через CLI с тем же токеном: `source scripts/load-env-from-keyring.sh && gh pr create --base main --head <branch> --title "..." --body "..."` (нужен установленный `gh` и `gh auth login` с этим токеном).
+
 ### Branch protection (optional)
 
 - Repo → **Settings** → **Branches** → add rule for `main`.

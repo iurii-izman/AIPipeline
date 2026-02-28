@@ -50,6 +50,10 @@ aipipeline-cursor
 - В чате с агентом: «Покажи мои Linear workspace» или «Найди в Notion страницы с Delivery Hub». Если MCP подключён, агент сможет вызвать инструменты и вернуть результат.
 - Settings → MCP: у серверов Notion, GitHub, Linear статус должен быть зелёный.
 
+## Если GitHub MCP не создаёт PR (Permission Denied)
+
+Токен в keyring может не иметь прав на запись в репо (create PR). Нужен **один PAT** с правами: classic — scope `repo`, или fine-grained — «Pull requests: Read and write». Подробно: [keyring-credentials.md](keyring-credentials.md) (раздел «GitHub PAT: права для MCP и git»). После смены прав перезапускать Cursor не обязательно; fallback — создать PR вручную или через `gh pr create` (см. [runbook.md](runbook.md)).
+
 ## Почему Linear и Telegram показывают Error (красная точка)
 
 **Причина:** Cursor запущен **не из терминала с env** (например из лаунчера/иконки). Тогда процесс Cursor не получает `LINEAR_API_KEY` и `TELEGRAM_BOT_TOKEN` из keyring; MCP-серверы Linear и Telegram при старте не находят переменные и падают с ошибкой.
