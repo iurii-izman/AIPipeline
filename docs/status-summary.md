@@ -10,12 +10,12 @@
 
 ## Сделано
 
-- **Фаза 0.5:** проверка среды, мини-интервью, план, скелет репо.
+- **Фаза 0.5:** проверка среды (`system-check.sh` с Ready/Setup/Blockers), мини-интервью, план, скелет репо.
 - **Keyring:** скрипт `load-env-from-keyring.sh` (поиск по `server` + `service`), документация [keyring-credentials.md](keyring-credentials.md).
 - **В keyring лежат:** GitHub PAT, Linear API Key, Notion token, Sentry DSN, Telegram Bot Token, Telegram Chat ID, **n8n Basic Auth (User/Password)**, **ngrok authtoken** (для run-n8n-with-ngrok.sh).
 - **GitHub:** репо, ruleset (защита main, owner bypass), 19 labels, pre-commit.ci, CI workflow (lint/build/test).
 - **Linear:** проект «AIPipeline Phase 1 — Day-0 Setup», 13 labels, issues AIP-1..AIP-10, интеграция с GitHub. **Фаза 3:** runbook [linear-phase3-runbook.md](linear-phase3-runbook.md) — workflow, labels, шаблон Agent-Ready, процесс ведения задач.
-- **Notion:** root-страница Delivery Hub создана пользователем; скрипт `notion-create-delivery-hub-structure.sh` (идемпотентный) создал подстраницы (Specs, Meetings, Runbooks, Integration Mapping, Decision Records, Quick Links). **Фаза 2 выполнена (автопилот):** Specs — 3 (Health check, MCP/env, n8n WF-1); Meetings — 1 (Phase 2 kickoff); Runbooks — 1 (n8n Podman); Integration Mapping — 2 (Linear↔GitHub, Notion↔Cursor MCP); Decision Records — 4 (Secrets keyring, Branch naming, PR required + ранее); Quick Links заполнены. Всё через MCP по шаблонам.
+- **Notion:** root-страница Delivery Hub создана пользователем; скрипт `notion-create-delivery-hub-structure.sh` (идемпотентный) создаёт подстраницы: Specs, Meetings, Runbooks, Integration Mapping, Decision Records, Risks & Issues, Access Matrix, Sprint Log, Guides, Quick Links. **Фаза 2 выполнена (автопилот):** Specs — 3 (Health check, MCP/env, n8n WF-1); Meetings — 1 (Phase 2 kickoff); Runbooks — 1 (n8n Podman); Integration Mapping — 2 (Linear↔GitHub, Notion↔Cursor MCP); Decision Records — 4 (Secrets keyring, Branch naming, PR required + ранее); Quick Links заполнены. Всё через MCP по шаблонам.
 - **Cursor / MCP:** `.cursor/mcp.json` — Notion, GitHub, Linear, Telegram, filesystem; Sentry MCP — remote (OAuth), в `~/.cursor/mcp.json`. Запуск с env из keyring (`aipipeline-cursor` или `source scripts/load-env-from-keyring.sh`). Все 6 MCP зелёные.
 - **Sentry:** проект на sentry.io (org aipipeline, project node), DSN в keyring, SDK в коде (`src/instrument.js`, `@sentry/node`), инициализация по `SENTRY_DSN`. Sentry MCP в Cursor (remote OAuth); на Linux добавлен cursor:// handler.
 - **n8n:** keyring (Basic Auth User/Password), контейнер (Podman), запуск через `./scripts/run-n8n.sh`, первый вход и Credentials — по [n8n-setup-step-by-step.md](n8n-setup-step-by-step.md). **Credentials из keyring:** скрипт `sync-n8n-credentials-from-keyring.js` создаёт в n8n AIPipeline Linear, Telegram, Notion, GitHub через API (без ручного ввода ключей). N8N_API_KEY в keyring для импорта workflow и создания credentials.
@@ -27,9 +27,7 @@
 
 ## Не сделано / опционально
 
-- **N8N_API_KEY в keyring:** ✅ уже есть (health-check показывает set).
-- ~~**Sentry MCP в Cursor.**~~ ✅ Подключён (remote OAuth, cursor:// handler на Linux).
-- **Проверки:** в Cursor — «find recent specs in Notion» ✅; открыть PR ✅ [PR #10](https://github.com/iurii-izman/AIPipeline/pull/10) создан через MCP, смержен в main, CI успешен. В Telegram — `/status` (опционально, если есть n8n workflow для команд).
+- В Telegram `/status`, `/help` — WF-5 активен; для /status нужны ngrok и приложение. Остальные команды (/tasks, /errors, /search, /create) — в разработке. Проверки выполнены (Notion, PR #10 и #12–#19, CI зелёный).
 
 ---
 

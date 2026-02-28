@@ -36,4 +36,4 @@ See [PIPELINE.md](../PIPELINE.md) Слой 4 and WF-5.
 
 - [PIPELINE.md](../PIPELINE.md) — Слой 4, WF-5.
 - [day0-runbook.md](day0-runbook.md) — step 7 (в этом же каталоге).
-- [runbook-n8n.md](runbook-n8n.md) — n8n credentials.
+- [../runbook-n8n.md](../runbook-n8n.md) — n8n credentials.

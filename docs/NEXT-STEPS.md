@@ -23,13 +23,9 @@
 
 ---
 
-## Пошагово (что делать дальше)
+## Пошагово и после аудита
 
-Подробный пошаговый план с чек-листом: **[next-steps-step-by-step.md](next-steps-step-by-step.md)**.
-
-Кратко: (1) `./scripts/health-check-env.sh` — проверка окружения. (2) **WF-1…WF-6 все активны.** (3) WF-3: если ещё не делал — в Sentry вставить Webhook URL из n8n (нода «Sentry Webhook») или выполнить `./scripts/register-sentry-webhook.sh` при запущенном ngrok и SENTRY_AUTH_TOKEN в keyring.
-
-Состояние окружения: `./scripts/health-check-env.sh`.
+- **Подробный чек-лист:** [next-steps-step-by-step.md](next-steps-step-by-step.md). **Проверка окружения:** `./scripts/health-check-env.sh`.
 
 ---
 

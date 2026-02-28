@@ -2,6 +2,8 @@
 
 **Главное:** статус → [status-summary.md](status-summary.md); что дальше → [NEXT-STEPS.md](NEXT-STEPS.md); для агента → [../AGENTS.md](../AGENTS.md).
 
+**Единый источник истины (SSoT):** статус проекта — [status-summary.md](status-summary.md); список следующих шагов — [NEXT-STEPS.md](NEXT-STEPS.md); текущий фокус и ссылки — [current-phase.md](current-phase.md). Дублировать эти данные в других файлах не следует.
+
 ---
 
 ## Активные документы
@@ -9,8 +11,8 @@
 ### Статус и фазы
 | Документ | Назначение |
 |----------|------------|
-| [status-summary.md](status-summary.md) | Краткий итог: что сделано / не сделано, таблица статусов |
-| [current-phase.md](current-phase.md) | Текущая фаза, что сделано агентом, что — пользователем, после Day-0 |
+| [status-summary.md](status-summary.md) | Что сделано / не сделано, таблица статусов (SSoT) |
+| [current-phase.md](current-phase.md) | Текущий фокус и ссылки на status-summary, NEXT-STEPS |
 | [next-steps-step-by-step.md](next-steps-step-by-step.md) | **Пошагово дальше:** чек-лист и шаги 1–7 (WF-1…WF-6, Linear) |
 | [what-to-do-manually.md](what-to-do-manually.md) | Что обязательно сделать в n8n UI и в Sentry после скриптов WF-2…WF-6 |
 
@@ -34,6 +36,12 @@
 | [n8n-workflows/README.md](n8n-workflows/README.md) | n8n WF-1…WF-6: пошагово WF-1, WF-5; подсказки WF-2, WF-3, WF-4, WF-6 |
 | [linear-setup.md](linear-setup.md) | Linear: проект, labels, workflow, интеграция GitHub |
 | [linear-phase3-runbook.md](linear-phase3-runbook.md) | Фаза 3: ведение задач по workflow и labels, Agent-Ready |
+
+### Онбординг и сверка с ТЗ
+| Документ | Назначение |
+|----------|------------|
+| [onboarding-guide.md](onboarding-guide.md) | Быстрый вход в проект (5 мин) |
+| [delivery-pipeline-compliance.md](delivery-pipeline-compliance.md) | Сверка с ТЗ delivery-pipeline.md, план действий |
 
 ### Справочники и стандарты
 | Документ | Назначение |

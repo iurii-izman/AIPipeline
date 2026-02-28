@@ -37,7 +37,7 @@ Create the Delivery Hub in Notion as below. Full structure in [PIPELINE.md](../P
    export NOTION_DELIVERY_HUB_PAGE_ID=<page-uuid-from-notion-url>
    ./scripts/notion-create-delivery-hub-structure.sh
    ```
-   This creates: Specs, Meetings, Runbooks, Integration Mapping, Decision Records, Quick Links. Then add databases and templates manually (see [notion-templates.md](notion-templates.md)).
+   This creates: Specs, Meetings, Runbooks, Integration Mapping, Decision Records, Risks & Issues, Access Matrix, Sprint Log, Guides, Quick Links. Then add databases and templates manually (see [notion-templates.md](notion-templates.md)).
 
 ## References
 

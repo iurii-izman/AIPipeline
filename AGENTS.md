@@ -10,7 +10,7 @@
 
 ## Текущее состояние
 
-**Day-0, Фаза 2, 3 и 4 завершены.** GET /health, /status, тесты; **WF-1…WF-6 все активны.** Linear: приоритеты и labels; AIP-7 и AIP-8 закрыты через PR #12 и #13 (Closes AIP-XX). При взятии задачи: ветка `AIP-XX-short-desc`, в PR — `Closes AIP-XX`. WF-3 webhook в Sentry зарегистрирован. Детали: [docs/what-to-do-manually.md](docs/what-to-do-manually.md).
+**Day-0, Фазы 2–4 завершены.** GET /health, /status; **WF-1…WF-6 активны.** Linear: приоритеты и labels; AIP-1…AIP-8 закрыты через PR #12–#19 (Closes AIP-XX). При взятии задачи: ветка `AIP-XX-short-desc`, в PR — `Closes AIP-XX`. WF-3 webhook в Sentry зарегистрирован. Детали: docs/status-summary.md, docs/NEXT-STEPS.md, docs/what-to-do-manually.md.
 
 ## Что читать
 
@@ -31,7 +31,7 @@
 ## Правила и ссылки
 
 - **Правила:** `.cursor/rules`; секреты только в keyring/env; не коммитить `.env` и токены.
-- **Документация:** каталог `docs/`; единый список следующих шагов — docs/README.md и docs/NEXT-STEPS.md.
+- **Документация:** каталог `docs/`; SSoT: статус — docs/status-summary.md, следующие шаги — docs/NEXT-STEPS.md (навигация — docs/README.md).
 - **План:** PIPELINE.md; **что сделано:** docs/status-summary.md; **навигация:** docs/README.md; **проверка окружения:** `./scripts/health-check-env.sh`.
 
 ---

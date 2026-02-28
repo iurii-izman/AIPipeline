@@ -49,7 +49,7 @@ _create_page() {
 
 existing=$(_existing_children)
 echo "Creating sub-pages under Delivery Hub (parent: $PARENT_ID)..."
-for title in "Specs" "Meetings" "Runbooks" "Integration Mapping" "Decision Records" "Quick Links"; do
+for title in "Specs" "Meetings" "Runbooks" "Integration Mapping" "Decision Records" "Risks & Issues" "Access Matrix" "Sprint Log" "Guides" "Quick Links"; do
   if echo "$existing" | grep -qF "\"title\":\"$title\""; then
     echo "  SKIP: $title (already exists)"
     continue

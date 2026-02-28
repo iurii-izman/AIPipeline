@@ -1,0 +1,100 @@
+# Сверка с ТЗ: delivery-pipeline.md
+
+Сопоставление требований из исходного ТЗ (delivery-pipeline.md) с текущей реализацией. Цель: **ничего не остаётся не реализованным** в рамках документа.
+
+---
+
+## Сводка
+
+| Раздел | Статус | Комментарий |
+|--------|--------|-------------|
+| Фаза 0 | ⚪ Ручное | Интервью — разовое, не автоматизируем |
+| Фаза 0.5 | ✅ | system-check + Ready/Setup/Blockers в system-check.sh |
+| Фаза 1 (Day-0) | ✅ | Все пункты 1.1–1.7 выполнены |
+| Фаза 2 (Notion) | ✅ | Все страницы в скрипте; Onboarding — onboarding-guide.md |
+| Фаза 3 (Linear) | ✅ | Workflow, labels, Agent-Ready |
+| Фаза 4 (GitHub scaffold) | ✅ | deploy-staging/production — placeholders |
+| Фаза 5 (NotebookLM) | ⚪ Ручное | WF-6 reminder есть; сам NotebookLM — пользователь |
+| Фаза 6 (Sprint 1) | 🟡 Частично | Инфраструктура (1–11, 31, 36–38) — сделано; Data Mapping, PoC — под конкретный проект |
+| Фаза 7 (DoR/DoD) | ✅ | definition-of-done.md |
+| WF-1…WF-6 | 🟡 Частично | WF-5: /status, /help ✅; /tasks, /errors, /search, /create, /standup — в разработке |
+
+---
+
+## Детальная сверка
+
+### Фаза 0.5: Мини-интервью
+
+| Требование | Статус | Действие |
+|------------|--------|----------|
+| system-check скрипт (Приложение В) | ✅ | `./scripts/system-check.sh` |
+| Ready List, Setup List, Blockers | ✅ | Добавлено в system-check.sh (Phase 0.5) |
+
+### Фаза 1: Day-0 Runbook
+
+| Пункт | Статус |
+|-------|--------|
+| 1.1 Linear ↔ GitHub (Authorize, auto-status, branch format) | ✅ |
+| 1.2 Cursor ↔ GitHub (OAuth, BugBot) | ✅ |
+| 1.3 Cursor ↔ Linear | ✅ |
+| 1.4 MCP: Notion, GitHub, Linear, Sentry, Telegram, filesystem | ✅ |
+| 1.5 Claude Code + MCP (субагенты .claude/agents) | ✅ |
+| 1.6 n8n: Podman, credentials, WF-1…WF-6, тест /status | ✅ (тест /status — нужны ngrok + app) |
+| 1.7 Sentry: проект, SDK, MCP, webhook → n8n | ✅ |
+
+### Фаза 2: Notion Delivery Hub
+
+| Элемент | Статус | Действие |
+|---------|--------|----------|
+| Specs, Meetings, Runbooks, Integration Mapping, Decision Records, Quick Links | ✅ | Скрипт notion-create-delivery-hub-structure.sh |
+| Risks & Issues | ✅ | Добавлено в notion-create-delivery-hub-structure.sh |
+| Access Matrix | ✅ | Добавлено в notion-create-delivery-hub-structure.sh |
+| Sprint Log | ✅ | Добавлено в notion-create-delivery-hub-structure.sh |
+| Templates (Meeting, Spec, ADR, Runbook, Integration Mapping) | ✅ | notion-templates.md |
+| Guides: MCP Setup, n8n, Telegram | ✅ | mcp-enable-howto, n8n-workflows, keyring-credentials |
+| Guides: Onboarding | ✅ | [onboarding-guide.md](onboarding-guide.md) |
+
+### Слой 3: n8n Workflows
+
+| WF | Требование | Реализация | Статус |
+|----|------------|------------|--------|
+| WF-1 | Linear → Telegram (In Review/Blocked) | Schedule 10 min → Linear Get → IF → Telegram | ✅ |
+| WF-2 | GitHub PR → Linear + Telegram | Schedule 15 min → GitHub List PRs → digest → Telegram | ✅ (вариант: digest вместо trigger) |
+| WF-3 | Sentry → Telegram + Linear | Webhook → IF (error/fatal) → Linear Create → Telegram | ✅ (без LLM-классификации) |
+| WF-4 | Daily Standup Digest | Cron 09:00 → Linear → Code (aggregate) → Telegram | ✅ |
+| WF-5 | /status | Telegram Trigger → IF /status → GET /status → Telegram | ✅ |
+| WF-5 | /tasks, /errors, /deploy, /search, /create, /standup, /help | — | ❌ |
+| WF-6 | NotebookLM Resync Reminder | Cron Пн 10:00 → Telegram напоминание | ✅ |
+
+### Telegram Command Center (полный список из ТЗ)
+
+| Команда | Действие | Статус |
+|---------|----------|--------|
+| /status | Статус спринта (env + n8n) | ✅ |
+| /tasks | Мои задачи (Linear API) | ❌ |
+| /errors | Последние ошибки (Sentry API) | ❌ |
+| /deploy [env] | Запустить деплой (GitHub Actions) | ❌ |
+| /create [title] | Создать задачу (Linear API) | ❌ |
+| /search [query] | Поиск в Notion | ❌ |
+| /standup | Ручной дайджест | ❌ |
+| /help | Список команд (статический) | ✅ |
+
+### Опциональные (ТЗ)
+
+| Элемент | Статус |
+|---------|--------|
+| Grafana + Loki | ❌ (опционально) |
+| n8n MCP в Cursor | ❌ (встроен в n8n) |
+| NotebookLM notebook | Ручная настройка пользователем |
+
+---
+
+## План действий (оставшееся)
+
+1. ~~**Notion:** Risks & Issues, Access Matrix, Sprint Log~~ ✅
+2. ~~**WF-5:** /help~~ ✅
+3. ~~**system-check:** Ready/Setup/Blockers~~ ✅
+4. ~~**Onboarding Guide**~~ ✅
+5. **WF-5:** /tasks, /errors, /search, /create, /deploy, /standup — по мере необходимости (требуют n8n нод и credentials). Подсказки: [n8n-workflows/README.md](n8n-workflows/README.md).
+
+**Применение изменений:** перезапустить `update-wf5-status-workflow.js` для /help; выполнить `notion-create-delivery-hub-structure.sh` для новых страниц (если Delivery Hub уже создан — скрипт добавит недостающие).

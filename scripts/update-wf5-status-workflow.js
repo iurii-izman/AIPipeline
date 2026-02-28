@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Update WF-5 workflow in n8n: add Telegram Trigger → IF (/status) → HTTP Request → Telegram Send.
- * Requires: N8N_API_KEY, n8n running. Run: node scripts/update-wf5-status-workflow.js
+ * Update WF-5 workflow in n8n: Telegram Command Center — /status, /help, unknown command.
+ * Requires: N8N_API_KEY, n8n running. Run: source scripts/load-env-from-keyring.sh && node scripts/update-wf5-status-workflow.js
  * After run: open n8n UI, open WF-5, assign Telegram credentials to Telegram Trigger and Telegram nodes, activate.
  */
 
@@ -57,8 +57,19 @@ function request(method, path, body) {
   });
 }
 
+const HELP_TEXT = `📋 *AIPipeline Bot — команды*
+
+/status — статус конвейера (env, n8n)
+/help — этот список
+/tasks — мои задачи (Linear) — в разработке
+/errors — последние ошибки (Sentry) — в разработке
+/search [query] — поиск в Notion — в разработке
+/create [title] — создать задачу в Linear — в разработке
+/deploy [env] — запустить деплой — в разработке
+/standup — дайджест — в разработке`;
+
 const workflow = {
-  name: "WF-5: Telegram /status (AIPipeline)",
+  name: "WF-5: Telegram Command Center (AIPipeline)",
   nodes: [
     {
       id: "tg-trigger",
@@ -66,9 +77,7 @@ const workflow = {
       type: "n8n-nodes-base.telegramTrigger",
       typeVersion: 1.2,
       position: [0, 0],
-      parameters: {
-        updates: ["message"],
-      },
+      parameters: { updates: ["message"] },
       webhookId: "wf5-telegram-webhook",
     },
     {
@@ -98,9 +107,71 @@ const workflow = {
       type: "n8n-nodes-base.httpRequest",
       typeVersion: 4.2,
       position: [460, -100],
+      parameters: { method: "GET", url: APP_STATUS_URL },
+    },
+    {
+      id: "if-help",
+      name: "If /help",
+      type: "n8n-nodes-base.if",
+      typeVersion: 2.3,
+      position: [460, 100],
       parameters: {
-        method: "GET",
-        url: APP_STATUS_URL,
+        conditions: {
+          options: { caseSensitive: true },
+          conditions: [
+            {
+              id: "cond-help",
+              leftValue: "={{ $json.message?.text }}",
+              rightValue: "/help",
+              operator: { type: "string", operation: "equals" },
+            },
+          ],
+          combinator: "and",
+        },
+      },
+    },
+    {
+      id: "set-help",
+      name: "Set /help text",
+      type: "n8n-nodes-base.set",
+      typeVersion: 3.4,
+      position: [680, 50],
+      parameters: {
+        mode: "raw",
+        jsonOutput: JSON.stringify({ text: HELP_TEXT }),
+      },
+    },
+    {
+      id: "set-unknown",
+      name: "Set unknown command",
+      type: "n8n-nodes-base.set",
+      typeVersion: 3.4,
+      position: [680, 200],
+      parameters: {
+        mode: "raw",
+        jsonOutput: JSON.stringify({
+          text: "Unknown command. Use /help for list.",
+        }),
+      },
+    },
+    {
+      id: "set-status-text",
+      name: "Format status for Telegram",
+      type: "n8n-nodes-base.set",
+      typeVersion: 3.4,
+      position: [680, -100],
+      parameters: {
+        mode: "manual",
+        assignments: {
+          assignments: [
+            {
+              id: "fmt",
+              name: "text",
+              value: "=Pipeline status:\n{{ JSON.stringify($json, null, 2) }}",
+              type: "string",
+            },
+          ],
+        },
       },
     },
     {
@@ -108,11 +179,12 @@ const workflow = {
       name: "Telegram Send",
       type: "n8n-nodes-base.telegram",
       typeVersion: 1.2,
-      position: [680, -100],
+      position: [900, 0],
       parameters: {
         operation: "sendMessage",
         chatId: "={{ $('Telegram Trigger').first().json.message.chat.id }}",
-        text: "=Pipeline status:\n{{ JSON.stringify($json, null, 2) }}",
+        text: "={{ $json.text || JSON.stringify($json, null, 2) }}",
+        additionalFields: { parse_mode: "Markdown" },
       },
     },
     {
@@ -133,7 +205,7 @@ const workflow = {
         jsonOutput: JSON.stringify({
           status: "ok",
           message:
-            "Test run. In production: Telegram Trigger → IF /status → GET /status → Telegram Send.",
+            "Test run. In production: Telegram Trigger → IF /status or /help → Telegram Send.",
         }),
       },
     },
@@ -145,10 +217,25 @@ const workflow = {
     "If /status": {
       main: [
         [{ node: "GET /status", type: "main", index: 0 }],
-        [],
+        [{ node: "If /help", type: "main", index: 0 }],
       ],
     },
     "GET /status": {
+      main: [[{ node: "Format status for Telegram", type: "main", index: 0 }]],
+    },
+    "Format status for Telegram": {
+      main: [[{ node: "Telegram Send", type: "main", index: 0 }]],
+    },
+    "If /help": {
+      main: [
+        [{ node: "Set /help text", type: "main", index: 0 }],
+        [{ node: "Set unknown command", type: "main", index: 0 }],
+      ],
+    },
+    "Set /help text": {
+      main: [[{ node: "Telegram Send", type: "main", index: 0 }]],
+    },
+    "Set unknown command": {
       main: [[{ node: "Telegram Send", type: "main", index: 0 }]],
     },
     "When clicking 'Test workflow'": {
