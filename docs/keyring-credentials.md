@@ -35,6 +35,8 @@
 | Sentry Auth Token (опц.) | `AIPipeline — Sentry Auth Token` | `aipipeline-auth` | `sentry.io` | Sentry → Settings → Auth Tokens → Create (scope **project:write**). Нужен для авторегистрации webhook через `scripts/register-sentry-webhook.js` (после добавления — запустить ngrok, выставить WEBHOOK_BASE_URL и скрипт). | ☑ |
 | Sentry Org Slug (опц.) | `AIPipeline — Sentry Org Slug` | `aipipeline-org-slug` | `sentry.io` | Slug org в Sentry API (нужен для WF-5 `/errors`) | ☑ |
 | Sentry Project Slug (опц.) | `AIPipeline — Sentry Project Slug` | `aipipeline-project-slug` | `sentry.io` | Slug проекта в Sentry API (нужен для WF-5 `/errors`) | ☑ |
+| OpenAI API Key (опц.) | `AIPipeline — OpenAI API Key` | `aipipeline` | `openai.com` | Для LLM-классификации severity в WF-3 | ☐ |
+| OpenAI Model (опц.) | `AIPipeline — OpenAI Model` | `aipipeline-model` | `openai.com` | Модель для WF-3 (`gpt-4o-mini` по умолчанию) | ☐ |
 | Linear Team ID (опц.) | `AIPipeline — Linear Team ID` | `aipipeline-team-id` | `linear.app` | Linear GraphQL: `teams { id key }`; нужен для WF-5 `/create` | ☑ |
 | Notion Sprint Log DB ID (опц.) | `AIPipeline — Notion Sprint Log Database ID` | `aipipeline-sprint-log-db` | `notion.so` | ID database для WF-4 записи Sprint Log | ☑ |
 | GitHub Owner (опц.) | `AIPipeline — GitHub Owner` | `aipipeline-owner` | `github.com` | owner repo (WF-5 `/deploy`) | ☑ |

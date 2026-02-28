@@ -41,6 +41,8 @@ _load SENTRY_DSN sentry.io aipipeline
 _load SENTRY_AUTH_TOKEN sentry.io aipipeline-auth
 _load SENTRY_ORG_SLUG sentry.io aipipeline-org-slug
 _load SENTRY_PROJECT_SLUG sentry.io aipipeline-project-slug
+_load OPENAI_API_KEY openai.com aipipeline
+_load OPENAI_MODEL openai.com aipipeline-model
 _load NGROK_AUTHTOKEN ngrok.com aipipeline
 _load GITHUB_OWNER github.com aipipeline-owner
 _load GITHUB_REPO github.com aipipeline-repo

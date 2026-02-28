@@ -62,10 +62,11 @@ MCP: Notion, GitHub, Linear, Telegram, filesystem (`.cursor/mcp.json`). Секр
 - `./scripts/import-n8n-workflow.sh [workflow.json]` — импорт одного workflow в n8n по API
 - `./scripts/import-all-n8n-workflows.sh` — импорт всех workflow из docs/n8n-workflows/*.json
 - `./scripts/export-n8n-workflows.sh` — экспорт WF-1…WF-6 из n8n API в `docs/n8n-workflows/*.json` (синхронизация runtime → repo)
+- `node scripts/configure-github-webhook-wf2.js` — создать/обновить GitHub webhook для WF-2 (`pull_request` → `/webhook/wf2-github-pr`)
 - `node scripts/update-wf5-status-workflow.js` — WF-5 Command Center: `/status`, `/help`, `/tasks`, `/errors`, `/search`, `/create`, `/deploy`, `/standup`
 - `node scripts/update-wf1-linear-telegram.js` — донастройка WF-1 (Schedule → Linear → IF → Telegram)
 - `node scripts/update-wf2-github-pr-linear.js` — WF-2: GitHub PR Webhook → parse `AIP-XX` → Linear update (Done) → Telegram
-- `node scripts/update-wf3-sentry-telegram.js` — WF-3: Webhook Sentry → IF → Linear + Telegram
+- `node scripts/update-wf3-sentry-telegram.js` — WF-3: Webhook Sentry → LLM classify (OpenAI) или heuristic fallback → Linear + Telegram
 - `node scripts/update-wf4-daily-digest.js` — WF-4: Schedule 09:00 → Linear digest → Telegram + optional Notion Sprint Log write
 - `node scripts/update-wf6-notion-reminder.js` — WF-6: Schedule Пн 10:00 → Notion updated last 7 days? → Telegram reminder
   После скриптов WF-2…WF-6: в n8n привязать credentials, для WF-3 — задать Team и URL в Sentry. См. [docs/what-to-do-manually.md](docs/what-to-do-manually.md)

@@ -14,7 +14,7 @@ Source of truth for workflow JSON: `docs/n8n-workflows/*.json`.
 |------|---------|------------|--------|
 | WF-1 | Schedule (10 min) | Linear Get issues → IF `In Review/Blocked` → Telegram | ✅ Active |
 | WF-2 | GitHub Webhook (`/webhook/wf2-github-pr`) | Parse PR payload + `AIP-XX` → Linear GraphQL update to Done (on merge) → Telegram | ✅ Active |
-| WF-3 | Sentry Webhook | IF `error/fatal` → Linear Create Issue → Telegram | ✅ Active |
+| WF-3 | Sentry Webhook | LLM classify (`OPENAI_API_KEY`) or heuristic fallback → Linear Create Issue (critical/bug) → Telegram | ✅ Active |
 | WF-4 | Schedule (weekday 09:00) | Linear digest → Telegram + optional Notion Sprint Log write | ✅ Active |
 | WF-5 | Telegram Trigger | `/status`, `/help`, `/tasks`, `/errors`, `/search`, `/create`, `/deploy`, `/standup` | ✅ Active |
 | WF-6 | Schedule (Monday 10:00) | Notion search (last 7 days) → IF updates exist → Telegram reminder | ✅ Active |
@@ -29,7 +29,11 @@ n8n container gets env from `run-n8n.sh` (if variables exist in shell/keyring):
 - `NOTION_TOKEN`, `NOTION_SPRINT_LOG_DATABASE_ID`
 - `GITHUB_PERSONAL_ACCESS_TOKEN`, `GITHUB_OWNER`, `GITHUB_REPO`, `GITHUB_WORKFLOW_STAGING`, `GITHUB_WORKFLOW_PRODUCTION`
 - `SENTRY_AUTH_TOKEN`, `SENTRY_ORG_SLUG`, `SENTRY_PROJECT_SLUG`
+- `OPENAI_API_KEY`, `OPENAI_MODEL` (optional, for WF-3 LLM branch)
 - `TELEGRAM_CHAT_ID`
+
+Runtime note:
+- `run-n8n.sh` sets `N8N_BLOCK_ENV_ACCESS_IN_NODE=false`, otherwise `$env.*` expressions in workflows (WF-3/WF-5/WF-6) will fail.
 
 If some vars are missing, WF-5 command branches return explicit config messages instead of failing.
 

@@ -14,6 +14,7 @@
 - **Keyring:** скрипт `load-env-from-keyring.sh` (поиск по `server` + `service`), документация [keyring-credentials.md](keyring-credentials.md).
 - **В keyring лежат:** GitHub PAT, Linear API Key, Notion token, Sentry DSN, Telegram Bot Token, Telegram Chat ID, **n8n Basic Auth (User/Password)**, **ngrok authtoken** (для run-n8n-with-ngrok.sh).
 - **Доп. env для WF-5/WF-4:** `LINEAR_TEAM_ID`, `SENTRY_ORG_SLUG`, `SENTRY_PROJECT_SLUG`, `NOTION_SPRINT_LOG_DATABASE_ID`, `GITHUB_OWNER`, `GITHUB_REPO`, `GITHUB_WORKFLOW_STAGING`, `GITHUB_WORKFLOW_PRODUCTION` добавлены в keyring и подхватываются `load-env-from-keyring.sh`.
+- **WF-3 classification:** реализована LLM-классификация severity (OpenAI) с fallback на эвристику; если `OPENAI_API_KEY` не задан, используется fallback.
 - **GitHub:** репо, ruleset (защита main, owner bypass), 19 labels, pre-commit.ci, CI workflow (lint/build/test).
 - **Linear:** проект «AIPipeline Phase 1 — Day-0 Setup», 13 labels, issues AIP-1..AIP-10, интеграция с GitHub. **Фаза 3:** runbook [linear-phase3-runbook.md](linear-phase3-runbook.md) — workflow, labels, шаблон Agent-Ready, процесс ведения задач.
 - **Notion:** root-страница Delivery Hub создана пользователем; скрипт `notion-create-delivery-hub-structure.sh` (идемпотентный) создаёт подстраницы: Specs, Meetings, Runbooks, Integration Mapping, Decision Records, Risks & Issues, Access Matrix, Sprint Log, Guides, Quick Links. **Фаза 2 выполнена (автопилот):** Specs — 3 (Health check, MCP/env, n8n WF-1); Meetings — 1 (Phase 2 kickoff); Runbooks — 1 (n8n Podman); Integration Mapping — 2 (Linear↔GitHub, Notion↔Cursor MCP); Decision Records — 4 (Secrets keyring, Branch naming, PR required + ранее); Quick Links заполнены. Всё через MCP по шаблонам.
@@ -30,7 +31,7 @@
 
 - Полная работоспособность команд WF-5 зависит от env в n8n: `LINEAR_TEAM_ID`, `SENTRY_AUTH_TOKEN`/`SENTRY_ORG_SLUG`/`SENTRY_PROJECT_SLUG`, `NOTION_TOKEN`, GitHub workflow vars.
 - Для WF-2 нужен GitHub webhook на `.../webhook/wf2-github-pr` (PR events).
-- WF-3 LLM-классификация severity (из ТЗ) пока не реализована: используется IF `error/fatal`.
+- Для LLM-ветки WF-3 нужен `OPENAI_API_KEY` в keyring/env (`openai.com` / `aipipeline`), иначе работает эвристика.
 - Опционально: Grafana/Loki, NotebookLM playbook (ручной процесс), n8n MCP enable.
 
 ---
@@ -55,6 +56,7 @@
 | Подсказки по WF-2, WF-3, WF-4, WF-6 (триггер, credentials, первый шаг) в docs/n8n-workflows/README.md | ✅ |
 | WF-1 (Linear → Telegram): ноды через update-wf1-linear-telegram.js, **включён (Active)** | ✅ |
 | WF-2: event-driven (GitHub PR webhook) + parse `AIP-XX` + попытка Linear update to Done + Telegram | ✅ (hook активен; URL нужно обновлять при смене ngrok/public host) |
+| WF-3: LLM severity classification + heuristic fallback + Linear create (critical/bug) + Telegram | ✅ (LLM ветка при наличии OPENAI_API_KEY) |
 | WF-4: digest + optional Notion Sprint Log write (`NOTION_SPRINT_LOG_DATABASE_ID`) | ✅ |
 | WF-5: команды `/status`, `/help`, `/tasks`, `/errors`, `/search`, `/create`, `/deploy`, `/standup` | ✅ (нужны env/credentials) |
 | WF-6: отправка reminder только если есть обновления в Notion за 7 дней | ✅ |

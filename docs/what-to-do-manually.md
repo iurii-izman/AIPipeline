@@ -16,6 +16,8 @@
 4. Events: Pull requests (`opened`, `closed`).
 5. Убедиться, что в n8n env есть `LINEAR_API_KEY` (иначе fallback без Linear update).
 
+Автоматизация: можно запускать `node scripts/configure-github-webhook-wf2.js` (берёт `WEBHOOK_BASE_URL` или текущий ngrok URL).
+
 ---
 
 ## WF-3 (Sentry → Telegram + Linear)
@@ -24,6 +26,7 @@
 
 - Добавить Webhook URL из ноды `Sentry Webhook` в Sentry Alerts,
 - или выполнить `./scripts/register-sentry-webhook.sh` (нужны ngrok + `SENTRY_AUTH_TOKEN` в keyring).
+- Для LLM-классификации severity добавить `OPENAI_API_KEY` (keyring: `openai.com` / `aipipeline`), иначе WF-3 использует heuristic fallback.
 
 ---
 

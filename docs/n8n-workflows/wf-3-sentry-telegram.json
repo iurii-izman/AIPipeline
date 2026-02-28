@@ -3,11 +3,6 @@
   "active": true,
   "nodes": [
     {
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "wf3-sentry",
-        "options": {}
-      },
       "id": "webhook-sentry",
       "name": "Sentry Webhook",
       "type": "n8n-nodes-base.webhook",
@@ -16,9 +11,36 @@
         0,
         0
       ],
-      "webhookId": "wf3-sentry"
+      "webhookId": "wf3-sentry",
+      "parameters": {
+        "path": "wf3-sentry",
+        "httpMethod": "POST",
+        "responseMode": "onReceived",
+        "options": {}
+      }
     },
     {
+      "id": "normalize-sentry",
+      "name": "Normalize Sentry event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const root = $json.body || $json;\nconst event = root.event || root.data?.event || root;\nconst issue = root.issue || root.data?.issue || {};\nconst title = event.title || issue.title || root.message || 'Sentry alert';\nconst level = (event.level || issue.level || root.level || 'error').toLowerCase();\nconst culprit = event.culprit || issue.culprit || '';\nconst project = root.project?.slug || root.project_slug || issue.project?.slug || 'node';\nconst url = issue.web_url || issue.permalink || event.web_url || root.url || '';\nconst fingerprint = (event.fingerprint && event.fingerprint.join(',')) || issue.shortId || issue.id || '';\nconst payloadSnippet = JSON.stringify(root).slice(0, 3500);\nreturn [{ json: { title, level, culprit, project, url, fingerprint, payloadSnippet } }];"
+      }
+    },
+    {
+      "id": "if-openai-key",
+      "name": "If OPENAI_API_KEY set",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        440,
+        0
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -26,51 +48,153 @@
           },
           "conditions": [
             {
-              "id": "c1",
-              "leftValue": "={{ $json.body?.event?.level || $json.event?.level || '' }}",
-              "rightValue": "error",
+              "leftValue": "={{ $env.OPENAI_API_KEY || '' }}",
+              "rightValue": "",
               "operator": {
                 "type": "string",
-                "operation": "equals"
+                "operation": "notEmpty"
               }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "openai-classify",
+      "name": "OpenAI classify severity",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        -120
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}"
             },
             {
-              "id": "c2",
-              "leftValue": "={{ $json.body?.event?.level || $json.event?.level || '' }}",
-              "rightValue": "fatal",
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { model: ($env.OPENAI_MODEL || 'gpt-4o-mini'), temperature: 0, messages: [ { role: 'system', content: 'You classify Sentry incidents. Return only compact JSON with fields: severity (critical|non_critical), confidence (0..1), reason (string <= 140 chars).' }, { role: 'user', content: JSON.stringify({ title: $('Normalize Sentry event').first().json.title, level: $('Normalize Sentry event').first().json.level, culprit: $('Normalize Sentry event').first().json.culprit, project: $('Normalize Sentry event').first().json.project, url: $('Normalize Sentry event').first().json.url, fingerprint: $('Normalize Sentry event').first().json.fingerprint }) } ] } }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "parse-openai",
+      "name": "Parse LLM result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        -120
+      ],
+      "parameters": {
+        "jsCode": "const base = $('Normalize Sentry event').first().json;\nconst text = $json.choices?.[0]?.message?.content || '';\nlet obj = null;\ntry { obj = JSON.parse(text); } catch {\n  const m = text.match(/{[sS]*}/);\n  if (m) {\n    try { obj = JSON.parse(m[0]); } catch {}\n  }\n}\nconst sev = String(obj?.severity || '').toLowerCase();\nconst severity = sev === 'critical' ? 'critical' : 'non_critical';\nconst confidence = Number.isFinite(Number(obj?.confidence)) ? Number(obj.confidence) : 0.6;\nconst reason = (obj?.reason || 'LLM classification fallback').toString().slice(0, 180);\nreturn [{ json: { ...base, severity, confidence, reason, classifiedBy: 'llm' } }];"
+      }
+    },
+    {
+      "id": "heuristic-classify",
+      "name": "Heuristic classify severity",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        120
+      ],
+      "parameters": {
+        "jsCode": "const base = $input.first().json;\nconst t = (base.title || '').toLowerCase();\nconst l = (base.level || '').toLowerCase();\nconst criticalSignals = ['fatal', 'outofmemory', 'oom', 'db down', 'payment', 'auth', 'timeout cascade', 'panic', 'crash loop'];\nconst hit = criticalSignals.find(s => t.includes(s));\nconst severity = (l === 'fatal' || hit) ? 'critical' : 'non_critical';\nconst reason = hit ? ('keyword: ' + hit) : ('level=' + l);\nconst confidence = severity === 'critical' ? 0.74 : 0.64;\nreturn [{ json: { ...base, severity, confidence, reason, classifiedBy: 'heuristic' } }];"
+      }
+    },
+    {
+      "id": "if-linear-team",
+      "name": "If LINEAR_TEAM_ID set",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1100,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $env.LINEAR_TEAM_ID || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "if-critical",
+      "name": "If critical",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1320,
+        -120
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.severity }}",
+              "rightValue": "critical",
               "operator": {
                 "type": "string",
                 "operation": "equals"
               }
             }
           ],
-          "combinator": "or"
+          "combinator": "and"
         },
         "options": {}
-      },
-      "id": "if-severity",
-      "name": "IF error or fatal",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        272,
-        0
-      ]
+      }
     },
     {
-      "parameters": {
-        "teamId": "d27ffe88-769f-4b73-8db9-fa11bd9bf915",
-        "title": "={{ ($json.body?.event || $json.event || {}).title || ($json.body?.message || $json.message) || 'Sentry alert' }}",
-        "additionalFields": {}
-      },
-      "id": "linear-create",
-      "name": "Linear: Create issue",
+      "id": "linear-create-critical",
+      "name": "Linear: Create critical issue",
       "type": "n8n-nodes-base.linear",
       "typeVersion": 1,
       "position": [
-        512,
-        -96
+        1540,
+        -220
       ],
+      "parameters": {
+        "resource": "issue",
+        "operation": "create",
+        "teamId": "={{ $env.LINEAR_TEAM_ID }}",
+        "title": "=CRITICAL Sentry: {{ $json.title }}",
+        "description": "=Severity: {{ $json.severity }} ({{ $json.classifiedBy }}, conf={{ $json.confidence }})\\nReason: {{ $json.reason }}\\nLevel: {{ $json.level }}\\nProject: {{ $json.project }}\\nURL: {{ $json.url }}\\nFingerprint: {{ $json.fingerprint }}\\n\\nPayload:\\n{{ $json.payloadSnippet }}",
+        "additionalFields": {
+          "priority": 1
+        }
+      },
       "credentials": {
         "linearApi": {
           "id": "SPM4RCmtiiJxQxSv",
@@ -79,20 +203,114 @@
       }
     },
     {
+      "id": "linear-create-normal",
+      "name": "Linear: Create bug issue",
+      "type": "n8n-nodes-base.linear",
+      "typeVersion": 1,
+      "position": [
+        1540,
+        -20
+      ],
       "parameters": {
-        "chatId": "1877269414",
-        "text": "=🚨 Sentry: {{ ($json.body?.event || $json.event || {}).title || $json.body?.message || $json.message || 'Alert' }}\nLevel: {{ $json.body?.event?.level || $json.event?.level || 'n/a' }}",
-        "additionalFields": {}
+        "resource": "issue",
+        "operation": "create",
+        "teamId": "={{ $env.LINEAR_TEAM_ID }}",
+        "title": "=Sentry: {{ $json.title }}",
+        "description": "=Severity: {{ $json.severity }} ({{ $json.classifiedBy }}, conf={{ $json.confidence }})\\nReason: {{ $json.reason }}\\nLevel: {{ $json.level }}\\nProject: {{ $json.project }}\\nURL: {{ $json.url }}\\nFingerprint: {{ $json.fingerprint }}\\n\\nPayload:\\n{{ $json.payloadSnippet }}"
       },
+      "credentials": {
+        "linearApi": {
+          "id": "SPM4RCmtiiJxQxSv",
+          "name": "AIPipeline Linear"
+        }
+      }
+    },
+    {
+      "id": "fmt-critical-msg",
+      "name": "Format critical notification",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1760,
+        -220
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "name": "text",
+              "type": "string",
+              "value": "=🚨 *CRITICAL* Sentry\\n{{ $('If critical').first().json.title }}\\nLevel: {{ $('If critical').first().json.level }}\\nClassifier: {{ $('If critical').first().json.classifiedBy }} ({{ $('If critical').first().json.confidence }})\\nReason: {{ $('If critical').first().json.reason }}\\nLinear: {{ $json.identifier || $json.id || 'created' }}\\n{{ $('If critical').first().json.url || '' }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "fmt-normal-msg",
+      "name": "Format non-critical notification",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1760,
+        -20
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "name": "text",
+              "type": "string",
+              "value": "=⚠️ *Sentry issue*\\n{{ $('If critical').first().json.title }}\\nLevel: {{ $('If critical').first().json.level }}\\nClassifier: {{ $('If critical').first().json.classifiedBy }} ({{ $('If critical').first().json.confidence }})\\nReason: {{ $('If critical').first().json.reason }}\\nLinear: {{ $json.identifier || $json.id || 'created' }}\\n{{ $('If critical').first().json.url || '' }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "fmt-no-linear",
+      "name": "Format no-linear notification",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1320,
+        180
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "name": "text",
+              "type": "string",
+              "value": "=⚠️ Sentry alert classified as *{{ $json.severity }}* but LINEAR_TEAM_ID is not configured.\\nTitle: {{ $json.title }}\\nLevel: {{ $json.level }}\\nClassifier: {{ $json.classifiedBy }} ({{ $json.confidence }})\\nReason: {{ $json.reason }}\\n{{ $json.url || '' }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
       "id": "telegram-wf3",
       "name": "Telegram: notify",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        752,
-        -96
+        1980,
+        0
       ],
-      "webhookId": "933b2fcc-ffbe-44f7-8c30-7e4bc7605830",
+      "parameters": {
+        "operation": "sendMessage",
+        "chatId": "1877269414",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
       "credentials": {
         "telegramApi": {
           "id": "CumMgGtm8MpeMfxm",
@@ -101,30 +319,28 @@
       }
     },
     {
-      "parameters": {},
       "id": "manual-wf3",
       "name": "When clicking 'Test workflow'",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
         0,
-        224
+        260
       ]
     },
     {
-      "parameters": {
-        "mode": "raw",
-        "jsonOutput": "{\"info\":\"WF-3: Activate workflow, copy Webhook Production URL from Sentry Webhook node, add in Sentry → Alerts → Webhook. Set Team in Linear Create issue node.\"}",
-        "options": {}
-      },
       "id": "placeholder-wf3",
       "name": "Placeholder",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        224,
-        224
-      ]
+        220,
+        260
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\"info\":\"WF-3: Sentry webhook -> classify (OpenAI if configured) -> create Linear issue -> Telegram notify.\"}"
+      }
     }
   ],
   "connections": {
@@ -132,26 +348,156 @@
       "main": [
         [
           {
-            "node": "IF error or fatal",
+            "node": "Normalize Sentry event",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "IF error or fatal": {
+    "Normalize Sentry event": {
       "main": [
         [
           {
-            "node": "Linear: Create issue",
+            "node": "If OPENAI_API_KEY set",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If OPENAI_API_KEY set": {
+      "main": [
+        [
+          {
+            "node": "OpenAI classify severity",
             "type": "main",
             "index": 0
           }
         ],
-        []
+        [
+          {
+            "node": "Heuristic classify severity",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "Linear: Create issue": {
+    "OpenAI classify severity": {
+      "main": [
+        [
+          {
+            "node": "Parse LLM result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse LLM result": {
+      "main": [
+        [
+          {
+            "node": "If LINEAR_TEAM_ID set",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Heuristic classify severity": {
+      "main": [
+        [
+          {
+            "node": "If LINEAR_TEAM_ID set",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If LINEAR_TEAM_ID set": {
+      "main": [
+        [
+          {
+            "node": "If critical",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format no-linear notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If critical": {
+      "main": [
+        [
+          {
+            "node": "Linear: Create critical issue",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Linear: Create bug issue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Linear: Create critical issue": {
+      "main": [
+        [
+          {
+            "node": "Format critical notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Linear: Create bug issue": {
+      "main": [
+        [
+          {
+            "node": "Format non-critical notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format critical notification": {
+      "main": [
+        [
+          {
+            "node": "Telegram: notify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format non-critical notification": {
+      "main": [
+        [
+          {
+            "node": "Telegram: notify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format no-linear notification": {
       "main": [
         [
           {

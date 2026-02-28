@@ -60,7 +60,7 @@
 |----|------------|------------|--------|
 | WF-1 | Linear → Telegram (In Review/Blocked) | Schedule 10 min → Linear Get → IF → Telegram | ✅ |
 | WF-2 | GitHub PR → Linear + Telegram | **Webhook** `/webhook/wf2-github-pr` → parse `AIP-XX` → Linear GraphQL update to Done (merge) → Telegram | ✅ |
-| WF-3 | Sentry → Telegram + Linear | Webhook → IF (error/fatal) → Linear Create → Telegram | ✅ (без LLM-классификации) |
+| WF-3 | Sentry → Telegram + Linear | Webhook → LLM classify (`OPENAI_API_KEY`) или heuristic fallback → Linear Create (critical/bug) → Telegram | ✅ |
 | WF-4 | Daily Standup Digest | Cron 09:00 → Linear → Code (aggregate) → Telegram + optional Notion Sprint Log write | ✅ |
 | WF-5 | /status | Telegram Trigger → IF /status → GET /status → Telegram | ✅ |
 | WF-5 | /tasks, /errors, /deploy, /search, /create, /standup, /help | Реализовано в `update-wf5-status-workflow.js` (ветки с fallback при отсутствии env) | ✅ |
