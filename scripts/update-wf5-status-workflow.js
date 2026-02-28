@@ -222,11 +222,22 @@ const workflow = {
     {
       id: "http-errors",
       name: "Sentry: recent issues",
-      type: "n8n-nodes-base.code",
-      typeVersion: 2,
+      type: "n8n-nodes-base.httpRequest",
+      typeVersion: 4.2,
       position: [1560, -160],
+      alwaysOutputData: true,
+      continueOnFail: true,
       parameters: {
-        jsCode: `const token = $env.SENTRY_AUTH_TOKEN;\nconst org = $env.SENTRY_ORG_SLUG;\nconst project = $env.SENTRY_PROJECT_SLUG;\nconst url = 'https://sentry.io/api/0/projects/' + org + '/' + project + '/issues/?limit=5&query=is:unresolved';\ntry {\n  const res = await fetch(url, {\n    method: 'GET',\n    headers: {\n      Authorization: 'Bearer ' + token,\n      Accept: 'application/json',\n    },\n  });\n  const body = await res.text();\n  if (!res.ok) {\n    return [{ json: { errors: [], sentryError: 'Sentry API ' + res.status + ': ' + body.slice(0, 200) } }];\n  }\n  let data = [];\n  try { data = JSON.parse(body); } catch (e) { data = []; }\n  return [{ json: { errors: Array.isArray(data) ? data : [] } }];\n} catch (e) {\n  return [{ json: { errors: [], sentryError: 'Sentry API request failed: ' + e.message } }];\n}`,
+        method: "GET",
+        url: "={{ 'https://sentry.io/api/0/projects/' + $env.SENTRY_ORG_SLUG + '/' + $env.SENTRY_PROJECT_SLUG + '/issues/?limit=5&query=is:unresolved' }}",
+        sendHeaders: true,
+        headerParameters: {
+          parameters: [
+            { name: "Authorization", value: "={{ 'Bearer ' + $env.SENTRY_AUTH_TOKEN }}" },
+            { name: "Accept", value: "application/json" },
+          ],
+        },
+        options: {},
       },
     },
     {
@@ -236,7 +247,7 @@ const workflow = {
       typeVersion: 2,
       position: [1780, -160],
       parameters: {
-        jsCode: `const data = Array.isArray($json.errors) ? $json.errors : [];\nconst top = data.slice(0, 5);\nconst lines = top.map(i => '• [' + (i.level || 'n/a') + '] ' + (i.title || 'Untitled') + '\\n  ' + (i.permalink || i.shortId || ''));\nlet text = top.length ? ('🚨 *Sentry top issues*\\n' + lines.join('\\n')) : '🚨 No unresolved Sentry issues.';\nif ($json.sentryError) text += '\\n\\n⚠️ ' + $json.sentryError;\nreturn [{ json: { text } }];`,
+        jsCode: `const items = $input.all().map(i => i.json || {});\nlet errors = [];\nlet apiError = '';\nfor (const it of items) {\n  if (Array.isArray(it)) errors.push(...it);\n  else if (Array.isArray(it.data)) errors.push(...it.data);\n  else if (it.error) apiError = it.error.message || it.error.description || 'Sentry request failed';\n  else if (it.message && !Array.isArray(it.results)) apiError = it.message;\n}\nconst top = errors.slice(0, 5);\nconst lines = top.map(i => '• [' + (i.level || 'n/a') + '] ' + (i.title || 'Untitled') + '\\n  ' + (i.permalink || i.shortId || ''));\nlet text = top.length ? ('🚨 *Sentry top issues*\\n' + lines.join('\\n')) : '🚨 No unresolved Sentry issues.';\nif (apiError) text += '\\n\\n⚠️ ' + apiError;\nreturn [{ json: { text } }];`,
       },
     },
     {
@@ -458,11 +469,26 @@ const workflow = {
     {
       id: "http-deploy",
       name: "GitHub: dispatch workflow",
-      type: "n8n-nodes-base.code",
-      typeVersion: 2,
+      type: "n8n-nodes-base.httpRequest",
+      typeVersion: 4.2,
       position: [2440, 480],
+      continueOnFail: true,
+      alwaysOutputData: true,
       parameters: {
-        jsCode: `const owner = $env.GITHUB_OWNER || 'iurii-izman';\nconst repo = $env.GITHUB_REPO || 'AIPipeline';\nconst token = $env.GITHUB_PERSONAL_ACCESS_TOKEN;\nconst workflow = $json.workflow;\nconst ref = $json.ref;\nconst url = 'https://api.github.com/repos/' + owner + '/' + repo + '/actions/workflows/' + workflow + '/dispatches';\ntry {\n  const res = await fetch(url, {\n    method: 'POST',\n    headers: {\n      Authorization: 'Bearer ' + token,\n      Accept: 'application/vnd.github+json',\n      'X-GitHub-Api-Version': '2022-11-28',\n      'Content-Type': 'application/json',\n    },\n    body: JSON.stringify({ ref }),\n  });\n  const body = await res.text();\n  if (!res.ok) {\n    return [{ json: { success: false, env: $json.env, workflow, ref, error: ('GitHub API ' + res.status + ': ' + body).slice(0, 350) } }];\n  }\n  return [{ json: { success: true, env: $json.env, workflow, ref } }];\n} catch (e) {\n  return [{ json: { success: false, env: $json.env, workflow, ref, error: 'GitHub request failed: ' + e.message } }];\n}`,
+        method: "POST",
+        url: "={{ 'https://api.github.com/repos/' + ($env.GITHUB_OWNER || 'iurii-izman') + '/' + ($env.GITHUB_REPO || 'AIPipeline') + '/actions/workflows/' + $json.workflow + '/dispatches' }}",
+        sendHeaders: true,
+        headerParameters: {
+          parameters: [
+            { name: "Authorization", value: "={{ 'Bearer ' + $env.GITHUB_PERSONAL_ACCESS_TOKEN }}" },
+            { name: "Accept", value: "application/vnd.github+json" },
+            { name: "X-GitHub-Api-Version", value: "2022-11-28" },
+          ],
+        },
+        sendBody: true,
+        specifyBody: "json",
+        jsonBody: "={{ { ref: $json.ref } }}",
+        options: {},
       },
     },
     {
@@ -478,7 +504,7 @@ const workflow = {
             {
               name: "text",
               type: "string",
-              value: "= {{ $json.success ? ('🚀 Deploy dispatched: *' + $json.env + '*\\nWorkflow: ' + $json.workflow + '\\nRef: ' + $json.ref) : ('⚠️ Deploy failed for *' + $json.env + '*\\nWorkflow: ' + $json.workflow + '\\nRef: ' + $json.ref + '\\n' + ($json.error || 'Unknown error')) }}",
+              value: "= {{ $json.error ? ('⚠️ Deploy failed for *' + $('Prepare deploy payload').first().json.env + '*\\nWorkflow: ' + $('Prepare deploy payload').first().json.workflow + '\\nRef: ' + $('Prepare deploy payload').first().json.ref + '\\n' + ($json.error.message || $json.error.description || 'Unknown error')) : ('🚀 Deploy dispatched: *' + $('Prepare deploy payload').first().json.env + '*\\nWorkflow: ' + $('Prepare deploy payload').first().json.workflow + '\\nRef: ' + $('Prepare deploy payload').first().json.ref) }}",
             },
           ],
         },
