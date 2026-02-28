@@ -47,7 +47,7 @@
 
 ## После Day-0
 
-- **Фаза 2 (начата):** наполнять Notion (протоколы, спеки, ADR) по шаблонам. Агент создал через MCP: первую спеку «Spec: Health check & env verification» в Specs, первый ADR «ADR: Secrets in keyring (no .env in repo)» в Decision Records.
+- **Фаза 2 (выполнена):** наполнять Notion по шаблонам. Агент создал через MCP: Specs — Health check & env verification, MCP and env (Cursor), n8n workflow WF-1 (alerts); Meetings — Phase 2 kickoff; Runbooks — n8n (Podman); Integration Mapping — Linear↔GitHub, Notion↔Cursor MCP; Decision Records — Secrets in keyring, Branch naming {LINEAR-ID}-{short-desc}, PR required for main; Quick Links заполнены ранее.
 - **Фаза 3:** вести задачи в Linear по workflow и labels.
 - **Фаза 4+:** добавлять код/интеграции, подключать n8n workflow (WF-1…WF-6), при необходимости NotebookLM.
 

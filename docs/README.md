@@ -56,6 +56,6 @@
 
 - Опционально: N8N_API_KEY в keyring; Sentry MCP в Cursor.
 - Проверки: Notion — выполнено (спеки/ADR через MCP); Telegram `/status`, PR (BugBot, Linear).
-- Дальше: Фаза 2 (Notion) начата — первая спека и ADR созданы; Фаза 3 (Linear), Фаза 4+ (код, n8n workflows).
+- Дальше: Фаза 2 (Notion) выполнена — спеки, meeting, runbook, integration mapping, ADR; Фаза 3 (Linear), Фаза 4+ (код, n8n workflows).
 
 Состояние окружения: `./scripts/health-check-env.sh`.
