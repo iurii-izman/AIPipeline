@@ -12,6 +12,7 @@ const N8N_URL = process.env.N8N_URL || "http://localhost:5678";
 const N8N_API_KEY = process.env.N8N_API_KEY;
 const WF5_ID = "41jAGQw9qAMs52dN";
 const APP_STATUS_URL = process.env.APP_STATUS_URL || "http://host.containers.internal:3000/status";
+const DLQ_PARK_URL = process.env.DLQ_PARK_URL || "http://localhost:5678/webhook/wf-dlq-park";
 
 if (!N8N_API_KEY) {
   console.error("N8N_API_KEY not set.");
@@ -78,7 +79,31 @@ const workflow = {
       typeVersion: 2,
       position: [220, 0],
       parameters: {
-        jsCode: `const text = (($json.message && $json.message.text) || '').trim();\nconst [commandRaw, ...rest] = text.split(/\\s+/);\nconst command = (commandRaw || '').toLowerCase();\nconst args = rest.join(' ').trim();\nconst username = $json.message?.from?.username || '';\nconst chatId = $json.message?.chat?.id;\nreturn [{ json: { command, args, username, chatId, raw: text } }];`,
+        jsCode: `const text = (($json.message && $json.message.text) || '').trim();\nconst [commandRaw, ...rest] = text.split(/\\s+/);\nconst command = (commandRaw || '').toLowerCase();\nconst args = rest.join(' ').trim();\nconst username = $json.message?.from?.username || '';\nconst chatId = $json.message?.chat?.id;\nconst messageId = $json.message?.message_id || '';\nconst updateId = $json.update_id || '';\nreturn [{ json: { command, args, username, chatId, messageId, updateId, raw: text } }];`,
+      },
+    },
+    {
+      id: "dedupe-command",
+      name: "Deduplicate command",
+      type: "n8n-nodes-base.code",
+      typeVersion: 2,
+      position: [440, -120],
+      parameters: {
+        jsCode: `const db = $getWorkflowStaticData('global');\nif (!db.seen) db.seen = {};\nconst ttlMs = 7 * 24 * 60 * 60 * 1000;\nconst now = Date.now();\nfor (const [k, ts] of Object.entries(db.seen)) {\n  if (!Number.isFinite(ts) || (now - ts) > ttlMs) delete db.seen[k];\n}\nconst key = ($json.chatId || 'chat') + ':' + ($json.messageId || $json.updateId || $json.raw || 'unknown');\nconst seenAt = db.seen[key];\nif (seenAt && (now - seenAt) < ttlMs) {\n  return [{ json: { ...$json, isDuplicate: true, dedupeKey: key } }];\n}\ndb.seen[key] = now;\nreturn [{ json: { ...$json, isDuplicate: false, dedupeKey: key } }];`,
+      },
+    },
+    {
+      id: "if-command-duplicate",
+      name: "If duplicate command",
+      type: "n8n-nodes-base.if",
+      typeVersion: 2.3,
+      position: [660, -120],
+      parameters: {
+        conditions: {
+          options: { caseSensitive: true },
+          conditions: [{ leftValue: "={{ $json.isDuplicate }}", rightValue: true, operator: { type: "boolean", operation: "true", singleValue: true } }],
+          combinator: "and",
+        },
       },
     },
 
@@ -87,7 +112,7 @@ const workflow = {
       name: "If /status",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [440, 0],
+      position: [880, 0],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -102,7 +127,7 @@ const workflow = {
       name: "GET /status",
       type: "n8n-nodes-base.httpRequest",
       typeVersion: 4.2,
-      position: [660, -320],
+      position: [1100, -320],
       parameters: { method: "GET", url: APP_STATUS_URL, options: {} },
     },
     {
@@ -110,7 +135,7 @@ const workflow = {
       name: "Format /status",
       type: "n8n-nodes-base.set",
       typeVersion: 3.4,
-      position: [880, -320],
+      position: [1320, -320],
       parameters: {
         mode: "manual",
         assignments: {
@@ -131,7 +156,7 @@ const workflow = {
       name: "If /help",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [660, 0],
+      position: [1100, 0],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -146,7 +171,7 @@ const workflow = {
       name: "Set /help",
       type: "n8n-nodes-base.set",
       typeVersion: 3.4,
-      position: [880, -160],
+      position: [1320, -160],
       parameters: { mode: "raw", jsonOutput: JSON.stringify({ text: HELP_TEXT }), options: {} },
     },
 
@@ -155,7 +180,7 @@ const workflow = {
       name: "If /tasks",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [880, 0],
+      position: [1320, 0],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -170,7 +195,7 @@ const workflow = {
       name: "Linear: Get issues for /tasks",
       type: "n8n-nodes-base.linear",
       typeVersion: 1,
-      position: [1120, -320],
+      position: [1540, -320],
       parameters: { resource: "issue", operation: "getAll", returnAll: true },
       credentials: { linearApi: { name: "AIPipeline Linear" } },
     },
@@ -179,9 +204,9 @@ const workflow = {
       name: "Format /tasks",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
-      position: [1340, -320],
+      position: [1760, -320],
       parameters: {
-        jsCode: `const username = $('Extract command').first().json.username || '';\nconst items = $input.all().map(i => i.json);\nconst filtered = items.filter(i => {\n  const state = (i.state?.name || '').toLowerCase();\n  if (['done', 'cancelled', 'canceled'].includes(state)) return false;\n  if (!username) return true;\n  const assignee = (i.assignee?.displayName || i.assignee?.name || i.assignee?.email || '').toLowerCase();\n  return assignee.includes(username.toLowerCase());\n});\nconst top = filtered.slice(0, 7);\nconst lines = top.map(i => '• ' + (i.identifier || 'N/A') + ' — ' + i.title + ' [' + (i.state?.name || 'N/A') + ']');\nconst suffix = filtered.length > top.length ? ('\\n… and ' + (filtered.length - top.length) + ' more') : '';\nconst text = top.length\n  ? ('🧩 *Open tasks*' + (username ? (' for @' + username) : '') + '\\n' + lines.join('\\n') + suffix)\n  : ('🧩 No open tasks' + (username ? (' for @' + username) : '') + '.');\nreturn [{ json: { text } }];`,
+        jsCode: `const username = $('Extract command').first().json.username || '';\nconst rows = $input.all().map(i => i.json || {});\nconst err = rows.find(r => r.error)?.error || null;\nif (err) {\n  const msg = String(err.message || err.description || JSON.stringify(err)).slice(0, 260);\n  const rateLimited = /429|rate\\s*limit|too many requests/i.test(msg);\n  return [{ json: { text: '⚠️ /tasks failed' + (rateLimited ? ' (rate-limited)' : '') + ': ' + msg } }];\n}\nconst items = rows;\nconst filtered = items.filter(i => {\n  const state = (i.state?.name || '').toLowerCase();\n  if (['done', 'cancelled', 'canceled'].includes(state)) return false;\n  if (!username) return true;\n  const assignee = (i.assignee?.displayName || i.assignee?.name || i.assignee?.email || '').toLowerCase();\n  return assignee.includes(username.toLowerCase());\n});\nconst top = filtered.slice(0, 7);\nconst lines = top.map(i => '• ' + (i.identifier || 'N/A') + ' — ' + i.title + ' [' + (i.state?.name || 'N/A') + ']');\nconst suffix = filtered.length > top.length ? ('\\n… and ' + (filtered.length - top.length) + ' more') : '';\nconst text = top.length\n  ? ('🧩 *Open tasks*' + (username ? (' for @' + username) : '') + '\\n' + lines.join('\\n') + suffix)\n  : ('🧩 No open tasks' + (username ? (' for @' + username) : '') + '.');\nreturn [{ json: { text } }];`,
       },
     },
 
@@ -190,7 +215,7 @@ const workflow = {
       name: "If /errors",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [1120, 0],
+      position: [1540, 0],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -205,7 +230,7 @@ const workflow = {
       name: "If Sentry env configured",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [1340, -80],
+      position: [1760, -80],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -224,7 +249,7 @@ const workflow = {
       name: "Sentry: recent issues",
       type: "n8n-nodes-base.httpRequest",
       typeVersion: 4.2,
-      position: [1560, -160],
+      position: [1980, -160],
       alwaysOutputData: true,
       continueOnFail: true,
       parameters: {
@@ -245,9 +270,9 @@ const workflow = {
       name: "Format /errors",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
-      position: [1780, -160],
+      position: [2200, -160],
       parameters: {
-        jsCode: `const items = $input.all().map(i => i.json || {});\nlet errors = [];\nlet apiError = '';\nfor (const it of items) {\n  if (Array.isArray(it)) errors.push(...it);\n  else if (Array.isArray(it.data)) errors.push(...it.data);\n  else if (it.error) apiError = it.error.message || it.error.description || 'Sentry request failed';\n  else if (it.message && !Array.isArray(it.results)) apiError = it.message;\n}\nconst top = errors.slice(0, 5);\nconst lines = top.map(i => '• [' + (i.level || 'n/a') + '] ' + (i.title || 'Untitled') + '\\n  ' + (i.permalink || i.shortId || ''));\nlet text = top.length ? ('🚨 *Sentry top issues*\\n' + lines.join('\\n')) : '🚨 No unresolved Sentry issues.';\nif (apiError) text += '\\n\\n⚠️ ' + apiError;\nreturn [{ json: { text } }];`,
+        jsCode: `const items = $input.all().map(i => i.json || {});\nlet errors = [];\nlet apiError = '';\nfor (const it of items) {\n  if (Array.isArray(it)) errors.push(...it);\n  else if (Array.isArray(it.data)) errors.push(...it.data);\n  else if (it.error) apiError = it.error.message || it.error.description || 'Sentry request failed';\n  else if (it.message && !Array.isArray(it.results)) apiError = it.message;\n}\nconst top = errors.slice(0, 5);\nconst lines = top.map(i => '• [' + (i.level || 'n/a') + '] ' + (i.title || 'Untitled') + '\\n  ' + (i.permalink || i.shortId || ''));\nlet text = top.length ? ('🚨 *Sentry top issues*\\n' + lines.join('\\n')) : '🚨 No unresolved Sentry issues.';\nif (apiError) {\n  const rateLimited = /429|rate\\s*limit|too many requests/i.test(apiError);\n  text += '\\n\\n⚠️ ' + (rateLimited ? 'Sentry API rate-limited: ' : '') + apiError;\n}\nreturn [{ json: { text } }];`,
       },
     },
     {
@@ -255,7 +280,7 @@ const workflow = {
       name: "Set /errors config missing",
       type: "n8n-nodes-base.set",
       typeVersion: 3.4,
-      position: [1560, 0],
+      position: [1980, 0],
       parameters: {
         mode: "raw",
         jsonOutput: JSON.stringify({ text: "⚠️ /errors requires SENTRY_AUTH_TOKEN, SENTRY_ORG_SLUG, SENTRY_PROJECT_SLUG in n8n env." }),
@@ -268,7 +293,7 @@ const workflow = {
       name: "If /search",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [1340, 120],
+      position: [1760, 120],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -283,7 +308,7 @@ const workflow = {
       name: "If /search has query",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [1560, 120],
+      position: [1980, 120],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -298,7 +323,7 @@ const workflow = {
       name: "Notion: search",
       type: "n8n-nodes-base.httpRequest",
       typeVersion: 4.2,
-      position: [1780, 40],
+      position: [2200, 40],
       parameters: {
         method: "POST",
         url: "https://api.notion.com/v1/search",
@@ -321,9 +346,9 @@ const workflow = {
       name: "Format /search",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
-      position: [2000, 40],
+      position: [2420, 40],
       parameters: {
-        jsCode: `const rows = ($json.results || []).slice(0, 5);\nconst titleOf = (r) => {\n  const p = r.properties || {};\n  for (const key of Object.keys(p)) {\n    if (p[key]?.type === 'title') {\n      return (p[key].title || []).map(t => t.plain_text).join('') || '(untitled)';\n    }\n  }\n  if (r.title && Array.isArray(r.title)) return r.title.map(t => t.plain_text).join('') || '(untitled)';\n  return '(untitled)';\n};\nconst lines = rows.map(r => '• ' + titleOf(r) + '\\n  ' + (r.url || ''));\nreturn [{ json: { text: lines.length ? ('🔎 *Notion search*\\n' + lines.join('\\n')) : '🔎 No Notion results.' } }];`,
+        jsCode: `if ($json.error) {\n  const msg = String($json.error.message || $json.error.description || JSON.stringify($json.error)).slice(0, 260);\n  const rateLimited = /429|rate\\s*limit|too many requests/i.test(msg);\n  return [{ json: { text: '⚠️ /search failed' + (rateLimited ? ' (rate-limited)' : '') + ': ' + msg } }];\n}\nconst rows = ($json.results || []).slice(0, 5);\nconst titleOf = (r) => {\n  const p = r.properties || {};\n  for (const key of Object.keys(p)) {\n    if (p[key]?.type === 'title') {\n      return (p[key].title || []).map(t => t.plain_text).join('') || '(untitled)';\n    }\n  }\n  if (r.title && Array.isArray(r.title)) return r.title.map(t => t.plain_text).join('') || '(untitled)';\n  return '(untitled)';\n};\nconst lines = rows.map(r => '• ' + titleOf(r) + '\\n  ' + (r.url || ''));\nreturn [{ json: { text: lines.length ? ('🔎 *Notion search*\\n' + lines.join('\\n')) : '🔎 No Notion results.' } }];`,
       },
     },
     {
@@ -331,7 +356,7 @@ const workflow = {
       name: "Set /search usage",
       type: "n8n-nodes-base.set",
       typeVersion: 3.4,
-      position: [1780, 200],
+      position: [2200, 200],
       parameters: { mode: "raw", jsonOutput: JSON.stringify({ text: "Usage: /search <query>" }), options: {} },
     },
 
@@ -340,7 +365,7 @@ const workflow = {
       name: "If /create",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [1560, 320],
+      position: [1980, 320],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -355,7 +380,7 @@ const workflow = {
       name: "If /create has title",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [1780, 320],
+      position: [2200, 320],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -370,7 +395,7 @@ const workflow = {
       name: "If LINEAR_TEAM_ID set",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [2000, 240],
+      position: [2420, 240],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -385,7 +410,7 @@ const workflow = {
       name: "Linear: Create issue",
       type: "n8n-nodes-base.linear",
       typeVersion: 1,
-      position: [2220, 160],
+      position: [2640, 160],
       parameters: {
         resource: "issue",
         operation: "create",
@@ -400,9 +425,9 @@ const workflow = {
       name: "Format /create",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
-      position: [2440, 160],
+      position: [2860, 160],
       parameters: {
-        jsCode: `const issue = $json;\nconst ident = issue.identifier || issue.id || 'N/A';\nconst url = issue.url || issue.permalink || '';\nreturn [{ json: { text: '✅ Created Linear issue: ' + ident + '\\n' + url } }];`,
+        jsCode: `if ($json.error) {\n  const msg = String($json.error.message || $json.error.description || JSON.stringify($json.error)).slice(0, 260);\n  const rateLimited = /429|rate\\s*limit|too many requests/i.test(msg);\n  return [{ json: { text: '⚠️ /create failed' + (rateLimited ? ' (rate-limited)' : '') + ': ' + msg } }];\n}\nconst issue = $json;\nconst ident = issue.identifier || issue.id || 'N/A';\nconst url = issue.url || issue.permalink || '';\nreturn [{ json: { text: '✅ Created Linear issue: ' + ident + '\\n' + url } }];`,
       },
     },
     {
@@ -410,7 +435,7 @@ const workflow = {
       name: "Set /create config missing",
       type: "n8n-nodes-base.set",
       typeVersion: 3.4,
-      position: [2220, 320],
+      position: [2640, 320],
       parameters: {
         mode: "raw",
         jsonOutput: JSON.stringify({ text: "⚠️ /create requires LINEAR_TEAM_ID in n8n env." }),
@@ -422,7 +447,7 @@ const workflow = {
       name: "Set /create usage",
       type: "n8n-nodes-base.set",
       typeVersion: 3.4,
-      position: [2000, 400],
+      position: [2420, 400],
       parameters: { mode: "raw", jsonOutput: JSON.stringify({ text: "Usage: /create <title>" }), options: {} },
     },
 
@@ -431,7 +456,7 @@ const workflow = {
       name: "If /deploy",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [1780, 560],
+      position: [2200, 560],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -446,7 +471,7 @@ const workflow = {
       name: "Prepare deploy payload",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
-      position: [2000, 560],
+      position: [2420, 560],
       parameters: {
         jsCode: `const envArg = (($('Extract command').first().json.args || '').trim().toLowerCase() || 'staging');\nif (!['staging', 'production'].includes(envArg)) {\n  return [{ json: { valid: false, text: 'Usage: /deploy <staging|production>' } }];\n}\nif (!$env.GITHUB_PERSONAL_ACCESS_TOKEN) {\n  return [{ json: { valid: false, text: '⚠️ /deploy requires GITHUB_PERSONAL_ACCESS_TOKEN in n8n env.' } }];\n}\nconst workflow = envArg === 'production'\n  ? ($env.GITHUB_WORKFLOW_PRODUCTION || 'deploy-production.yml')\n  : ($env.GITHUB_WORKFLOW_STAGING || 'deploy-staging.yml');\nconst ref = envArg === 'production'\n  ? ($env.GITHUB_REF_PRODUCTION || 'main')\n  : ($env.GITHUB_REF_STAGING || 'main');\nreturn [{ json: { valid: true, env: envArg, workflow, ref } }];`,
       },
@@ -456,7 +481,7 @@ const workflow = {
       name: "If deploy payload valid",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [2220, 560],
+      position: [2640, 560],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -471,7 +496,7 @@ const workflow = {
       name: "GitHub: dispatch workflow",
       type: "n8n-nodes-base.httpRequest",
       typeVersion: 4.2,
-      position: [2440, 480],
+      position: [2860, 480],
       continueOnFail: true,
       alwaysOutputData: true,
       parameters: {
@@ -494,21 +519,11 @@ const workflow = {
     {
       id: "set-deploy-ok",
       name: "Set /deploy ok",
-      type: "n8n-nodes-base.set",
-      typeVersion: 3.4,
-      position: [2660, 480],
+      type: "n8n-nodes-base.code",
+      typeVersion: 2,
+      position: [3080, 480],
       parameters: {
-        mode: "manual",
-        assignments: {
-          assignments: [
-            {
-              name: "text",
-              type: "string",
-              value: "= {{ $json.error ? ('⚠️ Deploy failed for *' + $('Prepare deploy payload').first().json.env + '*\\nWorkflow: ' + $('Prepare deploy payload').first().json.workflow + '\\nRef: ' + $('Prepare deploy payload').first().json.ref + '\\n' + ($json.error.message || $json.error.description || 'Unknown error')) : ('🚀 Deploy dispatched: *' + $('Prepare deploy payload').first().json.env + '*\\nWorkflow: ' + $('Prepare deploy payload').first().json.workflow + '\\nRef: ' + $('Prepare deploy payload').first().json.ref) }}",
-            },
-          ],
-        },
-        options: {},
+        jsCode: `const p = $('Prepare deploy payload').first().json;\nconst err = $json.error || null;\nif (!err) {\n  return [{ json: { text: '🚀 Deploy dispatched: *' + p.env + '*\\\\nWorkflow: ' + p.workflow + '\\\\nRef: ' + p.ref } }];\n}\nconst msg = String(err.message || err.description || JSON.stringify(err)).slice(0, 260);\nconst rateLimited = /429|rate\\s*limit|too many requests/i.test(msg);\nreturn [{ json: { text: '⚠️ Deploy failed for *' + p.env + '*\\\\nWorkflow: ' + p.workflow + '\\\\nRef: ' + p.ref + '\\\\n' + (rateLimited ? '(rate-limited) ' : '') + msg } }];`,
       },
     },
     {
@@ -516,7 +531,7 @@ const workflow = {
       name: "Set /deploy usage",
       type: "n8n-nodes-base.set",
       typeVersion: 3.4,
-      position: [2440, 640],
+      position: [2860, 640],
       parameters: {
         mode: "manual",
         assignments: { assignments: [{ name: "text", type: "string", value: "={{ $json.text || 'Usage: /deploy <staging|production>' }}" }] },
@@ -529,7 +544,7 @@ const workflow = {
       name: "If /standup",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [2000, 760],
+      position: [2420, 760],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -544,7 +559,7 @@ const workflow = {
       name: "Linear: Get issues for /standup",
       type: "n8n-nodes-base.linear",
       typeVersion: 1,
-      position: [2220, 760],
+      position: [2640, 760],
       parameters: { resource: "issue", operation: "getAll", returnAll: true },
       credentials: { linearApi: { name: "AIPipeline Linear" } },
     },
@@ -553,9 +568,9 @@ const workflow = {
       name: "Format /standup",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
-      position: [2440, 760],
+      position: [2860, 760],
       parameters: {
-        jsCode: `const items = $input.all().map(i => i.json);\nconst buckets = new Map();\nfor (const it of items) {\n  const key = it.state?.name || 'Other';\n  buckets.set(key, (buckets.get(key) || 0) + 1);\n}\nconst lines = [...buckets.entries()].map(([k,v]) => '• ' + k + ': ' + v);\nconst text = '📝 *Standup digest*\\nDate: ' + new Date().toISOString().slice(0,10) + '\\n' + (lines.join('\\n') || 'No issues');\nreturn [{ json: { text } }];`,
+        jsCode: `const rows = $input.all().map(i => i.json || {});\nconst err = rows.find(r => r.error)?.error || null;\nif (err) {\n  const msg = String(err.message || err.description || JSON.stringify(err)).slice(0, 260);\n  const rateLimited = /429|rate\\s*limit|too many requests/i.test(msg);\n  return [{ json: { text: '⚠️ /standup failed' + (rateLimited ? ' (rate-limited)' : '') + ': ' + msg } }];\n}\nconst buckets = new Map();\nfor (const it of rows) {\n  const key = it.state?.name || 'Other';\n  buckets.set(key, (buckets.get(key) || 0) + 1);\n}\nconst lines = [...buckets.entries()].map(([k,v]) => '• ' + k + ': ' + v);\nconst text = '📝 *Standup digest*\\nDate: ' + new Date().toISOString().slice(0,10) + '\\n' + (lines.join('\\n') || 'No issues');\nreturn [{ json: { text } }];`,
       },
     },
 
@@ -564,7 +579,7 @@ const workflow = {
       name: "Set unknown command",
       type: "n8n-nodes-base.set",
       typeVersion: 3.4,
-      position: [2220, 920],
+      position: [2640, 920],
       parameters: { mode: "raw", jsonOutput: JSON.stringify({ text: "Unknown command. Use /help." }), options: {} },
     },
 
@@ -573,7 +588,7 @@ const workflow = {
       name: "Telegram Send",
       type: "n8n-nodes-base.telegram",
       typeVersion: 1.2,
-      position: [2900, 320],
+      position: [3320, 320],
       parameters: {
         operation: "sendMessage",
         chatId: "={{ $('Telegram Trigger').first().json.message.chat.id }}",
@@ -582,10 +597,57 @@ const workflow = {
       },
       credentials: { telegramApi: { name: "AIPipeline Telegram" } },
     },
+    {
+      id: "assess-telegram-send",
+      name: "Assess Telegram command delivery",
+      type: "n8n-nodes-base.code",
+      typeVersion: 2,
+      position: [3540, 320],
+      parameters: {
+        jsCode: `const err = $json.error || null;
+if (!err) return [{ json: { telegramFailed: false } }];
+const msg = String(err.message || err.description || JSON.stringify(err)).slice(0, 320);
+const rateLimited = /429|rate\\s*limit|too many requests/i.test(msg);
+return [{ json: { telegramFailed: true, rateLimited, reason: msg } }];`,
+      },
+    },
+    {
+      id: "if-telegram-send-failed",
+      name: "If Telegram command delivery failed",
+      type: "n8n-nodes-base.if",
+      typeVersion: 2.3,
+      position: [3760, 320],
+      parameters: {
+        conditions: {
+          options: { caseSensitive: true },
+          conditions: [{ leftValue: "={{ $json.telegramFailed }}", rightValue: true, operator: { type: "boolean", operation: "true", singleValue: true } }],
+          combinator: "and",
+        },
+        options: {},
+      },
+    },
+    {
+      id: "dlq-park-wf5-telegram",
+      name: "DLQ: park WF-5 Telegram failure",
+      type: "n8n-nodes-base.httpRequest",
+      typeVersion: 4.2,
+      position: [3980, 320],
+      parameters: {
+        method: "POST",
+        url: DLQ_PARK_URL,
+        sendBody: true,
+        specifyBody: "json",
+        jsonBody:
+          "={{ { sourceWorkflow: 'WF-5', failureType: 'telegram_send_failed', reason: $('Assess Telegram command delivery').first().json.reason || 'unknown error', rateLimited: $('Assess Telegram command delivery').first().json.rateLimited || false, context: $('Extract command').first().json } }}",
+        options: {},
+      },
+    },
   ],
   connections: {
     "Telegram Trigger": { main: [[{ node: "Extract command", type: "main", index: 0 }]] },
-    "Extract command": { main: [[{ node: "If /status", type: "main", index: 0 }]] },
+    "Extract command": { main: [[{ node: "Deduplicate command", type: "main", index: 0 }]] },
+    "Deduplicate command": { main: [[{ node: "If duplicate command", type: "main", index: 0 }]] },
+    "If duplicate command": { main: [[], [{ node: "If /status", type: "main", index: 0 }]] },
 
     "If /status": { main: [[{ node: "GET /status", type: "main", index: 0 }], [{ node: "If /help", type: "main", index: 0 }]] },
     "GET /status": { main: [[{ node: "Format /status", type: "main", index: 0 }]] },
@@ -629,11 +691,27 @@ const workflow = {
     "Linear: Get issues for /standup": { main: [[{ node: "Format /standup", type: "main", index: 0 }]] },
     "Format /standup": { main: [[{ node: "Telegram Send", type: "main", index: 0 }]] },
     "Set unknown command": { main: [[{ node: "Telegram Send", type: "main", index: 0 }]] },
+    "Telegram Send": { main: [[{ node: "Assess Telegram command delivery", type: "main", index: 0 }]] },
+    "Assess Telegram command delivery": { main: [[{ node: "If Telegram command delivery failed", type: "main", index: 0 }]] },
+    "If Telegram command delivery failed": { main: [[{ node: "DLQ: park WF-5 Telegram failure", type: "main", index: 0 }], []] },
   },
   settings: {},
 };
 
+function applyResiliencePolicy(definition) {
+  const externalTypes = new Set(["n8n-nodes-base.httpRequest", "n8n-nodes-base.linear", "n8n-nodes-base.telegram"]);
+  for (const node of definition.nodes) {
+    if (!externalTypes.has(node.type)) continue;
+    node.retryOnFail = true;
+    node.maxTries = 4;
+    node.waitBetweenTries = 2000;
+    node.continueOnFail = true;
+    node.alwaysOutputData = true;
+  }
+}
+
 async function main() {
+  applyResiliencePolicy(workflow);
   const updated = await request("PUT", `/api/v1/workflows/${WF5_ID}`, workflow);
   console.log("WF-5 updated.", updated.id, updated.name);
   console.log("Next: open n8n UI, verify credentials (Telegram/Linear), activate if needed.");

@@ -1,4 +1,4 @@
-# n8n Workflows — WF-1…WF-6
+# n8n Workflows — WF-1…WF-7
 
 Source of truth for workflow JSON: `docs/n8n-workflows/*.json`.
 
@@ -13,11 +13,25 @@ Source of truth for workflow JSON: `docs/n8n-workflows/*.json`.
 | ID   | Trigger | Реализация | Статус |
 |------|---------|------------|--------|
 | WF-1 | Schedule (10 min) | Linear Get issues → IF `In Review/Blocked` → Telegram | ✅ Active |
-| WF-2 | GitHub Webhook (`/webhook/wf2-github-pr`) | Parse PR payload + `AIP-XX` → Linear GraphQL update to Done (on merge) → Telegram | ✅ Active |
-| WF-3 | Sentry Webhook | LLM classify (`OPENAI_API_KEY`) or heuristic fallback → Linear Create Issue (critical/bug) → Telegram | ✅ Active |
-| WF-4 | Schedule (weekday 09:00) | Linear digest → Telegram + optional Notion Sprint Log write | ✅ Active |
-| WF-5 | Telegram Trigger | `/status`, `/help`, `/tasks`, `/errors`, `/search`, `/create`, `/deploy`, `/standup` | ✅ Active |
+| WF-2 | GitHub Webhook (`/webhook/wf2-github-pr`) | Parse PR payload + `AIP-XX` → Linear GraphQL update to Done (on merge) → Telegram + DLQ parking on failures | ✅ Active |
+| WF-3 | Sentry Webhook | LLM classify (`OPENAI_API_KEY`) or heuristic fallback → Linear Create Issue → Telegram + DLQ parking on failures | ✅ Active |
+| WF-4 | Schedule (weekday 09:00) | Linear digest → Telegram + optional Notion Sprint Log write + Notion-failure alert/DLQ | ✅ Active |
+| WF-5 | Telegram Trigger | `/status`, `/help`, `/tasks`, `/errors`, `/search`, `/create`, `/deploy`, `/standup` + rate-limit-aware fallbacks + DLQ on Telegram send fail | ✅ Active |
 | WF-6 | Schedule (Monday 10:00) | Notion search (last 7 days) → IF updates exist → Telegram reminder | ✅ Active |
+| WF-7 | Webhook (`/webhook/wf-dlq-park`, `/webhook/wf-dlq-replay`) | Centralized DLQ parking + replay orchestration | ✅ Active |
+
+---
+
+## Reliability hardening (WF-2…WF-5)
+
+- retry/backoff policy on external API nodes:
+  - `retryOnFail=true`, `maxTries=4`, `waitBetweenTries=2000`
+- non-blocking external calls (`continueOnFail + alwaysOutputData`) and explicit fallback branches
+- rate-limit handling (`429`/`rate limit`/`too many requests`) for Sentry/Linear/Notion/GitHub paths
+- partial-failure policy implemented in flows:
+  - Telegram success / Linear fail
+  - Linear success / Telegram fail
+  - Notion write fail (WF-4)
 
 ---
 
@@ -33,7 +47,7 @@ n8n container gets env from `run-n8n.sh` (if variables exist in shell/keyring):
 - `TELEGRAM_CHAT_ID`
 
 Runtime note:
-- `run-n8n.sh` sets `N8N_BLOCK_ENV_ACCESS_IN_NODE=false`, otherwise `$env.*` expressions in workflows (WF-3/WF-5/WF-6) will fail.
+- `run-n8n.sh` sets `N8N_BLOCK_ENV_ACCESS_IN_NODE=false`, otherwise `$env.*` expressions in workflows will fail.
 
 If some vars are missing, WF-5 command branches return explicit config messages instead of failing.
 
@@ -49,6 +63,7 @@ If some vars are missing, WF-5 command branches return explicit config messages 
    - `node scripts/update-wf4-daily-digest.js`
    - `node scripts/update-wf5-status-workflow.js`
    - `node scripts/update-wf6-notion-reminder.js`
+   - `node scripts/update-wf7-dlq-parking.js`
 3. Export actual runtime workflows to repo:
    - `./scripts/export-n8n-workflows.sh`
 
@@ -56,8 +71,9 @@ If some vars are missing, WF-5 command branches return explicit config messages 
 
 ## Manual actions still required
 
-- WF-2: add GitHub webhook for PR events to `https://<n8n-host>/webhook/wf2-github-pr`.
-- WF-3: register Sentry webhook URL (manual UI or `./scripts/register-sentry-webhook.sh`).
-- WF-5: for `/status` response, run app on host (`./scripts/start-app-with-keyring.sh`) and keep HTTPS webhook for Telegram (`run-n8n-with-ngrok.sh` or public HTTPS endpoint).
+- WF-2: GitHub webhook target should stay aligned with active public n8n URL.
+- WF-3: Sentry webhook should point to active public n8n URL.
+- WF-5: verify Telegram credentials in n8n UI if they were reset by update.
+- WF-7 replay is operator-driven via webhook call (see [../dlq-replay-runbook.md](../dlq-replay-runbook.md)).
 
-References: [runbook-n8n.md](../runbook-n8n.md), [n8n-setup-step-by-step.md](../n8n-setup-step-by-step.md), [what-to-do-manually.md](../what-to-do-manually.md).
+References: [runbook-n8n.md](../runbook-n8n.md), [what-to-do-manually.md](../what-to-do-manually.md), [dlq-replay-runbook.md](../dlq-replay-runbook.md).

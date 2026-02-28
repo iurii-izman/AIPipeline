@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Export n8n workflows (WF-1..WF-6) from local n8n API to docs/n8n-workflows/*.json.
+# Export n8n workflows (WF-1..WF-7) from local n8n API to docs/n8n-workflows/*.json.
 # Usage: source scripts/load-env-from-keyring.sh && ./scripts/export-n8n-workflows.sh
 
 set -euo pipefail
@@ -50,3 +50,32 @@ for entry in "${MAP[@]}"; do
 done
 
 echo "Done. Exported workflows to docs/n8n-workflows/*.json"
+
+WF7_NAME="WF-7: DLQ Parking + Replay (AIPipeline)"
+WF7_ID="$(curl -sS -H "X-N8N-API-KEY: $N8N_API_KEY" "$N8N_URL/api/v1/workflows?limit=250" | node -e '
+  const fs = require("fs");
+  const payload = JSON.parse(fs.readFileSync(0, "utf8"));
+  const rows = Array.isArray(payload.data) ? payload.data : [];
+  const hit = rows.find((x) => x.name === process.argv[1]);
+  process.stdout.write(hit?.id || "");
+' "$WF7_NAME")"
+
+if [[ -n "$WF7_ID" ]]; then
+  echo "Exporting $WF7_ID -> wf-7-dlq-parking.json"
+  curl -sS \
+    -H "X-N8N-API-KEY: $N8N_API_KEY" \
+    "$N8N_URL/api/v1/workflows/$WF7_ID" \
+    | node -e '
+      const fs = require("fs");
+      const wf = JSON.parse(fs.readFileSync(0, "utf8"));
+      const out = {
+        name: wf.name,
+        active: wf.active,
+        nodes: wf.nodes,
+        connections: wf.connections,
+        settings: wf.settings || {},
+      };
+      process.stdout.write(JSON.stringify(out, null, 2) + "\n");
+    ' > "$OUT_DIR/wf-7-dlq-parking.json"
+  echo "Done. Exported WF-7 to docs/n8n-workflows/wf-7-dlq-parking.json"
+fi

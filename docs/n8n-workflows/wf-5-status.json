@@ -35,7 +35,49 @@
         0
       ],
       "parameters": {
-        "jsCode": "const text = (($json.message && $json.message.text) || '').trim();\nconst [commandRaw, ...rest] = text.split(/\\s+/);\nconst command = (commandRaw || '').toLowerCase();\nconst args = rest.join(' ').trim();\nconst username = $json.message?.from?.username || '';\nconst chatId = $json.message?.chat?.id;\nreturn [{ json: { command, args, username, chatId, raw: text } }];"
+        "jsCode": "const text = (($json.message && $json.message.text) || '').trim();\nconst [commandRaw, ...rest] = text.split(/\\s+/);\nconst command = (commandRaw || '').toLowerCase();\nconst args = rest.join(' ').trim();\nconst username = $json.message?.from?.username || '';\nconst chatId = $json.message?.chat?.id;\nconst messageId = $json.message?.message_id || '';\nconst updateId = $json.update_id || '';\nreturn [{ json: { command, args, username, chatId, messageId, updateId, raw: text } }];"
+      }
+    },
+    {
+      "id": "dedupe-command",
+      "name": "Deduplicate command",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        -120
+      ],
+      "parameters": {
+        "jsCode": "const db = $getWorkflowStaticData('global');\nif (!db.seen) db.seen = {};\nconst ttlMs = 7 * 24 * 60 * 60 * 1000;\nconst now = Date.now();\nfor (const [k, ts] of Object.entries(db.seen)) {\n  if (!Number.isFinite(ts) || (now - ts) > ttlMs) delete db.seen[k];\n}\nconst key = ($json.chatId || 'chat') + ':' + ($json.messageId || $json.updateId || $json.raw || 'unknown');\nconst seenAt = db.seen[key];\nif (seenAt && (now - seenAt) < ttlMs) {\n  return [{ json: { ...$json, isDuplicate: true, dedupeKey: key } }];\n}\ndb.seen[key] = now;\nreturn [{ json: { ...$json, isDuplicate: false, dedupeKey: key } }];"
+      }
+    },
+    {
+      "id": "if-command-duplicate",
+      "name": "If duplicate command",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        660,
+        -120
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.isDuplicate }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
       }
     },
     {
@@ -44,7 +86,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        440,
+        880,
         0
       ],
       "parameters": {
@@ -73,14 +115,19 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        660,
+        1100,
         -320
       ],
       "parameters": {
         "method": "GET",
         "url": "http://host.containers.internal:3000/status",
         "options": {}
-      }
+      },
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 2000,
+      "continueOnFail": true,
+      "alwaysOutputData": true
     },
     {
       "id": "fmt-status",
@@ -88,7 +135,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        880,
+        1320,
         -320
       ],
       "parameters": {
@@ -111,7 +158,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        660,
+        1100,
         0
       ],
       "parameters": {
@@ -140,7 +187,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        880,
+        1320,
         -160
       ],
       "parameters": {
@@ -155,7 +202,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        880,
+        1320,
         0
       ],
       "parameters": {
@@ -184,7 +231,7 @@
       "type": "n8n-nodes-base.linear",
       "typeVersion": 1,
       "position": [
-        1120,
+        1540,
         -320
       ],
       "parameters": {
@@ -197,7 +244,12 @@
           "id": "SPM4RCmtiiJxQxSv",
           "name": "AIPipeline Linear"
         }
-      }
+      },
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 2000,
+      "continueOnFail": true,
+      "alwaysOutputData": true
     },
     {
       "id": "fmt-tasks",
@@ -205,11 +257,11 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1340,
+        1760,
         -320
       ],
       "parameters": {
-        "jsCode": "const username = $('Extract command').first().json.username || '';\nconst items = $input.all().map(i => i.json);\nconst filtered = items.filter(i => {\n  const state = (i.state?.name || '').toLowerCase();\n  if (['done', 'cancelled', 'canceled'].includes(state)) return false;\n  if (!username) return true;\n  const assignee = (i.assignee?.displayName || i.assignee?.name || i.assignee?.email || '').toLowerCase();\n  return assignee.includes(username.toLowerCase());\n});\nconst top = filtered.slice(0, 7);\nconst lines = top.map(i => '• ' + (i.identifier || 'N/A') + ' — ' + i.title + ' [' + (i.state?.name || 'N/A') + ']');\nconst suffix = filtered.length > top.length ? ('\\n… and ' + (filtered.length - top.length) + ' more') : '';\nconst text = top.length\n  ? ('🧩 *Open tasks*' + (username ? (' for @' + username) : '') + '\\n' + lines.join('\\n') + suffix)\n  : ('🧩 No open tasks' + (username ? (' for @' + username) : '') + '.');\nreturn [{ json: { text } }];"
+        "jsCode": "const username = $('Extract command').first().json.username || '';\nconst rows = $input.all().map(i => i.json || {});\nconst err = rows.find(r => r.error)?.error || null;\nif (err) {\n  const msg = String(err.message || err.description || JSON.stringify(err)).slice(0, 260);\n  const rateLimited = /429|rate\\s*limit|too many requests/i.test(msg);\n  return [{ json: { text: '⚠️ /tasks failed' + (rateLimited ? ' (rate-limited)' : '') + ': ' + msg } }];\n}\nconst items = rows;\nconst filtered = items.filter(i => {\n  const state = (i.state?.name || '').toLowerCase();\n  if (['done', 'cancelled', 'canceled'].includes(state)) return false;\n  if (!username) return true;\n  const assignee = (i.assignee?.displayName || i.assignee?.name || i.assignee?.email || '').toLowerCase();\n  return assignee.includes(username.toLowerCase());\n});\nconst top = filtered.slice(0, 7);\nconst lines = top.map(i => '• ' + (i.identifier || 'N/A') + ' — ' + i.title + ' [' + (i.state?.name || 'N/A') + ']');\nconst suffix = filtered.length > top.length ? ('\\n… and ' + (filtered.length - top.length) + ' more') : '';\nconst text = top.length\n  ? ('🧩 *Open tasks*' + (username ? (' for @' + username) : '') + '\\n' + lines.join('\\n') + suffix)\n  : ('🧩 No open tasks' + (username ? (' for @' + username) : '') + '.');\nreturn [{ json: { text } }];"
       }
     },
     {
@@ -218,7 +270,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1120,
+        1540,
         0
       ],
       "parameters": {
@@ -247,7 +299,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1340,
+        1760,
         -80
       ],
       "parameters": {
@@ -292,7 +344,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1560,
+        1980,
         -160
       ],
       "alwaysOutputData": true,
@@ -314,7 +366,10 @@
           ]
         },
         "options": {}
-      }
+      },
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 2000
     },
     {
       "id": "fmt-errors",
@@ -322,11 +377,11 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1780,
+        2200,
         -160
       ],
       "parameters": {
-        "jsCode": "const items = $input.all().map(i => i.json || {});\nlet errors = [];\nlet apiError = '';\nfor (const it of items) {\n  if (Array.isArray(it)) errors.push(...it);\n  else if (Array.isArray(it.data)) errors.push(...it.data);\n  else if (it.error) apiError = it.error.message || it.error.description || 'Sentry request failed';\n  else if (it.message && !Array.isArray(it.results)) apiError = it.message;\n}\nconst top = errors.slice(0, 5);\nconst lines = top.map(i => '• [' + (i.level || 'n/a') + '] ' + (i.title || 'Untitled') + '\\n  ' + (i.permalink || i.shortId || ''));\nlet text = top.length ? ('🚨 *Sentry top issues*\\n' + lines.join('\\n')) : '🚨 No unresolved Sentry issues.';\nif (apiError) text += '\\n\\n⚠️ ' + apiError;\nreturn [{ json: { text } }];"
+        "jsCode": "const items = $input.all().map(i => i.json || {});\nlet errors = [];\nlet apiError = '';\nfor (const it of items) {\n  if (Array.isArray(it)) errors.push(...it);\n  else if (Array.isArray(it.data)) errors.push(...it.data);\n  else if (it.error) apiError = it.error.message || it.error.description || 'Sentry request failed';\n  else if (it.message && !Array.isArray(it.results)) apiError = it.message;\n}\nconst top = errors.slice(0, 5);\nconst lines = top.map(i => '• [' + (i.level || 'n/a') + '] ' + (i.title || 'Untitled') + '\\n  ' + (i.permalink || i.shortId || ''));\nlet text = top.length ? ('🚨 *Sentry top issues*\\n' + lines.join('\\n')) : '🚨 No unresolved Sentry issues.';\nif (apiError) {\n  const rateLimited = /429|rate\\s*limit|too many requests/i.test(apiError);\n  text += '\\n\\n⚠️ ' + (rateLimited ? 'Sentry API rate-limited: ' : '') + apiError;\n}\nreturn [{ json: { text } }];"
       }
     },
     {
@@ -335,7 +390,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1560,
+        1980,
         0
       ],
       "parameters": {
@@ -350,7 +405,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1340,
+        1760,
         120
       ],
       "parameters": {
@@ -379,7 +434,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1560,
+        1980,
         120
       ],
       "parameters": {
@@ -408,7 +463,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1780,
+        2200,
         40
       ],
       "parameters": {
@@ -435,7 +490,12 @@
         "specifyBody": "json",
         "jsonBody": "={{ { query: $('Extract command').first().json.args, page_size: 5 } }}",
         "options": {}
-      }
+      },
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 2000,
+      "continueOnFail": true,
+      "alwaysOutputData": true
     },
     {
       "id": "fmt-search",
@@ -443,11 +503,11 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2000,
+        2420,
         40
       ],
       "parameters": {
-        "jsCode": "const rows = ($json.results || []).slice(0, 5);\nconst titleOf = (r) => {\n  const p = r.properties || {};\n  for (const key of Object.keys(p)) {\n    if (p[key]?.type === 'title') {\n      return (p[key].title || []).map(t => t.plain_text).join('') || '(untitled)';\n    }\n  }\n  if (r.title && Array.isArray(r.title)) return r.title.map(t => t.plain_text).join('') || '(untitled)';\n  return '(untitled)';\n};\nconst lines = rows.map(r => '• ' + titleOf(r) + '\\n  ' + (r.url || ''));\nreturn [{ json: { text: lines.length ? ('🔎 *Notion search*\\n' + lines.join('\\n')) : '🔎 No Notion results.' } }];"
+        "jsCode": "if ($json.error) {\n  const msg = String($json.error.message || $json.error.description || JSON.stringify($json.error)).slice(0, 260);\n  const rateLimited = /429|rate\\s*limit|too many requests/i.test(msg);\n  return [{ json: { text: '⚠️ /search failed' + (rateLimited ? ' (rate-limited)' : '') + ': ' + msg } }];\n}\nconst rows = ($json.results || []).slice(0, 5);\nconst titleOf = (r) => {\n  const p = r.properties || {};\n  for (const key of Object.keys(p)) {\n    if (p[key]?.type === 'title') {\n      return (p[key].title || []).map(t => t.plain_text).join('') || '(untitled)';\n    }\n  }\n  if (r.title && Array.isArray(r.title)) return r.title.map(t => t.plain_text).join('') || '(untitled)';\n  return '(untitled)';\n};\nconst lines = rows.map(r => '• ' + titleOf(r) + '\\n  ' + (r.url || ''));\nreturn [{ json: { text: lines.length ? ('🔎 *Notion search*\\n' + lines.join('\\n')) : '🔎 No Notion results.' } }];"
       }
     },
     {
@@ -456,7 +516,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1780,
+        2200,
         200
       ],
       "parameters": {
@@ -471,7 +531,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1560,
+        1980,
         320
       ],
       "parameters": {
@@ -500,7 +560,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1780,
+        2200,
         320
       ],
       "parameters": {
@@ -529,7 +589,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        2000,
+        2420,
         240
       ],
       "parameters": {
@@ -558,7 +618,7 @@
       "type": "n8n-nodes-base.linear",
       "typeVersion": 1,
       "position": [
-        2220,
+        2640,
         160
       ],
       "parameters": {
@@ -573,7 +633,12 @@
           "id": "SPM4RCmtiiJxQxSv",
           "name": "AIPipeline Linear"
         }
-      }
+      },
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 2000,
+      "continueOnFail": true,
+      "alwaysOutputData": true
     },
     {
       "id": "fmt-create",
@@ -581,11 +646,11 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2440,
+        2860,
         160
       ],
       "parameters": {
-        "jsCode": "const issue = $json;\nconst ident = issue.identifier || issue.id || 'N/A';\nconst url = issue.url || issue.permalink || '';\nreturn [{ json: { text: '✅ Created Linear issue: ' + ident + '\\n' + url } }];"
+        "jsCode": "if ($json.error) {\n  const msg = String($json.error.message || $json.error.description || JSON.stringify($json.error)).slice(0, 260);\n  const rateLimited = /429|rate\\s*limit|too many requests/i.test(msg);\n  return [{ json: { text: '⚠️ /create failed' + (rateLimited ? ' (rate-limited)' : '') + ': ' + msg } }];\n}\nconst issue = $json;\nconst ident = issue.identifier || issue.id || 'N/A';\nconst url = issue.url || issue.permalink || '';\nreturn [{ json: { text: '✅ Created Linear issue: ' + ident + '\\n' + url } }];"
       }
     },
     {
@@ -594,7 +659,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2220,
+        2640,
         320
       ],
       "parameters": {
@@ -609,7 +674,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2000,
+        2420,
         400
       ],
       "parameters": {
@@ -624,7 +689,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1780,
+        2200,
         560
       ],
       "parameters": {
@@ -653,7 +718,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2000,
+        2420,
         560
       ],
       "parameters": {
@@ -666,7 +731,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        2220,
+        2640,
         560
       ],
       "parameters": {
@@ -696,7 +761,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2440,
+        2860,
         480
       ],
       "continueOnFail": true,
@@ -725,29 +790,22 @@
         "specifyBody": "json",
         "jsonBody": "={{ { ref: $json.ref } }}",
         "options": {}
-      }
+      },
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 2000
     },
     {
       "id": "set-deploy-ok",
       "name": "Set /deploy ok",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
-        2660,
+        3080,
         480
       ],
       "parameters": {
-        "mode": "manual",
-        "assignments": {
-          "assignments": [
-            {
-              "name": "text",
-              "type": "string",
-              "value": "= {{ $json.error ? ('⚠️ Deploy failed for *' + $('Prepare deploy payload').first().json.env + '*\\nWorkflow: ' + $('Prepare deploy payload').first().json.workflow + '\\nRef: ' + $('Prepare deploy payload').first().json.ref + '\\n' + ($json.error.message || $json.error.description || 'Unknown error')) : ('🚀 Deploy dispatched: *' + $('Prepare deploy payload').first().json.env + '*\\nWorkflow: ' + $('Prepare deploy payload').first().json.workflow + '\\nRef: ' + $('Prepare deploy payload').first().json.ref) }}"
-            }
-          ]
-        },
-        "options": {}
+        "jsCode": "const p = $('Prepare deploy payload').first().json;\nconst err = $json.error || null;\nif (!err) {\n  return [{ json: { text: '🚀 Deploy dispatched: *' + p.env + '*\\\\nWorkflow: ' + p.workflow + '\\\\nRef: ' + p.ref } }];\n}\nconst msg = String(err.message || err.description || JSON.stringify(err)).slice(0, 260);\nconst rateLimited = /429|rate\\s*limit|too many requests/i.test(msg);\nreturn [{ json: { text: '⚠️ Deploy failed for *' + p.env + '*\\\\nWorkflow: ' + p.workflow + '\\\\nRef: ' + p.ref + '\\\\n' + (rateLimited ? '(rate-limited) ' : '') + msg } }];"
       }
     },
     {
@@ -756,7 +814,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2440,
+        2860,
         640
       ],
       "parameters": {
@@ -779,7 +837,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        2000,
+        2420,
         760
       ],
       "parameters": {
@@ -808,7 +866,7 @@
       "type": "n8n-nodes-base.linear",
       "typeVersion": 1,
       "position": [
-        2220,
+        2640,
         760
       ],
       "parameters": {
@@ -821,7 +879,12 @@
           "id": "SPM4RCmtiiJxQxSv",
           "name": "AIPipeline Linear"
         }
-      }
+      },
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 2000,
+      "continueOnFail": true,
+      "alwaysOutputData": true
     },
     {
       "id": "fmt-standup",
@@ -829,11 +892,11 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2440,
+        2860,
         760
       ],
       "parameters": {
-        "jsCode": "const items = $input.all().map(i => i.json);\nconst buckets = new Map();\nfor (const it of items) {\n  const key = it.state?.name || 'Other';\n  buckets.set(key, (buckets.get(key) || 0) + 1);\n}\nconst lines = [...buckets.entries()].map(([k,v]) => '• ' + k + ': ' + v);\nconst text = '📝 *Standup digest*\\nDate: ' + new Date().toISOString().slice(0,10) + '\\n' + (lines.join('\\n') || 'No issues');\nreturn [{ json: { text } }];"
+        "jsCode": "const rows = $input.all().map(i => i.json || {});\nconst err = rows.find(r => r.error)?.error || null;\nif (err) {\n  const msg = String(err.message || err.description || JSON.stringify(err)).slice(0, 260);\n  const rateLimited = /429|rate\\s*limit|too many requests/i.test(msg);\n  return [{ json: { text: '⚠️ /standup failed' + (rateLimited ? ' (rate-limited)' : '') + ': ' + msg } }];\n}\nconst buckets = new Map();\nfor (const it of rows) {\n  const key = it.state?.name || 'Other';\n  buckets.set(key, (buckets.get(key) || 0) + 1);\n}\nconst lines = [...buckets.entries()].map(([k,v]) => '• ' + k + ': ' + v);\nconst text = '📝 *Standup digest*\\nDate: ' + new Date().toISOString().slice(0,10) + '\\n' + (lines.join('\\n') || 'No issues');\nreturn [{ json: { text } }];"
       }
     },
     {
@@ -842,7 +905,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2220,
+        2640,
         920
       ],
       "parameters": {
@@ -857,7 +920,7 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        2900,
+        3320,
         320
       ],
       "parameters": {
@@ -873,7 +936,78 @@
           "id": "CumMgGtm8MpeMfxm",
           "name": "AIPipeline Telegram"
         }
+      },
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 2000,
+      "continueOnFail": true,
+      "alwaysOutputData": true
+    },
+    {
+      "id": "assess-telegram-send",
+      "name": "Assess Telegram command delivery",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3540,
+        320
+      ],
+      "parameters": {
+        "jsCode": "const err = $json.error || null;\nif (!err) return [{ json: { telegramFailed: false } }];\nconst msg = String(err.message || err.description || JSON.stringify(err)).slice(0, 320);\nconst rateLimited = /429|rate\\s*limit|too many requests/i.test(msg);\nreturn [{ json: { telegramFailed: true, rateLimited, reason: msg } }];"
       }
+    },
+    {
+      "id": "if-telegram-send-failed",
+      "name": "If Telegram command delivery failed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3760,
+        320
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.telegramFailed }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "dlq-park-wf5-telegram",
+      "name": "DLQ: park WF-5 Telegram failure",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3980,
+        320
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:5678/webhook/wf-dlq-park",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { sourceWorkflow: 'WF-5', failureType: 'telegram_send_failed', reason: $('Assess Telegram command delivery').first().json.reason || 'unknown error', rateLimited: $('Assess Telegram command delivery').first().json.rateLimited || false, context: $('Extract command').first().json } }}",
+        "options": {}
+      },
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 2000,
+      "continueOnFail": true,
+      "alwaysOutputData": true
     }
   ],
   "connections": {
@@ -890,6 +1024,29 @@
     },
     "Extract command": {
       "main": [
+        [
+          {
+            "node": "Deduplicate command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deduplicate command": {
+      "main": [
+        [
+          {
+            "node": "If duplicate command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If duplicate command": {
+      "main": [
+        [],
         [
           {
             "node": "If /status",
@@ -1373,6 +1530,40 @@
             "index": 0
           }
         ]
+      ]
+    },
+    "Telegram Send": {
+      "main": [
+        [
+          {
+            "node": "Assess Telegram command delivery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assess Telegram command delivery": {
+      "main": [
+        [
+          {
+            "node": "If Telegram command delivery failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Telegram command delivery failed": {
+      "main": [
+        [
+          {
+            "node": "DLQ: park WF-5 Telegram failure",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
       ]
     }
   },

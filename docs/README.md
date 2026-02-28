@@ -34,7 +34,8 @@
 | [sentry-setup-step-by-step.md](sentry-setup-step-by-step.md) | Sentry: проект, DSN, keyring, SDK, MCP |
 | [sentry-setup.md](sentry-setup.md) | Краткий обзор Sentry |
 | [runbook-n8n.md](runbook-n8n.md) | n8n: деплой, операции, Podman |
-| [n8n-workflows/README.md](n8n-workflows/README.md) | n8n WF-1…WF-6: пошагово WF-1, WF-5; подсказки WF-2, WF-3, WF-4, WF-6 |
+| [n8n-workflows/README.md](n8n-workflows/README.md) | n8n WF-1…WF-7: workflows, hardening policy, apply/sync |
+| [dlq-replay-runbook.md](dlq-replay-runbook.md) | Операционный runbook по DLQ parking/replay (WF-7) |
 | [linear-setup.md](linear-setup.md) | Linear: проект, labels, workflow, интеграция GitHub |
 | [linear-phase3-runbook.md](linear-phase3-runbook.md) | Фаза 3: ведение задач по workflow и labels, Agent-Ready |
 
@@ -53,6 +54,7 @@
 | [architecture.md](architecture.md) | Архитектура конвейера |
 | [data-mapping.md](data-mapping.md) | Маппинг данных между инструментами |
 | [observability.md](observability.md) | Baseline наблюдаемости: логи, correlationId, алерты, апгрейды |
+| [token-least-privilege.md](token-least-privilege.md) | Минимальные scopes/permissions для GitHub/Linear/Notion/Sentry/Telegram |
 | [live-uat-telegram.md](live-uat-telegram.md) | Живой UAT для Telegram команд, WF-2 PR webhook, OPENAI_API_KEY, стабильный HTTPS |
 | [stable-https-options.md](stable-https-options.md) | Сравнение вариантов стабильного HTTPS endpoint (плюсы/минусы, рейтинг) |
 | [cloudflare-tunnel-setup.md](cloudflare-tunnel-setup.md) | Пошаговая миграция на Cloudflare Tunnel (stable URL) |

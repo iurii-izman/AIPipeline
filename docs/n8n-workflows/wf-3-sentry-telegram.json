@@ -29,7 +29,50 @@
         0
       ],
       "parameters": {
-        "jsCode": "const root = $json.body || $json;\nconst event = root.event || root.data?.event || root;\nconst issue = root.issue || root.data?.issue || {};\nconst title = event.title || issue.title || root.message || 'Sentry alert';\nconst level = (event.level || issue.level || root.level || 'error').toLowerCase();\nconst culprit = event.culprit || issue.culprit || '';\nconst project = root.project?.slug || root.project_slug || issue.project?.slug || 'node';\nconst url = issue.web_url || issue.permalink || event.web_url || root.url || '';\nconst fingerprint = (event.fingerprint && event.fingerprint.join(',')) || issue.shortId || issue.id || '';\nconst payloadSnippet = JSON.stringify(root).slice(0, 3500);\nreturn [{ json: { title, level, culprit, project, url, fingerprint, payloadSnippet } }];"
+        "jsCode": "const root = $json.body || $json;\nconst event = root.event || root.data?.event || root;\nconst issue = root.issue || root.data?.issue || {};\nconst title = event.title || issue.title || root.message || 'Sentry alert';\nconst level = (event.level || issue.level || root.level || 'error').toLowerCase();\nconst culprit = event.culprit || issue.culprit || '';\nconst project = root.project?.slug || root.project_slug || issue.project?.slug || 'node';\nconst url = issue.web_url || issue.permalink || event.web_url || root.url || '';\nconst fingerprint = (event.fingerprint && event.fingerprint.join(',')) || issue.shortId || issue.id || '';\nconst eventId = event.event_id || root.event_id || issue.id || root.id || '';\nconst payloadSnippet = JSON.stringify(root).slice(0, 3500);\nreturn [{ json: { title, level, culprit, project, url, fingerprint, eventId, payloadSnippet } }];"
+      }
+    },
+    {
+      "id": "dedupe-sentry",
+      "name": "Deduplicate Sentry event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        -120
+      ],
+      "parameters": {
+        "jsCode": "const db = $getWorkflowStaticData('global');\nif (!db.seen) db.seen = {};\nconst ttlMs = 7 * 24 * 60 * 60 * 1000;\nconst now = Date.now();\nfor (const [k, ts] of Object.entries(db.seen)) {\n  if (!Number.isFinite(ts) || (now - ts) > ttlMs) delete db.seen[k];\n}\nconst basis = $json.eventId || $json.fingerprint || (($json.project || '') + ':' + ($json.level || '') + ':' + ($json.title || ''));\nconst key = String(basis).slice(0, 400);\nconst seenAt = db.seen[key];\nif (seenAt && (now - seenAt) < ttlMs) {\n  return [{ json: { ...$json, isDuplicate: true, dedupeKey: key } }];\n}\ndb.seen[key] = now;\nreturn [{ json: { ...$json, isDuplicate: false, dedupeKey: key } }];"
+      }
+    },
+    {
+      "id": "if-sentry-duplicate",
+      "name": "If duplicate event",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        660,
+        -120
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.isDuplicate }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
       }
     },
     {
@@ -38,7 +81,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        440,
+        880,
         0
       ],
       "parameters": {
@@ -67,7 +110,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        660,
+        1100,
         -120
       ],
       "parameters": {
@@ -90,6 +133,41 @@
         "specifyBody": "json",
         "jsonBody": "={{ { model: ($env.OPENAI_MODEL || 'gpt-4o-mini'), temperature: 0, messages: [ { role: 'system', content: 'You classify Sentry incidents. Return only compact JSON with fields: severity (critical|non_critical), confidence (0..1), reason (string <= 140 chars).' }, { role: 'user', content: JSON.stringify({ title: $('Normalize Sentry event').first().json.title, level: $('Normalize Sentry event').first().json.level, culprit: $('Normalize Sentry event').first().json.culprit, project: $('Normalize Sentry event').first().json.project, url: $('Normalize Sentry event').first().json.url, fingerprint: $('Normalize Sentry event').first().json.fingerprint }) } ] } }}",
         "options": {}
+      },
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 2000,
+      "continueOnFail": true,
+      "alwaysOutputData": true
+    },
+    {
+      "id": "if-openai-call-failed",
+      "name": "If OpenAI request failed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1320,
+        -220
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ !!$json.error }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
       }
     },
     {
@@ -98,7 +176,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        880,
+        1320,
         -120
       ],
       "parameters": {
@@ -111,7 +189,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        660,
+        1100,
         120
       ],
       "parameters": {
@@ -124,7 +202,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1100,
+        1540,
         0
       ],
       "parameters": {
@@ -153,7 +231,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1320,
+        1760,
         -120
       ],
       "parameters": {
@@ -182,7 +260,7 @@
       "type": "n8n-nodes-base.linear",
       "typeVersion": 1,
       "position": [
-        1540,
+        1980,
         -220
       ],
       "parameters": {
@@ -200,7 +278,12 @@
           "id": "SPM4RCmtiiJxQxSv",
           "name": "AIPipeline Linear"
         }
-      }
+      },
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 2000,
+      "continueOnFail": true,
+      "alwaysOutputData": true
     },
     {
       "id": "linear-create-normal",
@@ -208,7 +291,7 @@
       "type": "n8n-nodes-base.linear",
       "typeVersion": 1,
       "position": [
-        1540,
+        1980,
         -20
       ],
       "parameters": {
@@ -223,52 +306,37 @@
           "id": "SPM4RCmtiiJxQxSv",
           "name": "AIPipeline Linear"
         }
-      }
+      },
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 2000,
+      "continueOnFail": true,
+      "alwaysOutputData": true
     },
     {
       "id": "fmt-critical-msg",
       "name": "Format critical notification",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
-        1760,
+        2200,
         -220
       ],
       "parameters": {
-        "mode": "manual",
-        "assignments": {
-          "assignments": [
-            {
-              "name": "text",
-              "type": "string",
-              "value": "=🚨 *CRITICAL* Sentry\\n{{ $('If critical').first().json.title }}\\nLevel: {{ $('If critical').first().json.level }}\\nClassifier: {{ $('If critical').first().json.classifiedBy }} ({{ $('If critical').first().json.confidence }})\\nReason: {{ $('If critical').first().json.reason }}\\nLinear: {{ $json.identifier || $json.id || 'created' }}\\n{{ $('If critical').first().json.url || '' }}"
-            }
-          ]
-        },
-        "options": {}
+        "jsCode": "const src = $('If critical').first().json;\nconst err = $json.error || null;\nif (!err) {\n  return [{ json: { text: '🚨 *CRITICAL* Sentry\\n' + src.title + '\\nLevel: ' + src.level + '\\nClassifier: ' + src.classifiedBy + ' (' + src.confidence + ')\\nReason: ' + src.reason + '\\nLinear: ' + ($json.identifier || $json.id || 'created') + '\\n' + (src.url || '') } }];\n}\nconst msg = String(err.message || err.description || JSON.stringify(err)).slice(0, 300);\nconst rateLimited = /429|rate\\s*limit|too many requests/i.test(msg);\nreturn [{ json: { text: '🚨 *CRITICAL* Sentry\\n' + src.title + '\\nLevel: ' + src.level + '\\nClassifier: ' + src.classifiedBy + ' (' + src.confidence + ')\\nReason: ' + src.reason + '\\n⚠️ Linear create failed' + (rateLimited ? ' (rate-limited)' : '') + ': ' + msg + '\\n' + (src.url || ''), linearFailed: true, rateLimited, linearReason: msg } }];"
       }
     },
     {
       "id": "fmt-normal-msg",
       "name": "Format non-critical notification",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
-        1760,
+        2200,
         -20
       ],
       "parameters": {
-        "mode": "manual",
-        "assignments": {
-          "assignments": [
-            {
-              "name": "text",
-              "type": "string",
-              "value": "=⚠️ *Sentry issue*\\n{{ $('If critical').first().json.title }}\\nLevel: {{ $('If critical').first().json.level }}\\nClassifier: {{ $('If critical').first().json.classifiedBy }} ({{ $('If critical').first().json.confidence }})\\nReason: {{ $('If critical').first().json.reason }}\\nLinear: {{ $json.identifier || $json.id || 'created' }}\\n{{ $('If critical').first().json.url || '' }}"
-            }
-          ]
-        },
-        "options": {}
+        "jsCode": "const src = $('If critical').first().json;\nconst err = $json.error || null;\nif (!err) {\n  return [{ json: { text: '⚠️ *Sentry issue*\\n' + src.title + '\\nLevel: ' + src.level + '\\nClassifier: ' + src.classifiedBy + ' (' + src.confidence + ')\\nReason: ' + src.reason + '\\nLinear: ' + ($json.identifier || $json.id || 'created') + '\\n' + (src.url || '') } }];\n}\nconst msg = String(err.message || err.description || JSON.stringify(err)).slice(0, 300);\nconst rateLimited = /429|rate\\s*limit|too many requests/i.test(msg);\nreturn [{ json: { text: '⚠️ *Sentry issue*\\n' + src.title + '\\nLevel: ' + src.level + '\\nClassifier: ' + src.classifiedBy + ' (' + src.confidence + ')\\nReason: ' + src.reason + '\\n⚠️ Linear create failed' + (rateLimited ? ' (rate-limited)' : '') + ': ' + msg + '\\n' + (src.url || ''), linearFailed: true, rateLimited, linearReason: msg } }];"
       }
     },
     {
@@ -277,7 +345,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1320,
+        1760,
         180
       ],
       "parameters": {
@@ -300,8 +368,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1980,
-        0
+        2420,
+        -20
       ],
       "parameters": {
         "operation": "sendMessage",
@@ -316,7 +384,131 @@
           "id": "CumMgGtm8MpeMfxm",
           "name": "AIPipeline Telegram"
         }
+      },
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 2000,
+      "continueOnFail": true,
+      "alwaysOutputData": true
+    },
+    {
+      "id": "if-linear-message-failed",
+      "name": "If Linear create failed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2420,
+        120
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.linearFailed || false }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
       }
+    },
+    {
+      "id": "dlq-park-wf3-linear",
+      "name": "DLQ: park WF-3 Linear failure",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2640,
+        120
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:5678/webhook/wf-dlq-park",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { sourceWorkflow: 'WF-3', failureType: 'linear_create_failed', reason: $json.linearReason || 'unknown error', rateLimited: $json.rateLimited || false, replayTarget: (($env.WEBHOOK_URL || '').replace(/\\/$/, '') + '/webhook/wf3-sentry'), replayPayload: { title: $('If critical').first().json.title, level: $('If critical').first().json.level, culprit: $('If critical').first().json.culprit, project: $('If critical').first().json.project, url: $('If critical').first().json.url, fingerprint: $('If critical').first().json.fingerprint, event_id: $('If critical').first().json.eventId }, context: $('If critical').first().json } }}",
+        "options": {}
+      },
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 2000,
+      "continueOnFail": true,
+      "alwaysOutputData": true
+    },
+    {
+      "id": "assess-telegram-wf3",
+      "name": "Assess Telegram notify delivery",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        -20
+      ],
+      "parameters": {
+        "jsCode": "const err = $json.error || null;\nif (!err) return [{ json: { telegramFailed: false } }];\nconst msg = String(err.message || err.description || JSON.stringify(err)).slice(0, 360);\nconst rateLimited = /429|rate\\s*limit|too many requests/i.test(msg);\nreturn [{ json: { telegramFailed: true, rateLimited, reason: msg } }];"
+      }
+    },
+    {
+      "id": "if-telegram-wf3-failed",
+      "name": "If Telegram notify failed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2860,
+        -20
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.telegramFailed }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "dlq-park-wf3-telegram",
+      "name": "DLQ: park WF-3 Telegram failure",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3080,
+        -100
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:5678/webhook/wf-dlq-park",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { sourceWorkflow: 'WF-3', failureType: 'telegram_send_failed', reason: $('Assess Telegram notify delivery').first().json.reason || 'unknown error', rateLimited: $('Assess Telegram notify delivery').first().json.rateLimited || false, context: $('If critical').first().json } }}",
+        "options": {}
+      },
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 2000,
+      "continueOnFail": true,
+      "alwaysOutputData": true
     },
     {
       "id": "manual-wf3",
@@ -359,6 +551,29 @@
       "main": [
         [
           {
+            "node": "Deduplicate Sentry event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deduplicate Sentry event": {
+      "main": [
+        [
+          {
+            "node": "If duplicate event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If duplicate event": {
+      "main": [
+        [],
+        [
+          {
             "node": "If OPENAI_API_KEY set",
             "type": "main",
             "index": 0
@@ -386,6 +601,24 @@
     },
     "OpenAI classify severity": {
       "main": [
+        [
+          {
+            "node": "If OpenAI request failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If OpenAI request failed": {
+      "main": [
+        [
+          {
+            "node": "Heuristic classify severity",
+            "type": "main",
+            "index": 0
+          }
+        ],
         [
           {
             "node": "Parse LLM result",
@@ -479,6 +712,11 @@
       "main": [
         [
           {
+            "node": "If Linear create failed",
+            "type": "main",
+            "index": 0
+          },
+          {
             "node": "Telegram: notify",
             "type": "main",
             "index": 0
@@ -490,11 +728,28 @@
       "main": [
         [
           {
+            "node": "If Linear create failed",
+            "type": "main",
+            "index": 0
+          },
+          {
             "node": "Telegram: notify",
             "type": "main",
             "index": 0
           }
         ]
+      ]
+    },
+    "If Linear create failed": {
+      "main": [
+        [
+          {
+            "node": "DLQ: park WF-3 Linear failure",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
       ]
     },
     "Format no-linear notification": {
@@ -506,6 +761,40 @@
             "index": 0
           }
         ]
+      ]
+    },
+    "Telegram: notify": {
+      "main": [
+        [
+          {
+            "node": "Assess Telegram notify delivery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assess Telegram notify delivery": {
+      "main": [
+        [
+          {
+            "node": "If Telegram notify failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Telegram notify failed": {
+      "main": [
+        [
+          {
+            "node": "DLQ: park WF-3 Telegram failure",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
       ]
     },
     "When clicking 'Test workflow'": {

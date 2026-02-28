@@ -24,6 +24,19 @@ Workflow ID: `41jAGQw9qAMs52dN`
 | `/status` | 117 | 2026-02-28T19:22:33.116Z | success | Telegram Send |
 | `/deploy staging` | 118 | 2026-02-28T19:22:45.980Z | success | Telegram Send |
 
+Post-hardening regression (user chat run, 22:38–22:40 Europe/Chisinau):
+
+| Command | Execution ID | Started (UTC) | Status |
+|---------|--------------|---------------|--------|
+| `/tasks` | 124 | 2026-02-28T20:38:34.114Z | success |
+| `/errors` | 125 | 2026-02-28T20:38:47.412Z | success |
+| `/search test` | 126 | 2026-02-28T20:39:00.194Z | success |
+| `/search test` | 127 | 2026-02-28T20:39:27.577Z | success |
+| `/create test issue` | 128 | 2026-02-28T20:39:38.006Z | success |
+| `/deploy staging` | 129 | 2026-02-28T20:39:46.939Z | success |
+| `/standup` (user input error -> unknown command) | 130 | 2026-02-28T20:39:56.356Z | success |
+| `/standup` (correct retry, digest ok) | 131 | 2026-02-28T20:40:21.428Z | success |
+
 ## Deploy evidence (GitHub Actions)
 
 - Workflow: `deploy-staging.yml`
@@ -42,6 +55,14 @@ Workflow ID: `41jAGQw9qAMs52dN`
 - Ref/branch: `main`
 - URL: https://github.com/iurii-izman/AIPipeline/actions/runs/22527352114
 
+Post-hardening regression deploy:
+- Run ID: `22528587690`
+- Created: `2026-02-28T20:39:48Z`
+- Status: `completed`
+- Conclusion: `success`
+- Ref/branch: `main`
+- URL: https://github.com/iurii-izman/AIPipeline/actions/runs/22528587690
+
 ## Linear evidence for `/create`
 
 - Issue: `AIP-13`
@@ -49,6 +70,10 @@ Workflow ID: `41jAGQw9qAMs52dN`
 - State: `Backlog`
 - Created: `2026-02-28T17:02:18.081Z`
 - URL: https://linear.app/aipipeline/issue/AIP-13/test-issue
+
+Post-hardening regression:
+- Issue: `AIP-14`
+- Title: `test issue` (from `/create test issue`)
 
 ## Notes
 

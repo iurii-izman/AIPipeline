@@ -72,6 +72,24 @@ WF-6 теперь отправляет reminder только если нашёл
 
 ---
 
+## WF-7 (DLQ parking + replay)
+
+WF-7 разворачивается скриптом (`node scripts/update-wf7-dlq-parking.js`) и работает без UI-кликов.
+
+Ручная операционная часть:
+
+1. При инциденте проверить Telegram alert из WF-7 и execution в n8n.
+2. При необходимости запустить replay:
+```bash
+curl -sS -X POST https://n8n.aipipeline.cc/webhook/wf-dlq-replay \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+3. Для replay конкретного элемента передать `id` (`{\"id\":\"dlq_xxxxx\"}`).
+4. Полный регламент: [dlq-replay-runbook.md](dlq-replay-runbook.md).
+
+---
+
 ## Stable HTTPS endpoint (Cloudflare Tunnel)
 
 Сейчас поддерживаются два режима:

@@ -56,6 +56,21 @@ curl -s http://localhost:3000/status | jq .
 2. `/deploy staging`: `staging` ref отсутствовал в repo -> переведено на default `main` (или env override).
 3. `/errors`/`/deploy`: использование `fetch` в Code node ломалось на текущем n8n runtime (`fetch is not defined`) -> заменено на HTTP Request nodes.
 
+## 2.2) Post-hardening regression (2026-02-28, 22:38–22:40 Europe/Chisinau)
+
+Проверено в рабочем Telegram-чате после внедрения retry/backoff + DLQ:
+
+- `/tasks` -> ✅ `No open tasks for @IzmanIurii`.
+- `/errors` -> ✅ `No unresolved Sentry issues`.
+- `/search test` -> ✅ `No Notion results` (два прогона подряд).
+- `/create test issue` -> ✅ создан issue `AIP-14`.
+- `/deploy staging` -> ✅ dispatch принят (`deploy-staging.yml`, `ref=main`).
+- `/standup` -> из-за ошибки ввода на 1-м сообщении получен `Unknown command. Use /help.`, на корректном повторе ✅ `Standup digest`.
+
+Наблюдение:
+- fallback `Unknown command` зафиксирован как пользовательская ошибка ввода, не как дефект workflow.
+- execution IDs и deploy run зафиксированы в [uat-evidence-2026-02-28.md](uat-evidence-2026-02-28.md).
+
 ## 3) UAT для WF-2 (GitHub PR -> Linear)
 
 1. Создать ветку `AIP-XX-uat-wf2`.

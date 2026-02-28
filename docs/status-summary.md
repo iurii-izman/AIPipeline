@@ -15,6 +15,16 @@
 - **В keyring лежат:** GitHub PAT, Linear API Key, Notion token, Sentry DSN, Telegram Bot Token, Telegram Chat ID, **n8n Basic Auth (User/Password)**, **ngrok authtoken** (для run-n8n-with-ngrok.sh).
 - **Доп. env для WF-5/WF-4:** `LINEAR_TEAM_ID`, `SENTRY_ORG_SLUG`, `SENTRY_PROJECT_SLUG`, `NOTION_SPRINT_LOG_DATABASE_ID`, `GITHUB_OWNER`, `GITHUB_REPO`, `GITHUB_WORKFLOW_STAGING`, `GITHUB_WORKFLOW_PRODUCTION` добавлены в keyring и подхватываются `load-env-from-keyring.sh`.
 - **WF-3 classification:** реализована LLM-классификация severity (OpenAI) с fallback на эвристику; если `OPENAI_API_KEY` не задан, используется fallback.
+- **Functional hardening (2026-02-28):**
+  - retry/backoff policy добавлена на внешние API узлы WF-2/WF-3/WF-4/WF-5;
+  - rate-limit handling (`429`, `rate limit`, `too many requests`) добавлен в ветки Sentry/Linear/Notion/GitHub;
+  - partial-failure policy формализована: `Linear fail / Telegram ok`, `Telegram fail / DLQ parking`, `WF-4 Notion write fail -> Telegram + DLQ`.
+- **DLQ/parking + replay:** добавлен `WF-7: DLQ Parking + Replay (AIPipeline)` (`/webhook/wf-dlq-park`, `/webhook/wf-dlq-replay`) + runbook [dlq-replay-runbook.md](dlq-replay-runbook.md).
+- **Least-privilege scopes:** зафиксированы минимальные права токенов в [token-least-privilege.md](token-least-privilege.md).
+- **Idempotency guards (WF-2/WF-3/WF-5):** добавлена дедупликация входящих событий через workflow static data:
+  - WF-2: delivery dedupe (`x-github-delivery` + fallback key);
+  - WF-3: incident dedupe (`eventId`/fingerprint);
+  - WF-5: Telegram command dedupe (`chatId + messageId`).
 - **Data Mapping (Phase 6 #12–#16):** `docs/data-mapping.md` расширен до практического field-level mapping: canonical entities, idempotency keys, conflict policy, mapping WF-5/WF-4, skeleton доменных сущностей.
 - **Observability baseline:** добавлены structured JSON logs + `correlationId` в `src/healthServer.js`/`src/logger.js`; документирован baseline в `docs/observability.md`.
 - **GitHub:** репо, ruleset (защита main, owner bypass), 19 labels, pre-commit.ci, CI workflow (lint/build/test).
@@ -31,6 +41,7 @@
 - **Stable endpoint active:** `https://n8n.aipipeline.cc` поднят, `/status` и `/deploy staging` подтверждены в Telegram на stable URL; cloudflared переведён на user systemd (`aipipeline-cloudflared.service`). Details: `docs/cloudflare-tunnel-setup.md`, `docs/uat-evidence-2026-02-28.md`.
 - **Live Telegram UAT (2026-02-28):** подтверждены рабочие команды `/tasks`, `/status`, `/search`, `/standup`, `/errors`, `/create`, `/deploy staging`; детали и evidence в `docs/live-uat-telegram.md`.
 - **UAT evidence:** execution IDs (n8n), deploy run (GitHub Actions), созданный issue (`AIP-13`) зафиксированы в `docs/uat-evidence-2026-02-28.md`.
+- **Post-hardening closure (2026-02-28):** regression evidence синхронизирован в Notion Sprint Log (запись создана), задача Linear `AIP-11` переведена в `Done` с closure-комментарием.
 - **Доки:** runbooks (в т.ч. [linear-phase3-runbook.md](linear-phase3-runbook.md), [n8n-workflows/README.md](n8n-workflows/README.md), [live-uat-telegram.md](live-uat-telegram.md)), гайды по Notion/Sentry/n8n (step-by-step), keyring, Linear, MCP, audit, и consolidated backlog [tz-remaining-work.md](tz-remaining-work.md).
 
 ---
@@ -39,7 +50,6 @@
 
 - Полная работоспособность команд WF-5 зависит от env в n8n: `LINEAR_TEAM_ID`, `SENTRY_AUTH_TOKEN`/`SENTRY_ORG_SLUG`/`SENTRY_PROJECT_SLUG`, `NOTION_TOKEN`, GitHub workflow vars.
 - WF-2 webhook активен; при смене ngrok/public URL нужно обновлять webhook target в GitHub.
-- Для LLM-ветки WF-3 нужен `OPENAI_API_KEY` в keyring/env (`openai.com` / `aipipeline`), иначе работает эвристика.
 - Опционально: Grafana/Loki, NotebookLM playbook (ручной процесс), n8n MCP enable.
 
 ---
@@ -65,9 +75,11 @@
 | WF-1 (Linear → Telegram): ноды через update-wf1-linear-telegram.js, **включён (Active)** | ✅ |
 | WF-2: event-driven (GitHub PR webhook) + parse `AIP-XX` + попытка Linear update to Done + Telegram | ✅ (hook активен; URL нужно обновлять при смене ngrok/public host) |
 | WF-3: LLM severity classification + heuristic fallback + Linear create (critical/bug) + Telegram | ✅ (LLM ветка при наличии OPENAI_API_KEY) |
+| WF-7: DLQ parking + replay webhooks + Telegram alerts | ✅ |
+| Idempotency guards: WF-2 deliveries, WF-3 incidents, WF-5 Telegram commands | ✅ |
 | Data Mapping: field-level mapping + idempotency/conflict rules (Phase 6 groundwork) | ✅ |
 | Observability baseline: structured logs + correlation ID + SLO-lite doc | ✅ |
 | WF-4: digest + optional Notion Sprint Log write (`NOTION_SPRINT_LOG_DATABASE_ID`) | ✅ |
 | WF-5: команды `/status`, `/help`, `/tasks`, `/errors`, `/search`, `/create`, `/deploy`, `/standup` | ✅ (нужны env/credentials) |
 | WF-6: отправка reminder только если есть обновления в Notion за 7 дней | ✅ |
-| Runtime ↔ repo sync: `./scripts/export-n8n-workflows.sh` экспортирует WF-1…WF-6 в `docs/n8n-workflows/*.json` | ✅ |
+| Runtime ↔ repo sync: `./scripts/export-n8n-workflows.sh` экспортирует WF-1…WF-7 в `docs/n8n-workflows/*.json` | ✅ |

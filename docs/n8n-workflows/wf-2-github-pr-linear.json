@@ -29,7 +29,49 @@
         0
       ],
       "parameters": {
-        "jsCode": "const action = ($json.body?.action || '').toLowerCase();\nconst pr = $json.body?.pull_request || {};\nconst merged = Boolean(pr.merged);\nconst branch = pr.head?.ref || '';\nconst title = pr.title || '(untitled PR)';\nconst url = pr.html_url || '';\nconst number = pr.number || '';\nconst match = branch.match(/(AIP-\\d+)/i) || title.match(/(AIP-\\d+)/i);\nconst issueKey = match ? match[1].toUpperCase() : '';\nconst teamKey = issueKey ? issueKey.split('-')[0] : '';\nreturn [{ json: { action, merged, branch, title, url, number, issueKey, teamKey } }];"
+        "jsCode": "const action = ($json.body?.action || '').toLowerCase();\nconst pr = $json.body?.pull_request || {};\nconst merged = Boolean(pr.merged);\nconst branch = pr.head?.ref || '';\nconst title = pr.title || '(untitled PR)';\nconst url = pr.html_url || '';\nconst number = pr.number || '';\nconst headers = $json.headers || {};\nconst deliveryId = headers['x-github-delivery'] || headers['X-GitHub-Delivery'] || '';\nconst match = branch.match(/(AIP-\\d+)/i) || title.match(/(AIP-\\d+)/i);\nconst issueKey = match ? match[1].toUpperCase() : '';\nconst teamKey = issueKey ? issueKey.split('-')[0] : '';\nreturn [{ json: { action, merged, branch, title, url, number, issueKey, teamKey, deliveryId } }];"
+      }
+    },
+    {
+      "id": "dedupe-delivery",
+      "name": "Deduplicate delivery",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        -120
+      ],
+      "parameters": {
+        "jsCode": "const db = $getWorkflowStaticData('global');\nif (!db.seen) db.seen = {};\nconst ttlMs = 7 * 24 * 60 * 60 * 1000;\nconst now = Date.now();\nfor (const [k, ts] of Object.entries(db.seen)) {\n  if (!Number.isFinite(ts) || (now - ts) > ttlMs) delete db.seen[k];\n}\nconst key = $json.deliveryId || (($json.action || '') + ':' + ($json.number || '') + ':' + ($json.url || '') + ':' + String($json.merged));\nconst seenAt = db.seen[key];\nif (seenAt && (now - seenAt) < ttlMs) {\n  return [{ json: { ...$json, isDuplicate: true, dedupeKey: key } }];\n}\ndb.seen[key] = now;\nreturn [{ json: { ...$json, isDuplicate: false, dedupeKey: key } }];"
+      }
+    },
+    {
+      "id": "if-delivery-duplicate",
+      "name": "If delivery duplicate",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        660,
+        -120
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.isDuplicate }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
       }
     },
     {
@@ -38,7 +80,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        440,
+        880,
         0
       ],
       "parameters": {
@@ -74,7 +116,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        660,
+        1100,
         0
       ],
       "parameters": {
@@ -103,7 +145,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        880,
+        1320,
         -120
       ],
       "parameters": {
@@ -131,7 +173,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1100,
+        1540,
         -120
       ],
       "parameters": {
@@ -159,7 +201,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1320,
+        1760,
         -220
       ],
       "parameters": {
@@ -182,7 +224,12 @@
         "specifyBody": "json",
         "jsonBody": "={{ { query: 'query($identifier:String!){issues(filter:{identifier:{eq:$identifier}},first:1){nodes{id identifier title}}}', variables: { identifier: $('Extract PR payload').first().json.issueKey } } }}",
         "options": {}
-      }
+      },
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 2000,
+      "continueOnFail": true,
+      "alwaysOutputData": true
     },
     {
       "id": "linear-pick-issue-id",
@@ -190,7 +237,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1540,
+        1980,
         -220
       ],
       "parameters": {
@@ -203,7 +250,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1760,
+        2200,
         -220
       ],
       "parameters": {
@@ -231,7 +278,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1980,
+        2420,
         -320
       ],
       "parameters": {
@@ -254,7 +301,12 @@
         "specifyBody": "json",
         "jsonBody": "={{ { query: 'query($key:String!){teams(filter:{key:{eq:$key}},first:1){nodes{id states{name id type}}}}', variables: { key: $('Extract PR payload').first().json.teamKey || 'AIP' } } }}",
         "options": {}
-      }
+      },
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 2000,
+      "continueOnFail": true,
+      "alwaysOutputData": true
     },
     {
       "id": "linear-pick-done-state",
@@ -262,7 +314,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2200,
+        2640,
         -320
       ],
       "parameters": {
@@ -275,7 +327,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        2420,
+        2860,
         -320
       ],
       "parameters": {
@@ -303,7 +355,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2640,
+        3080,
         -400
       ],
       "parameters": {
@@ -326,6 +378,54 @@
         "specifyBody": "json",
         "jsonBody": "={{ { query: 'mutation($id:String!,$stateId:String!){issueUpdate(id:$id,input:{stateId:$stateId}){success issue{id identifier}}}', variables: { id: $('Linear: pick issue id').first().json.issueId, stateId: $('Linear: pick Done state').first().json.doneStateId } } }}",
         "options": {}
+      },
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 2000,
+      "continueOnFail": true,
+      "alwaysOutputData": true
+    },
+    {
+      "id": "assess-linear-update",
+      "name": "Assess Linear update result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3300,
+        -400
+      ],
+      "parameters": {
+        "jsCode": "const err = $json.error || null;\nif (!err) return [{ json: { linearFailed: false, rateLimited: false, reason: '' } }];\nconst msg = String(err.message || err.description || JSON.stringify(err)).slice(0, 360);\nconst rateLimited = /429|rate\\s*limit|too many requests/i.test(msg);\nreturn [{ json: { linearFailed: true, rateLimited, reason: msg } }];"
+      }
+    },
+    {
+      "id": "if-linear-update-failed",
+      "name": "If Linear update failed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3520,
+        -400
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.linearFailed }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
       }
     },
     {
@@ -334,8 +434,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2860,
-        -400
+        3740,
+        -500
       ],
       "parameters": {
         "mode": "manual",
@@ -352,12 +452,58 @@
       }
     },
     {
+      "id": "set-merged-linear-failed",
+      "name": "Set merged + Linear failed",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3740,
+        -300
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "name": "text",
+              "type": "string",
+              "value": "=✅ PR #{{ $('Extract PR payload').first().json.number }} merged: {{ $('Extract PR payload').first().json.title }}\\n{{ $('Extract PR payload').first().json.url }}\\n⚠️ Linear update failed{{ $('Assess Linear update result').first().json.rateLimited ? ' (rate-limited)' : '' }}: {{ $('Assess Linear update result').first().json.reason || 'unknown error' }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "dlq-park-linear-failure",
+      "name": "DLQ: park Linear failure",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3960,
+        -300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:5678/webhook/wf-dlq-park",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { sourceWorkflow: 'WF-2', failureType: 'linear_update_failed', reason: $('Assess Linear update result').first().json.reason || 'unknown error', rateLimited: $('Assess Linear update result').first().json.rateLimited || false, replayTarget: (($env.WEBHOOK_URL || '').replace(/\\/$/, '') + '/webhook/wf2-github-pr'), replayPayload: { action: $('Extract PR payload').first().json.action, pull_request: { number: $('Extract PR payload').first().json.number, title: $('Extract PR payload').first().json.title, html_url: $('Extract PR payload').first().json.url, merged: $('Extract PR payload').first().json.merged, head: { ref: $('Extract PR payload').first().json.branch } } }, context: $('Extract PR payload').first().json } }}",
+        "options": {}
+      },
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 2000,
+      "continueOnFail": true,
+      "alwaysOutputData": true
+    },
+    {
       "id": "set-merged-no-linear",
       "name": "Set merged fallback",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2640,
+        3080,
         -120
       ],
       "parameters": {
@@ -380,7 +526,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1100,
+        1540,
         220
       ],
       "parameters": {
@@ -403,8 +549,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        3080,
-        -80
+        4180,
+        -100
       ],
       "parameters": {
         "operation": "sendMessage",
@@ -416,7 +562,78 @@
           "id": "CumMgGtm8MpeMfxm",
           "name": "AIPipeline Telegram"
         }
+      },
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 2000,
+      "continueOnFail": true,
+      "alwaysOutputData": true
+    },
+    {
+      "id": "assess-telegram-send",
+      "name": "Assess Telegram delivery",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4400,
+        -100
+      ],
+      "parameters": {
+        "jsCode": "const err = $json.error || null;\nif (!err) return [{ json: { telegramFailed: false } }];\nconst msg = String(err.message || err.description || JSON.stringify(err)).slice(0, 360);\nconst rateLimited = /429|rate\\s*limit|too many requests/i.test(msg);\nreturn [{ json: { telegramFailed: true, rateLimited, reason: msg } }];"
       }
+    },
+    {
+      "id": "if-telegram-failed",
+      "name": "If Telegram delivery failed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4620,
+        -100
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.telegramFailed }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "dlq-park-telegram-failure",
+      "name": "DLQ: park Telegram failure",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4840,
+        -180
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:5678/webhook/wf-dlq-park",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { sourceWorkflow: 'WF-2', failureType: 'telegram_send_failed', reason: $('Assess Telegram delivery').first().json.reason || 'unknown error', rateLimited: $('Assess Telegram delivery').first().json.rateLimited || false, context: $('Extract PR payload').first().json } }}",
+        "options": {}
+      },
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 2000,
+      "continueOnFail": true,
+      "alwaysOutputData": true
     }
   ],
   "connections": {
@@ -433,6 +650,29 @@
     },
     "Extract PR payload": {
       "main": [
+        [
+          {
+            "node": "Deduplicate delivery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deduplicate delivery": {
+      "main": [
+        [
+          {
+            "node": "If delivery duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If delivery duplicate": {
+      "main": [
+        [],
         [
           {
             "node": "If PR opened/closed",
@@ -592,7 +832,58 @@
       "main": [
         [
           {
+            "node": "Assess Linear update result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assess Linear update result": {
+      "main": [
+        [
+          {
+            "node": "If Linear update failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Linear update failed": {
+      "main": [
+        [
+          {
+            "node": "Set merged + Linear failed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
             "node": "Set merged + updated",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set merged + Linear failed": {
+      "main": [
+        [
+          {
+            "node": "DLQ: park Linear failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DLQ: park Linear failure": {
+      "main": [
+        [
+          {
+            "node": "Telegram: send",
             "type": "main",
             "index": 0
           }
@@ -630,6 +921,40 @@
             "index": 0
           }
         ]
+      ]
+    },
+    "Telegram: send": {
+      "main": [
+        [
+          {
+            "node": "Assess Telegram delivery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assess Telegram delivery": {
+      "main": [
+        [
+          {
+            "node": "If Telegram delivery failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Telegram delivery failed": {
+      "main": [
+        [
+          {
+            "node": "DLQ: park Telegram failure",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
       ]
     }
   },
