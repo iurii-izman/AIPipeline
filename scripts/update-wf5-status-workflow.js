@@ -222,20 +222,11 @@ const workflow = {
     {
       id: "http-errors",
       name: "Sentry: recent issues",
-      type: "n8n-nodes-base.httpRequest",
-      typeVersion: 4.2,
+      type: "n8n-nodes-base.code",
+      typeVersion: 2,
       position: [1560, -160],
       parameters: {
-        method: "GET",
-        url: "={{ 'https://sentry.io/api/0/projects/' + $env.SENTRY_ORG_SLUG + '/' + $env.SENTRY_PROJECT_SLUG + '/issues/?limit=5&query=is:unresolved' }}",
-        sendHeaders: true,
-        headerParameters: {
-          parameters: [
-            { name: "Authorization", value: "={{ 'Bearer ' + $env.SENTRY_AUTH_TOKEN }}" },
-            { name: "Accept", value: "application/json" },
-          ],
-        },
-        options: {},
+        jsCode: `const token = $env.SENTRY_AUTH_TOKEN;\nconst org = $env.SENTRY_ORG_SLUG;\nconst project = $env.SENTRY_PROJECT_SLUG;\nconst url = 'https://sentry.io/api/0/projects/' + org + '/' + project + '/issues/?limit=5&query=is:unresolved';\ntry {\n  const res = await fetch(url, {\n    method: 'GET',\n    headers: {\n      Authorization: 'Bearer ' + token,\n      Accept: 'application/json',\n    },\n  });\n  const body = await res.text();\n  if (!res.ok) {\n    return [{ json: { errors: [], sentryError: 'Sentry API ' + res.status + ': ' + body.slice(0, 200) } }];\n  }\n  let data = [];\n  try { data = JSON.parse(body); } catch (e) { data = []; }\n  return [{ json: { errors: Array.isArray(data) ? data : [] } }];\n} catch (e) {\n  return [{ json: { errors: [], sentryError: 'Sentry API request failed: ' + e.message } }];\n}`,
       },
     },
     {
@@ -245,7 +236,7 @@ const workflow = {
       typeVersion: 2,
       position: [1780, -160],
       parameters: {
-        jsCode: `const data = Array.isArray($json) ? $json : ($json.data || []);\nconst top = data.slice(0, 5);\nconst lines = top.map(i => '• [' + (i.level || 'n/a') + '] ' + (i.title || 'Untitled') + '\\n  ' + (i.permalink || i.shortId || ''));\nreturn [{ json: { text: top.length ? ('🚨 *Sentry top issues*\\n' + lines.join('\\n')) : '🚨 No unresolved Sentry issues.' } }];`,
+        jsCode: `const data = Array.isArray($json.errors) ? $json.errors : [];\nconst top = data.slice(0, 5);\nconst lines = top.map(i => '• [' + (i.level || 'n/a') + '] ' + (i.title || 'Untitled') + '\\n  ' + (i.permalink || i.shortId || ''));\nlet text = top.length ? ('🚨 *Sentry top issues*\\n' + lines.join('\\n')) : '🚨 No unresolved Sentry issues.';\nif ($json.sentryError) text += '\\n\\n⚠️ ' + $json.sentryError;\nreturn [{ json: { text } }];`,
       },
     },
     {
@@ -389,7 +380,7 @@ const workflow = {
         operation: "create",
         title: "={{ $('Extract command').first().json.args }}",
         description: "=Created from Telegram /create by @{{ $('Extract command').first().json.username || 'unknown' }}",
-        teamId: { __rl: true, mode: "id", value: "={{ $env.LINEAR_TEAM_ID }}" },
+        teamId: "={{ $env.LINEAR_TEAM_ID }}",
       },
       credentials: { linearApi: { name: "AIPipeline Linear" } },
     },
@@ -446,7 +437,7 @@ const workflow = {
       typeVersion: 2,
       position: [2000, 560],
       parameters: {
-        jsCode: `const envArg = (($('Extract command').first().json.args || '').trim().toLowerCase() || 'staging');\nif (!['staging', 'production'].includes(envArg)) {\n  return [{ json: { valid: false, text: 'Usage: /deploy <staging|production>' } }];\n}\nconst workflow = envArg === 'production'\n  ? ($env.GITHUB_WORKFLOW_PRODUCTION || 'deploy-production.yml')\n  : ($env.GITHUB_WORKFLOW_STAGING || 'deploy-staging.yml');\nconst ref = envArg === 'production' ? 'main' : 'staging';\nreturn [{ json: { valid: true, env: envArg, workflow, ref } }];`,
+        jsCode: `const envArg = (($('Extract command').first().json.args || '').trim().toLowerCase() || 'staging');\nif (!['staging', 'production'].includes(envArg)) {\n  return [{ json: { valid: false, text: 'Usage: /deploy <staging|production>' } }];\n}\nif (!$env.GITHUB_PERSONAL_ACCESS_TOKEN) {\n  return [{ json: { valid: false, text: '⚠️ /deploy requires GITHUB_PERSONAL_ACCESS_TOKEN in n8n env.' } }];\n}\nconst workflow = envArg === 'production'\n  ? ($env.GITHUB_WORKFLOW_PRODUCTION || 'deploy-production.yml')\n  : ($env.GITHUB_WORKFLOW_STAGING || 'deploy-staging.yml');\nconst ref = envArg === 'production'\n  ? ($env.GITHUB_REF_PRODUCTION || 'main')\n  : ($env.GITHUB_REF_STAGING || 'main');\nreturn [{ json: { valid: true, env: envArg, workflow, ref } }];`,
       },
     },
     {
@@ -467,24 +458,11 @@ const workflow = {
     {
       id: "http-deploy",
       name: "GitHub: dispatch workflow",
-      type: "n8n-nodes-base.httpRequest",
-      typeVersion: 4.2,
+      type: "n8n-nodes-base.code",
+      typeVersion: 2,
       position: [2440, 480],
       parameters: {
-        method: "POST",
-        url: "={{ 'https://api.github.com/repos/' + ($env.GITHUB_OWNER || 'iurii-izman') + '/' + ($env.GITHUB_REPO || 'AIPipeline') + '/actions/workflows/' + $json.workflow + '/dispatches' }}",
-        sendHeaders: true,
-        headerParameters: {
-          parameters: [
-            { name: "Authorization", value: "={{ 'Bearer ' + $env.GITHUB_PERSONAL_ACCESS_TOKEN }}" },
-            { name: "Accept", value: "application/vnd.github+json" },
-            { name: "X-GitHub-Api-Version", value: "2022-11-28" },
-          ],
-        },
-        sendBody: true,
-        specifyBody: "json",
-        jsonBody: "={{ { ref: $json.ref } }}",
-        options: {},
+        jsCode: `const owner = $env.GITHUB_OWNER || 'iurii-izman';\nconst repo = $env.GITHUB_REPO || 'AIPipeline';\nconst token = $env.GITHUB_PERSONAL_ACCESS_TOKEN;\nconst workflow = $json.workflow;\nconst ref = $json.ref;\nconst url = 'https://api.github.com/repos/' + owner + '/' + repo + '/actions/workflows/' + workflow + '/dispatches';\ntry {\n  const res = await fetch(url, {\n    method: 'POST',\n    headers: {\n      Authorization: 'Bearer ' + token,\n      Accept: 'application/vnd.github+json',\n      'X-GitHub-Api-Version': '2022-11-28',\n      'Content-Type': 'application/json',\n    },\n    body: JSON.stringify({ ref }),\n  });\n  const body = await res.text();\n  if (!res.ok) {\n    return [{ json: { success: false, env: $json.env, workflow, ref, error: ('GitHub API ' + res.status + ': ' + body).slice(0, 350) } }];\n  }\n  return [{ json: { success: true, env: $json.env, workflow, ref } }];\n} catch (e) {\n  return [{ json: { success: false, env: $json.env, workflow, ref, error: 'GitHub request failed: ' + e.message } }];\n}`,
       },
     },
     {
@@ -500,7 +478,7 @@ const workflow = {
             {
               name: "text",
               type: "string",
-              value: "=🚀 Deploy dispatched: *{{ $('Prepare deploy payload').first().json.env }}*\\nWorkflow: {{ $('Prepare deploy payload').first().json.workflow }}\\nRef: {{ $('Prepare deploy payload').first().json.ref }}",
+              value: "= {{ $json.success ? ('🚀 Deploy dispatched: *' + $json.env + '*\\nWorkflow: ' + $json.workflow + '\\nRef: ' + $json.ref) : ('⚠️ Deploy failed for *' + $json.env + '*\\nWorkflow: ' + $json.workflow + '\\nRef: ' + $json.ref + '\\n' + ($json.error || 'Unknown error')) }}",
             },
           ],
         },
