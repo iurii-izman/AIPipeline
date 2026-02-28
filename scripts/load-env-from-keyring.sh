@@ -29,9 +29,10 @@ _load NOTION_TOKEN notion.so aipipeline
 _load TELEGRAM_BOT_TOKEN api.telegram.org aipipeline_delivery_bot
 _load TELEGRAM_CHAT_ID api.telegram.org aipipeline-alerts
 
-# n8n (for scripts/run-n8n.sh)
+# n8n (for scripts/run-n8n.sh and API calls)
 _load N8N_BASIC_AUTH_USER n8n aipipeline
 _load N8N_BASIC_AUTH_PASSWORD n8n aipipeline-password
+_load N8N_API_KEY n8n aipipeline-api
 
 # Optional
 _load SENTRY_DSN sentry.io aipipeline

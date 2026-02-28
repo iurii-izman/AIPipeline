@@ -26,23 +26,34 @@ if [[ -z "${NOTION_DELIVERY_HUB_PAGE_ID:-}" ]]; then
 fi
 
 PARENT_ID="$NOTION_DELIVERY_HUB_PAGE_ID"
-API="https://api.notion.com/v1/pages"
+API="https://api.notion.com/v1"
 H_VERSION="${NOTION_VERSION:-2022-06-28}"
+
+# Fetch existing child pages so we don't create duplicates (idempotent)
+_existing_children() {
+  curl -s -X GET "$API/blocks/$PARENT_ID/children?page_size=100" \
+    -H "Authorization: Bearer $NOTION_TOKEN" \
+    -H "Notion-Version: $H_VERSION"
+}
 
 _create_page() {
   local title="$1"
-  # Escape double quotes in title for JSON
   local safe_title="${title//\"/\\\"}"
   local body="{\"parent\":{\"page_id\":\"$PARENT_ID\"},\"properties\":{\"title\":{\"title\":[{\"text\":{\"content\":\"$safe_title\"}}]}}}"
-  curl -s -X POST "$API" \
+  curl -s -X POST "$API/pages" \
     -H "Authorization: Bearer $NOTION_TOKEN" \
     -H "Notion-Version: $H_VERSION" \
     -H "Content-Type: application/json" \
     -d "$body"
 }
 
+existing=$(_existing_children)
 echo "Creating sub-pages under Delivery Hub (parent: $PARENT_ID)..."
 for title in "Specs" "Meetings" "Runbooks" "Integration Mapping" "Decision Records" "Quick Links"; do
+  if echo "$existing" | grep -qF "\"title\":\"$title\""; then
+    echo "  SKIP: $title (already exists)"
+    continue
+  fi
   resp=$(_create_page "$title")
   if echo "$resp" | grep -q '"id"'; then
     echo "  OK: $title"

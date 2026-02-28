@@ -6,52 +6,56 @@ AI-native delivery pipeline for solo development: Linear, Notion, GitHub, Cursor
 
 ## Master plan
 
-**[PIPELINE.md](PIPELINE.md)** — full blueprint (phases 0–7, MCP, n8n workflows, DoR/DoD).
+**[PIPELINE.md](PIPELINE.md)** — полный план (фазы 0–7, MCP, n8n workflows, DoR/DoD).
 
-## Quick links
+## Документация и статус
 
-| Doc | Purpose |
-|-----|--------|
-| [docs/day0-runbook.md](docs/day0-runbook.md) | Day-0 checklist: GitHub → Linear → Notion → Cursor → Sentry → Telegram → n8n |
+| Документ | Назначение |
+|----------|------------|
+| [docs/README.md](docs/README.md) | **Навигация по документации**, активные доки, архив, следующие шаги |
+| [docs/status-summary.md](docs/status-summary.md) | Краткий итог: что сделано / не сделано |
+| [docs/current-phase.md](docs/current-phase.md) | Текущая фаза, что сделано, что дальше |
+| [AGENTS.md](AGENTS.md) | **Промпт для следующего чата** — контекст и задача агенту |
+
+## Quick links (операции и настройка)
+
+| Документ | Назначение |
+|----------|------------|
+| [docs/keyring-credentials.md](docs/keyring-credentials.md) | Keyring: записи, атрибуты, как обновить |
+| [docs/mcp-enable-howto.md](docs/mcp-enable-howto.md) | Как включить MCP в Cursor (env из keyring) |
+| [docs/day0-runbook.md](docs/day0-runbook.md) | Чек-лист Day-0 (для справки) |
 | [docs/runbook.md](docs/runbook.md) | Code review, MCP, n8n, health |
-| [docs/definition-of-done.md](docs/definition-of-done.md) | DoR / DoD, naming |
-| [docs/mcp-setup.md](docs/mcp-setup.md) | MCP env vars for Cursor |
-| [docs/mcp-enable-howto.md](docs/mcp-enable-howto.md) | Как включить MCP (запуск Cursor с env из keyring, проверка) |
-| [docs/runbook-n8n.md](docs/runbook-n8n.md) | n8n on Podman |
-| [docs/notion-delivery-hub.md](docs/notion-delivery-hub.md) | Notion Delivery Hub structure |
-| [docs/linear-setup.md](docs/linear-setup.md) | Linear workflow, labels, GitHub link |
-| [docs/sentry-setup.md](docs/sentry-setup.md) | Sentry project, SDK, MCP |
-| [docs/telegram-bot-setup.md](docs/telegram-bot-setup.md) | Telegram bot and Chat ID |
-| [docs/keyring-credentials.md](docs/keyring-credentials.md) | Keyring: шаблон записей, инвентарь ключей, токены/OAuth |
-| [docs/audit-and-history.md](docs/audit-and-history.md) | Что логируем и где смотреть историю |
-| [docs/current-phase.md](docs/current-phase.md) | Текущая фаза и следующие шаги |
-| [docs/stage2-mcp-automation.md](docs/stage2-mcp-automation.md) | Что агент с MCP делает на автопилоте (GitHub, Linear, Notion) |
-| [docs/agent-handoff-prompt.md](docs/agent-handoff-prompt.md) | Промпт для следующего чата — контекст и задача агенту |
-| [docs/notion-templates.md](docs/notion-templates.md) | Шаблоны Notion (Meeting, Spec, Runbook, ADR) — копировать |
+| [docs/definition-of-done.md](docs/definition-of-done.md) | DoD для PR и задач |
+| [docs/runbook-n8n.md](docs/runbook-n8n.md) | n8n на Podman |
+| [docs/notion-delivery-hub.md](docs/notion-delivery-hub.md) | Структура Notion Delivery Hub |
+| [docs/linear-setup.md](docs/linear-setup.md) | Linear: workflow, labels, GitHub |
+| [docs/sentry-setup.md](docs/sentry-setup.md) | Sentry: проект, SDK, MCP |
+
+Telegram (бот, Chat ID) и MCP — в [docs/keyring-credentials.md](docs/keyring-credentials.md) и [docs/mcp-enable-howto.md](docs/mcp-enable-howto.md). Архив пройденных гайдов — [docs/archive/README.md](docs/archive/README.md).
 
 ## Stack
 
 - **Plan:** Linear (tasks), Notion (specs, ADR, runbooks)
-- **Build:** GitHub (code, CI), Cursor (AI-IDE, BugBot), Claude Code CLI (terminal agent)
+- **Build:** GitHub (code, CI), Cursor (AI-IDE, BugBot), Claude Code CLI
 - **Observe:** Sentry (errors), n8n (alerts → Telegram)
 - **Control:** Telegram bot (notifications, commands)
 
-MCP servers: Notion, GitHub, Linear, Telegram, filesystem (see `.cursor/mcp.json`). Secrets via env only (`.env.example`).
+MCP: Notion, GitHub, Linear, Telegram, filesystem (`.cursor/mcp.json`). Секреты только из env (keyring).
 
 ## Local setup
 
-1. Ключи в **keyring** по [docs/keyring-credentials.md](docs/keyring-credentials.md). Запуск Cursor с env: из любой папки **`aipipeline-cursor`** (после `ln -sf .../scripts/aipipeline-cursor.sh ~/.local/bin/aipipeline-cursor`) или из проекта: `./scripts/load-env-from-keyring.sh --cursor`.
-2. Либо `.env` из `.env.example` (не коммитить); см. [docs/mcp-setup.md](docs/mcp-setup.md).
+1. Ключи в **keyring** по [docs/keyring-credentials.md](docs/keyring-credentials.md). Запуск Cursor с env: **`aipipeline-cursor`** (или из проекта: `source scripts/load-env-from-keyring.sh` затем `cursor .`). См. [docs/mcp-enable-howto.md](docs/mcp-enable-howto.md).
+2. Либо `.env` из `.env.example` (не коммитить).
 3. `npm ci` (или `npm install`).
 4. Cursor: Settings → MCP → Refresh после установки env.
-5. n8n: `./scripts/run-n8n.sh` (N8N_* можно брать из keyring через скрипт выше).
+5. n8n: `./scripts/run-n8n.sh` (подхват N8N_* из keyring).
 
 ## Scripts
 
-- `npm run lint` — lint
-- `npm run build` — build
-- `npm test` — tests
-- `./scripts/run-n8n.sh` — start n8n in Podman
+- `npm run status` или `./scripts/health-check-env.sh` — проверка keyring, приложения, n8n
+- `./scripts/system-check.sh` — среда (OS, Node, Podman, toolbox)
+- `npm run lint` / `npm run build` / `npm test`
+- `./scripts/run-n8n.sh` — запуск n8n в Podman
 
 ## License
 

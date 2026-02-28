@@ -1,3 +1,5 @@
+require("./instrument.js");
+
 /**
  * AIPipeline — entry point (placeholder).
  * Add app logic, API, or scripts here.

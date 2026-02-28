@@ -1,12 +1,12 @@
 # Day-0 Runbook (Phase 1)
 
-Checklist to bring the pipeline online. Do in order; each step may require creating accounts or tokens. **Все ключи — в keyring** по [keyring-credentials.md](keyring-credentials.md) (Label, Password, User, Server); затем env через `./scripts/load-env-from-keyring.sh`.
+Checklist to bring the pipeline online. **Day-0 завершён** — конвейер поднят; чек-лист ниже для справки и опциональных шагов. Все ключи — в keyring по [keyring-credentials.md](keyring-credentials.md); env через `./scripts/load-env-from-keyring.sh`. Текущий статус: [status-summary.md](status-summary.md).
 
 ## 1. GitHub
 
 - [ ] Create repo (or use existing). Push this scaffold.
 - [ ] Settings → Branches → add rule for `main`: require PR, require status checks (CI).
-- [ ] Create labels (see [github-branch-protection.md](github-branch-protection.md)).
+- [ ] Create labels (see [archive/github-branch-protection.md](archive/github-branch-protection.md) or already done via ruleset).
 - [ ] Personal Access Token: Settings → Developer settings → PAT (scope: `repo`, `read:org`). **В keyring** (service: github.com, user: aipipeline) или в `.env` как `GITHUB_PERSONAL_ACCESS_TOKEN`.
 
 ## 2. Linear
@@ -29,7 +29,7 @@ Checklist to bring the pipeline online. Do in order; each step may require creat
 
 - [ ] Settings → Integrations → Connect GitHub (OAuth); select repo; enable BugBot for PR review.
 - [ ] Settings → Integrations → Connect Linear (if available).
-- [ ] Set env from keyring: `source scripts/load-env-from-keyring.sh` или `./scripts/load-env-from-keyring.sh --cursor` (см. [mcp-setup.md](mcp-setup.md)).
+- [ ] Set env from keyring: `source scripts/load-env-from-keyring.sh` или `./scripts/load-env-from-keyring.sh --cursor` (см. [mcp-enable-howto.md](mcp-enable-howto.md)).
 - [ ] Settings → MCP → Refresh; check green status for Notion, GitHub, Linear, Telegram, filesystem.
 
 ## 5. Claude Code CLI (optional)
@@ -39,10 +39,9 @@ Checklist to bring the pipeline online. Do in order; each step may require creat
 
 ## 6. Sentry
 
-- [ ] Create org/project (free tier: 5K errors/month).
-- [ ] Get DSN; в keyring (service: sentry.io, user: aipipeline) или в `.env` как `SENTRY_DSN` при добавлении SDK.
-- [ ] (Optional) Sentry MCP: Cursor → MCP → add remote https://mcp.sentry.dev/mcp, complete OAuth.
-- [ ] (Later) Webhook → n8n for alerts → Telegram.
+- [ ] Пошагово: [sentry-setup-step-by-step.md](sentry-setup-step-by-step.md). Создать org/project на sentry.io, скопировать DSN → keyring (server: sentry.io, user: aipipeline).
+- [ ] (Опц.) Sentry MCP в Cursor: MCP → Add remote `https://mcp.sentry.dev/mcp` → OAuth в браузере.
+- [ ] (Позже) Alert rule → Webhook → URL n8n workflow для алертов в Telegram.
 
 ## 7. Telegram
 
@@ -51,13 +50,13 @@ Checklist to bring the pipeline online. Do in order; each step may require creat
 
 ## 8. n8n
 
-- [ ] Run `./scripts/run-n8n.sh` (N8N_* можно подставить из keyring через `./scripts/load-env-from-keyring.sh`), или команды Podman из [runbook-n8n.md](runbook-n8n.md).
-- [ ] Open http://localhost:5678; add credentials (Linear, GitHub, Notion, Telegram, Sentry).
-- [ ] Import or create workflows from PIPELINE (WF-1 … WF-6).
-- [ ] Settings → MCP → Enable (if you want Cursor to call n8n).
+- [ ] Пошагово: [n8n-setup-step-by-step.md](n8n-setup-step-by-step.md). Keyring: две записи (n8n User / n8n Password, server: n8n). Затем `./scripts/run-n8n.sh` (подхватит из keyring).
+- [ ] Открыть http://localhost:5678, войти; в Settings → Credentials добавить GitHub, Linear, Notion, Telegram (и при необходимости Sentry).
+- [ ] (Опц.) Создать/импортировать workflow по PIPELINE (WF-1…WF-6). Settings → MCP → Enable — если нужен вызов n8n из Cursor.
 
 ## 9. Verify
 
+- [ ] `./scripts/health-check-env.sh` — ключи из keyring, приложение и контейнер n8n.
 - [ ] In Cursor: ask agent "find recent specs in Notion" (after Notion has content).
 - [ ] In Telegram: send `/status` (after n8n workflow for commands is set).
 - [ ] Open a PR; confirm BugBot runs and Linear link works.

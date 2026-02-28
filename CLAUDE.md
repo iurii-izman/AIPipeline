@@ -78,7 +78,9 @@ n8n (self-hosted in Podman) is the automation hub. MCP servers connect tools: No
 | `docs/runbook.md` | Code review, MCP, n8n, health checks |
 | `docs/definition-of-done.md` | DoR/DoD and naming conventions |
 | `docs/keyring-credentials.md` | Keyring inventory and token list |
-| `docs/mcp-setup.md` | MCP env vars for Cursor |
+| `docs/mcp-enable-howto.md` | MCP env vars and Cursor launch with keyring |
+| `docs/README.md` | Doc index, next steps, archive |
+| `AGENTS.md` | Handoff prompt for next chat |
 
 ## Platform Notes
 
