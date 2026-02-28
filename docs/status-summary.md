@@ -28,7 +28,8 @@
   - добавлены runtime config schema validation (`src/config/env.ts`, `zod`);
   - добавлен resilience layer (`withRetry`, `withCircuitBreaker`, policy);
   - реализован pilot интеграционный модуль `src/modules/linear-client` с typed errors и idempotency key header;
-  - добавлен второй typed integration module `src/modules/notion-client` (typed API + retry/backoff + circuit breaker + idempotent create strategy + vitest coverage).
+  - добавлен второй typed integration module `src/modules/notion-client` (typed API + retry/backoff + circuit breaker + idempotent create strategy + vitest coverage);
+  - добавлен третий typed integration module `src/modules/github-client` (workflow dispatch + workflow runs + retry/backoff + circuit breaker + idempotent dispatch guard + vitest coverage).
 - **Least-privilege scopes:** зафиксированы минимальные права токенов в [token-least-privilege.md](token-least-privilege.md).
 - **Idempotency guards (WF-2/WF-3/WF-5):** добавлена дедупликация входящих событий через workflow static data:
   - WF-2: delivery dedupe (`x-github-delivery` + fallback key);
@@ -97,7 +98,7 @@
 | WF-2: event-driven (GitHub PR webhook) + parse `AIP-XX` + попытка Linear update to Done + Telegram | ✅ (hook активен; URL нужно обновлять при смене ngrok/public host) |
 | WF-3: LLM severity classification + heuristic fallback + Linear create (critical/bug) + Telegram | ✅ (LLM ветка при наличии OPENAI_API_KEY) |
 | WF-7: DLQ parking + replay webhooks + Telegram alerts | ✅ |
-| Engineering baseline: TypeScript strict + ESLint/Prettier + Vitest/coverage + zod config + linear-client + notion-client | ✅ |
+| Engineering baseline: TypeScript strict + ESLint/Prettier + Vitest/coverage + zod config + linear-client + notion-client + github-client | ✅ |
 | Idempotency guards: WF-2 deliveries, WF-3 incidents, WF-5 Telegram commands | ✅ |
 | Data Mapping: field-level mapping + idempotency/conflict rules (Phase 6 groundwork) | ✅ |
 | Observability baseline: structured logs + correlation ID + SLO-lite doc | ✅ |

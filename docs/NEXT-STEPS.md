@@ -15,7 +15,7 @@
 - Engineering baseline внедрён:
   - TypeScript strict scaffold + coexistence JS/TS;
   - ESLint/Prettier + `typecheck` + Vitest + coverage gate.
-  - второй typed integration module (`notion-client`) добавлен по тому же стандарту (`resilience + typed errors + idempotency + tests`).
+  - typed integration modules `linear-client`, `notion-client`, `github-client` внедрены по единому стандарту (`resilience + typed errors + idempotency + tests`).
 - Optional advanced блок внедрён:
   - локальный Grafana/Loki/Promtail стек;
   - n8n MCP в Cursor (`n8n-mcp`);
@@ -56,7 +56,6 @@
 
 1. Синхронизировать финальный PR/коммиты с закрытыми задачами Linear.
 2. Поддерживать регулярный цикл evidence-sync в Notion Sprint Log/Runbook.
-3. Опционально: третий typed integration module (`github-client`) для унификации runtime интеграций.
 
 ## Рабочий цикл дальше
 
