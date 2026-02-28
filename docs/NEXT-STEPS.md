@@ -13,7 +13,7 @@
 
 - ~~В Cursor: «find recent specs in Notion».~~ ✅ Выполнено (поиск через MCP, созданы первая спека и ADR).
 - В Telegram: `/status` (если есть n8n workflow для команд).
-- ~~Открыть PR: убедиться, что BugBot и Linear link работают.~~ ✅ [PR #10](https://github.com/iurii-izman/AIPipeline/pull/10) создан через GitHub MCP (PAT с правами на создание PR). Проверить BugBot и Linear link на PR, затем merge.
+- ~~Открыть PR: убедиться, что BugBot и Linear link работают.~~ ✅ [PR #10](https://github.com/iurii-izman/AIPipeline/pull/10) создан через MCP, CI (pre-commit) прошёл, merge в main выполнен.
 
 ## Дальше по PIPELINE.md
 

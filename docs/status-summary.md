@@ -28,7 +28,7 @@
 
 - **N8N_API_KEY в keyring:** если нужен вызов n8n API из скриптов — запись с User: `aipipeline-api`, Server: `n8n` (см. [keyring-credentials.md](keyring-credentials.md)).
 - **Sentry MCP в Cursor:** MCP → Add remote `https://mcp.sentry.dev/mcp` → OAuth в браузере.
-- **Проверки:** в Cursor — «find recent specs in Notion» (выполнено); в Telegram — `/status` (если есть workflow); открыть PR — выполнено: [PR #10](https://github.com/iurii-izman/AIPipeline/pull/10), создан через MCP после расширения прав PAT.
+- **Проверки:** в Cursor — «find recent specs in Notion» (выполнено); в Telegram — `/status` (если есть workflow); открыть PR — выполнено: [PR #10](https://github.com/iurii-izman/AIPipeline/pull/10) создан через MCP, смержен в main, CI успешен.
 
 ---
 
@@ -46,4 +46,4 @@
 | Telegram: Bot Token + Chat ID в keyring, MCP (mcp-telegram-bot-server) | ✅ |
 | n8n: keyring, run-n8n.sh, контейнер, первый вход, credentials в UI | ✅ |
 | N8N_API_KEY в keyring (опц.) | ⬜ опционально |
-| Verify (Notion, PR #10, /status, BugBot) | ✅ Notion + PR через MCP; BugBot/Linear — проверить на PR |
+| Verify (Notion, PR #10, /status, BugBot) | ✅ Notion + PR #10 merged; CI green |
