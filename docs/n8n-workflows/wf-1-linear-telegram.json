@@ -1,29 +1,181 @@
 {
   "name": "WF-1: Linear → Telegram (AIPipeline)",
+  "active": true,
   "nodes": [
     {
-      "id": "c3d4e5f6-0001-4000-8000-000000000001",
+      "id": "schedule-wf1",
+      "name": "Every 10 min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 */10 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "linear-get-issues",
+      "name": "Linear: Get issues",
+      "type": "n8n-nodes-base.linear",
+      "typeVersion": 1,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "resource": "issue",
+        "operation": "getAll",
+        "returnAll": true
+      },
+      "credentials": {
+        "linearApi": {
+          "id": "SPM4RCmtiiJxQxSv",
+          "name": "AIPipeline Linear"
+        }
+      }
+    },
+    {
+      "id": "if-in-review-blocked",
+      "name": "IF status In Review or Blocked",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "id": "cond-state",
+              "leftValue": "={{ $json.state?.name }}",
+              "rightValue": "In Review",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "cond-state-blocked",
+              "leftValue": "={{ $json.state?.name }}",
+              "rightValue": "Blocked",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        }
+      }
+    },
+    {
+      "id": "telegram-send-wf1",
+      "name": "Telegram: notify",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        720,
+        -80
+      ],
+      "parameters": {
+        "operation": "sendMessage",
+        "chatId": "1877269414",
+        "text": "=🔄 {{ $json.title }}\n→ {{ $json.state?.name || 'N/A' }} | Assignee: {{ $json.assignee?.name || '—' }}"
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "CumMgGtm8MpeMfxm",
+          "name": "AIPipeline Telegram"
+        }
+      }
+    },
+    {
+      "id": "manual-wf1",
       "name": "When clicking 'Test workflow'",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [0, 0]
+      "position": [
+        0,
+        200
+      ]
     },
     {
-      "id": "c3d4e5f6-0002-4000-8000-000000000002",
-      "name": "Placeholder: add Linear + IF + Telegram",
+      "id": "set-placeholder-wf1",
+      "name": "Placeholder",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [220, 0],
+      "position": [
+        220,
+        200
+      ],
       "parameters": {
         "mode": "raw",
-        "jsonOutput": "{\n  \"info\": \"Add: Linear Trigger or Cron+Linear API → IF status In Review/Blocked → Telegram Send. See docs/n8n-workflows/README.md WF-1.\"\n}"
+        "jsonOutput": "{\"info\":\"WF-1: Schedule → Linear Get issues → IF (In Review/Blocked) → Telegram. Assign credentials in UI.\"}"
       }
     }
   ],
   "connections": {
+    "Every 10 min": {
+      "main": [
+        [
+          {
+            "node": "Linear: Get issues",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Linear: Get issues": {
+      "main": [
+        [
+          {
+            "node": "IF status In Review or Blocked",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF status In Review or Blocked": {
+      "main": [
+        [
+          {
+            "node": "Telegram: notify",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
     "When clicking 'Test workflow'": {
-      "main": [[{ "node": "Placeholder: add Linear + IF + Telegram", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Placeholder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "settings": {}
+  "settings": {
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  }
 }

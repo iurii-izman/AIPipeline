@@ -1,14 +1,99 @@
-# Placeholder: deploy to staging. Replace with real job when staging exists.
 name: Deploy Staging
 
 on:
   workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Git ref to deploy'
+        required: false
+        default: 'staging'
+      run_smoke_tests:
+        description: 'Run npm lint/build/test before deploy'
+        required: false
+        default: true
+        type: boolean
   push:
     branches: [staging]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: true
+
 jobs:
-  deploy-staging:
+  validate:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || inputs.run_smoke_tests == true }}
     steps:
       - uses: actions/checkout@v4
-      - run: echo "Staging deploy not configured yet"
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Build
+        run: npm run build
+      - name: Test
+        run: npm test
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [validate]
+    if: ${{ always() && (needs.validate.result == 'success' || needs.validate.result == 'skipped') }}
+    environment:
+      name: staging
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+      - name: Resolve deploy metadata
+        id: meta
+        run: |
+          echo "ref_name=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          echo "sha_short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+      - name: Deploy via webhook (if configured)
+        env:
+          DEPLOY_WEBHOOK_STAGING: ${{ secrets.DEPLOY_WEBHOOK_STAGING }}
+          DEPLOY_WEBHOOK_TOKEN_STAGING: ${{ secrets.DEPLOY_WEBHOOK_TOKEN_STAGING }}
+        run: |
+          if [[ -z "$DEPLOY_WEBHOOK_STAGING" ]]; then
+            echo "DEPLOY_WEBHOOK_STAGING is not configured. Dry-run mode."
+            exit 0
+          fi
+          PAYLOAD=$(cat <<JSON
+          {
+            "environment":"staging",
+            "repository":"${{ github.repository }}",
+            "ref":"${{ steps.meta.outputs.ref_name }}",
+            "sha":"${{ github.sha }}",
+            "actor":"${{ github.actor }}",
+            "run_url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          }
+          JSON
+          )
+          curl -fsSL -X POST "$DEPLOY_WEBHOOK_STAGING" \
+            -H "Content-Type: application/json" \
+            ${DEPLOY_WEBHOOK_TOKEN_STAGING:+-H "Authorization: Bearer $DEPLOY_WEBHOOK_TOKEN_STAGING"} \
+            -d "$PAYLOAD"
+      - name: Deployment summary
+        env:
+          DEPLOY_WEBHOOK_STAGING: ${{ secrets.DEPLOY_WEBHOOK_STAGING }}
+        run: |
+          {
+            echo "### Staging deploy"
+            echo "- Ref: \`${{ steps.meta.outputs.ref_name }}\`"
+            echo "- SHA: \`${{ steps.meta.outputs.sha_short }}\`"
+            if [[ -n "$DEPLOY_WEBHOOK_STAGING" ]]; then
+              echo "- Mode: webhook deploy executed"
+            else
+              echo "- Mode: dry-run (DEPLOY_WEBHOOK_STAGING not configured)"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

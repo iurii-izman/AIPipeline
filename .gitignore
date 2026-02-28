@@ -23,3 +23,8 @@ Thumbs.db
 
 # Optional: ngrok binary (see docs/n8n-setup-step-by-step.md § 4.7)
 .bin/
+
+coverage/
+.out/
+.runtime-logs/
+.state/

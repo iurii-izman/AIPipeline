@@ -29,7 +29,7 @@
    - Закоммитить: `git add package.json && git commit -m "chore: bump version to X.Y.Z" && git push origin main`.
 
 4. **Тег**
-   - Создать аннотированный тег:  
+   - Создать аннотированный тег:
      `git tag -a vX.Y.Z -m "Alpha N: краткое описание"`.
    - Запушить тег: `git push origin vX.Y.Z`.
 

@@ -32,7 +32,19 @@
 | n8n Basic Auth Password | `AIPipeline — n8n Basic Auth Password` | `aipipeline-password` | `n8n` | пароль для входа в UI n8n | ☑ |
 | n8n API Key (опц.) | `AIPipeline — N8n API` | `aipipeline-api` | `n8n` | n8n → Settings → API → Create API Key (для вызова API/workflow извне). Чтобы скрипт подхватывал как `N8N_API_KEY`, в записи должны быть **User:** `aipipeline-api`, **Server:** `n8n`. | ☑ |
 | Sentry DSN (опц.) | `AIPipeline — Sentry DSN` | `aipipeline` | `sentry.io` | Sentry → Project → Client Keys (DSN) | ☑ |
-| Sentry Auth Token (опц.) | `AIPipeline — Sentry Auth Token` | `aipipeline-auth` | `sentry.io` | Sentry → Settings → Auth Tokens → Create (scope **project:write**). Нужен для авторегистрации webhook через `scripts/register-sentry-webhook.js` (после добавления — запустить ngrok, выставить WEBHOOK_BASE_URL и скрипт). | ☐ |
+| Sentry Auth Token (опц.) | `AIPipeline — Sentry Auth Token` | `aipipeline-auth` | `sentry.io` | Sentry → Settings → Auth Tokens → Create (scope **project:write**). Нужен для авторегистрации webhook через `scripts/register-sentry-webhook.js` (после добавления — запустить ngrok, выставить WEBHOOK_BASE_URL и скрипт). | ☑ |
+| Sentry Org Slug (опц.) | `AIPipeline — Sentry Org Slug` | `aipipeline-org-slug` | `sentry.io` | Slug org в Sentry API (нужен для WF-5 `/errors`) | ☑ |
+| Sentry Project Slug (опц.) | `AIPipeline — Sentry Project Slug` | `aipipeline-project-slug` | `sentry.io` | Slug проекта в Sentry API (нужен для WF-5 `/errors`) | ☑ |
+| OpenAI API Key (опц.) | `AIPipeline — OpenAI API Key` | `aipipeline` | `openai.com` | Для LLM-классификации severity в WF-3 | ☐ |
+| OpenAI Model (опц.) | `AIPipeline — OpenAI Model` | `aipipeline-model` | `openai.com` | Модель для WF-3 (`gpt-4o-mini` по умолчанию) | ☐ |
+| Cloudflare Tunnel Token (опц.) | `AIPipeline — Cloudflared Tunnel Token` | `aipipeline-tunnel-token` | `cloudflare.com` | Zero Trust → Tunnels → Run tunnel token | ☐ |
+| Cloudflare Public Base URL (опц.) | `AIPipeline — Cloudflare Public Base URL` | `aipipeline-public-url` | `cloudflare.com` | Стабильный URL tunnel host, напр. `https://n8n.example.com` | ☐ |
+| Linear Team ID (опц.) | `AIPipeline — Linear Team ID` | `aipipeline-team-id` | `linear.app` | Linear GraphQL: `teams { id key }`; нужен для WF-5 `/create` | ☑ |
+| Notion Sprint Log DB ID (опц.) | `AIPipeline — Notion Sprint Log Database ID` | `aipipeline-sprint-log-db` | `notion.so` | ID database для WF-4 записи Sprint Log | ☑ |
+| GitHub Owner (опц.) | `AIPipeline — GitHub Owner` | `aipipeline-owner` | `github.com` | owner repo (WF-5 `/deploy`) | ☑ |
+| GitHub Repo (опц.) | `AIPipeline — GitHub Repo` | `aipipeline-repo` | `github.com` | repo name (WF-5 `/deploy`) | ☑ |
+| GitHub Workflow Staging (опц.) | `AIPipeline — GitHub Workflow Staging` | `aipipeline-workflow-staging` | `github.com` | filename workflow для staging deploy | ☑ |
+| GitHub Workflow Production (опц.) | `AIPipeline — GitHub Workflow Production` | `aipipeline-workflow-production` | `github.com` | filename workflow для production deploy | ☑ |
 | ngrok authtoken (опц.) | `AIPipeline — ngrok` | `aipipeline` | `ngrok.com` | [dashboard.ngrok.com](https://dashboard.ngrok.com/get-started/your-authtoken) — для скрипта `run-n8n-with-ngrok.sh` (Telegram webhook по HTTPS) | ☑ |
 
 **Примечание:** Sentry MCP использует OAuth (логин в браузере), в keyring его хранить не обязательно. В keyring — DSN для SDK в коде и для n8n, если нужен. **Sentry Auth Token** — только для автоматической регистрации webhook (WF-3) через API.
@@ -83,6 +95,12 @@ secret-tool store --label="AIPipeline — n8n Basic Auth Password" server n8n us
 
 # n8n API Key (для вызова API n8n из скриптов; Settings → API в n8n)
 secret-tool store --label="AIPipeline — N8n API" server n8n user aipipeline-api
+
+# Cloudflare tunnel token (stable HTTPS for webhooks)
+secret-tool store --label="AIPipeline — Cloudflared Tunnel Token" server cloudflare.com user aipipeline-tunnel-token
+
+# Cloudflare public URL (example: https://n8n.example.com)
+secret-tool store --label="AIPipeline — Cloudflare Public Base URL" server cloudflare.com user aipipeline-public-url
 ```
 
 > **Важно:** CLI-шаблоны выше используют `server` (не `service`), чтобы быть совместимыми с GUI-записями. Если ранее ключи создавались с `service`, скрипт всё равно их найдёт (fallback).

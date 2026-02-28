@@ -25,7 +25,9 @@ _load() {
 # MCP / Cursor
 _load GITHUB_PERSONAL_ACCESS_TOKEN github.com aipipeline
 _load LINEAR_API_KEY linear.app aipipeline
+_load LINEAR_TEAM_ID linear.app aipipeline-team-id
 _load NOTION_TOKEN notion.so aipipeline
+_load NOTION_SPRINT_LOG_DATABASE_ID notion.so aipipeline-sprint-log-db
 _load TELEGRAM_BOT_TOKEN api.telegram.org aipipeline_delivery_bot
 _load TELEGRAM_CHAT_ID api.telegram.org aipipeline-alerts
 
@@ -33,11 +35,40 @@ _load TELEGRAM_CHAT_ID api.telegram.org aipipeline-alerts
 _load N8N_BASIC_AUTH_USER n8n aipipeline
 _load N8N_BASIC_AUTH_PASSWORD n8n aipipeline-password
 _load N8N_API_KEY n8n aipipeline-api
+_load N8N_URL n8n aipipeline-url
 
 # Optional
 _load SENTRY_DSN sentry.io aipipeline
 _load SENTRY_AUTH_TOKEN sentry.io aipipeline-auth
+_load SENTRY_ORG_SLUG sentry.io aipipeline-org-slug
+_load SENTRY_PROJECT_SLUG sentry.io aipipeline-project-slug
+_load OPENAI_API_KEY openai.com aipipeline
+_load OPENAI_MODEL openai.com aipipeline-model
 _load NGROK_AUTHTOKEN ngrok.com aipipeline
+_load CLOUDFLARED_TUNNEL_TOKEN cloudflare.com aipipeline-tunnel-token
+_load CLOUDFLARE_PUBLIC_BASE_URL cloudflare.com aipipeline-public-url
+_load GITHUB_OWNER github.com aipipeline-owner
+_load GITHUB_REPO github.com aipipeline-repo
+_load GITHUB_WORKFLOW_STAGING github.com aipipeline-workflow-staging
+_load GITHUB_WORKFLOW_PRODUCTION github.com aipipeline-workflow-production
+
+# Compatibility fallbacks for OPENAI_API_KEY if stored with custom attributes.
+if [[ -z "${OPENAI_API_KEY:-}" ]]; then
+  OPENAI_API_KEY="$(secret-tool lookup server openai.com key OPENAI_API_KEY 2>/dev/null || true)"
+  export OPENAI_API_KEY
+fi
+if [[ -z "${OPENAI_API_KEY:-}" ]]; then
+  OPENAI_API_KEY="$(secret-tool lookup service openai.com key OPENAI_API_KEY 2>/dev/null || true)"
+  export OPENAI_API_KEY
+fi
+if [[ -z "${OPENAI_API_KEY:-}" ]]; then
+  OPENAI_API_KEY="$(secret-tool lookup service aipipeline server openai.com key OPENAI_API_KEY 2>/dev/null || true)"
+  export OPENAI_API_KEY
+fi
+
+if [[ -z "${N8N_URL:-}" ]]; then
+  export N8N_URL="http://localhost:5678"
+fi
 
 if [[ "${1:-}" == "--cursor" ]]; then
   cd "$REPO_ROOT"

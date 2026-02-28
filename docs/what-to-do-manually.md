@@ -1,87 +1,162 @@
 # Что нужно сделать вручную (после скриптов)
 
-Скрипты добавили ноды в WF-2…WF-6, все workflow **включены (Active)**. Если ты уже выполнил регистрацию webhook для WF-3 (`./scripts/register-sentry-webhook.sh` при запущенном ngrok) — цепочка Sentry → n8n → Linear/Telegram настроена. Ниже — опциональные проверки и донастройки.
+Скрипты обновили WF-2…WF-6 и workflow активны. Ниже только то, что нельзя надёжно автоматизировать.
 
 ---
 
-## WF-2 (GitHub PR → Telegram)
+## WF-2 (GitHub PR → Linear + Telegram)
 
-**Сделано скриптом:** Schedule каждые 15 мин → GitHub: List PRs → Format digest → Telegram.
+Скрипт теперь делает event-driven workflow через `GitHub PR Webhook` (`/webhook/wf2-github-pr`).
 
-**Ты делаешь:**
+Сделать вручную:
 
-1. Открыть n8n → WF-2.
-2. В ноде **«GitHub»** (getPullRequests) credential **AIPipeline GitHub**; **Owner** и **Repository** уже проставлены (`iurii-izman`, `AIPipeline`) — проверено через API. При другом репо — поменять в ноде или задать env `GITHUB_OWNER`, `GITHUB_REPO` и перезапустить скрипт.
-3. В ноде **«Telegram: send»** при необходимости проверить Chat ID.
-4. WF-2 уже включён (Active).
+1. GitHub repo → **Settings → Webhooks → Add webhook**.
+2. Payload URL: `https://<n8n-host>/webhook/wf2-github-pr`.
+3. Content type: `application/json`.
+4. Events: Pull requests (`opened`, `closed`).
+5. Убедиться, что в n8n env есть `LINEAR_API_KEY` (иначе fallback без Linear update).
 
-**По желанию:** добавить ветку: из `head.ref` вытащить идентификатор задачи (например `AIP-123`) → Linear: update issue (status) → тогда при появлении PR будет обновляться задача в Linear.
+Автоматизация: можно запускать `node scripts/configure-github-webhook-wf2.js` (берёт `WEBHOOK_BASE_URL` или текущий ngrok URL).
+При запуске `./scripts/run-n8n-with-ngrok.sh` этот шаг выполняется автоматически.
 
 ---
 
 ## WF-3 (Sentry → Telegram + Linear)
 
-**Сделано скриптом:** Webhook → IF (level error/fatal) → Linear: Create issue → Telegram.
+Сделать вручную (если не сделано):
 
-**Если ещё не делал:**
-- **Вариант А (вручную):** n8n → WF-3 → нода «Sentry Webhook» → скопировать **Production Webhook URL** → Sentry → Alerts → правило → Actions → **Send a notification via Webhook** → вставить URL.
-- **Вариант Б (скрипт):** В keyring: **Sentry Auth Token** (User: `aipipeline-auth`, Server: `sentry.io`). Один раз настроить ngrok: **`./scripts/configure-ngrok-from-keyring.sh`** (или `source scripts/load-env-from-keyring.sh && ./.bin/ngrok config add-authtoken "$NGROK_AUTHTOKEN"`). Затем запустить **`./.bin/ngrok http 5678`** (в одном терминале), в другом: `source scripts/load-env-from-keyring.sh && export WEBHOOK_BASE_URL=$(curl -s http://127.0.0.1:4040/api/tunnels | node -e "const j=JSON.parse(require('fs').readFileSync(0,'utf8')); const t=(j.tunnels||[]).find(x=>x.public_url&&x.public_url.startsWith('https')); console.log(t?t.public_url:'');") && ./scripts/register-sentry-webhook.sh`.
-
-Team в Linear и Chat ID уже заданы; WF-3 включён (Active).
-
----
-
-## WF-4 (Daily digest)
-
-**Сделано скриптом:** Schedule будни 09:00 → Linear: Get issues → Build digest (сводка по статусам) → Telegram.
-
-**Ты делаешь:**
-
-1. Открыть n8n → WF-4.
-2. В нодах **«Linear: Get issues»** и **«Telegram: send digest»** credentials уже проставлены (по id). Если нет — выбрать **AIPipeline Linear** и **AIPipeline Telegram**.
-3. WF-4 уже включён (Active).
-
-При желании в Linear-ноде можно сузить список (фильтр по проекту/команде).
+- Добавить Webhook URL из ноды `Sentry Webhook` в Sentry Alerts,
+- или выполнить `./scripts/register-sentry-webhook.sh` (нужны ngrok + `SENTRY_AUTH_TOKEN` в keyring).
+- Для LLM-классификации severity добавить `OPENAI_API_KEY` (keyring: `openai.com` / `aipipeline`), иначе WF-3 использует heuristic fallback.
+При запуске `./scripts/run-n8n-with-ngrok.sh` скрипт пытается зарегистрировать webhook WF-3 автоматически (если есть `SENTRY_AUTH_TOKEN`).
 
 ---
 
-## WF-6 (Notion reminder)
+## WF-4 (Daily digest + Notion Sprint Log)
 
-**Сделано скриптом:** Schedule понедельник 10:00 → Set reminder message → Telegram.
+WF-4 отправляет digest в Telegram всегда.
 
-**Ты делаешь:**
+Для записи в Notion Sprint Log дополнительно нужны env в n8n:
 
-1. Открыть n8n → WF-6 при необходимости проверить credential и Chat ID.
-2. WF-6 уже включён (Active).
+- `NOTION_TOKEN`
+- `NOTION_SPRINT_LOG_DATABASE_ID`
 
-**По желанию:** перед Set добавить ноду **Notion** (например, Search / Get Many) и условие IF «есть обновлённые за неделю» → тогда напоминание слать только если что-то поменялось.
-
----
-
-## WF-5 (Telegram Command Center: /status, /help)
-
-**Сделано скриптом:** Telegram Trigger → If /status → GET /status → Telegram; If /help → список команд; неизвестная команда → «Use /help».
-
-**Ты делаешь:** после `node scripts/update-wf5-status-workflow.js` n8n может вернуть ошибку про Telegram credentials — открыть WF-5 в UI, в нодах **«Telegram Trigger»** и **«Telegram Send»** выбрать credential **AIPipeline Telegram**, сохранить. Для ответа на /status нужны ngrok и приложение: `./scripts/start-app-with-keyring.sh` (или `PORT=3000 npm start`).
+Если их нет, ветка записи в Notion пропускается.
 
 ---
 
-## Кратко по workflow
+## WF-5 (Telegram Command Center)
 
-| Workflow | Обязательно вручную | Опционально |
-|----------|----------------------|-------------|
-| WF-2     | Всё настроено, включён | Правка owner/repo, ветка с Linear update |
-| WF-3     | ~~Добавить Webhook URL в Sentry~~ ✅ Зарегистрировано через `register-sentry-webhook.sh` (при ngrok + SENTRY_AUTH_TOKEN в keyring) | — |
-| WF-4     | Включён | Фильтр в Linear |
-| WF-5     | Назначить Telegram credential в UI после update-wf5; для /status — ngrok + app | /tasks, /errors, /search — в разработке |
-| WF-6     | Включён | Notion search + IF |
+Реализованы команды:
 
-Запуск скриптов (уже выполнены):
+- `/status`, `/help`, `/tasks`, `/errors`, `/search`, `/create`, `/deploy`, `/standup`
 
-- `node scripts/update-wf2-github-pr-linear.js`
-- `node scripts/update-wf3-sentry-telegram.js`
-- `node scripts/update-wf4-daily-digest.js`
-- `node scripts/update-wf6-notion-reminder.js`
-- `node scripts/update-wf5-status-workflow.js` (WF-5: /status, /help)
+Ручные условия:
 
-Перед запуском: `source scripts/load-env-from-keyring.sh` (для `TELEGRAM_CHAT_ID` и т.п.).
+1. В WF-5 нодах `Telegram Trigger` и `Telegram Send` выбрать credential `AIPipeline Telegram` (если сброшено после update).
+2. Для `/status`: приложение должно работать на хосте (`./scripts/start-app-with-keyring.sh`), n8n достаёт его по `http://host.containers.internal:3000/status`.
+3. Для Telegram webhook нужен HTTPS (`run-n8n-with-ngrok.sh` или публичный HTTPS endpoint).
+4. Для полного функционала команд нужны env в n8n:
+   - `LINEAR_TEAM_ID`
+   - `SENTRY_AUTH_TOKEN`, `SENTRY_ORG_SLUG`, `SENTRY_PROJECT_SLUG`
+   - `NOTION_TOKEN`
+   - `GITHUB_OWNER`, `GITHUB_REPO`, `GITHUB_WORKFLOW_STAGING`, `GITHUB_WORKFLOW_PRODUCTION`, `GITHUB_PERSONAL_ACCESS_TOKEN`
+
+---
+
+## WF-6 (Notion → NotebookLM reminder)
+
+WF-6 теперь отправляет reminder только если нашёл страницы Notion, обновлённые за последние 7 дней.
+
+Нужен `NOTION_TOKEN` в n8n env.
+
+Для полного NotebookLM контура:
+
+1. Сформировать актуальный source-bundle:
+   ```bash
+   ./scripts/notebooklm-build-source-bundle.sh
+   ```
+2. Загрузить/обновить файлы из `./.out/notebooklm-sources/` в NotebookLM notebook (UI).
+3. При необходимости зафиксировать evidence в Sprint Log.
+
+---
+
+## WF-7 (DLQ parking + replay)
+
+WF-7 разворачивается скриптом (`node scripts/update-wf7-dlq-parking.js`) и работает без UI-кликов.
+
+Ручная операционная часть:
+
+1. При инциденте проверить Telegram alert из WF-7 и execution в n8n.
+2. При необходимости запустить replay:
+```bash
+curl -sS -X POST https://n8n.aipipeline.cc/webhook/wf-dlq-replay \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+3. Для replay конкретного элемента передать `id` (`{\"id\":\"dlq_xxxxx\"}`).
+4. Полный регламент: [dlq-replay-runbook.md](dlq-replay-runbook.md).
+
+---
+
+## Stable HTTPS endpoint (Cloudflare Tunnel)
+
+Сейчас поддерживаются два режима:
+
+- `run-n8n-with-ngrok.sh` (быстрый, но URL может меняться),
+- `run-n8n-with-cloudflared.sh` (стабильный URL после ручной настройки Cloudflare).
+
+Ручной блок (один раз):
+
+1. Поднять Tunnel + hostname в Cloudflare Zero Trust.
+2. Получить Tunnel token.
+3. Добавить в keyring:
+   - `server=cloudflare.com user=aipipeline-tunnel-token`
+   - `server=cloudflare.com user=aipipeline-public-url`
+4. Установить `cloudflared` на хост.
+
+После этого запуск:
+
+```bash
+source scripts/load-env-from-keyring.sh
+./scripts/run-n8n-with-cloudflared.sh --daemon
+```
+
+Подробный runbook: [cloudflare-tunnel-setup.md](cloudflare-tunnel-setup.md).
+
+Текущий статус: stable endpoint `https://n8n.aipipeline.cc` активен и проверен (`HTTPS 200`, `/status`, `/deploy staging`).
+Дальше вручную обычно нужно только:
+1. поддерживать DNS/domain,
+2. при необходимости ротировать tunnel token,
+3. контролировать `systemctl --user status aipipeline-cloudflared.service`.
+
+---
+
+## Синхронизация JSON в репо
+
+После любых правок workflow в n8n UI:
+
+```bash
+source scripts/load-env-from-keyring.sh
+./scripts/export-n8n-workflows.sh
+```
+
+Это обновит `docs/n8n-workflows/wf-*.json` под фактическое runtime состояние.
+
+---
+
+## Operations profiles: ручной governance цикл
+
+Автоматизировано:
+
+- `./scripts/profile-acceptance-check.sh full`
+- `./scripts/evidence-sync-cycle.sh --profile full`
+
+Остаётся вручную:
+
+1. Ротация credential в UI провайдеров (GitHub/Linear/Notion/Sentry/Telegram/Cloudflare).
+2. Обновление ключей в keyring (без `.env` и без коммита секретов).
+3. Еженедельный запуск evidence-cycle + фиксация ссылки на Sprint Log.
+4. При закрытии operational issue добавить `--linear AIP-XX` в `evidence-sync-cycle.sh`, чтобы closure в Linear и Sprint Log были синхронизированы в одном цикле.
+
+Детали ownership/rotation/audit trail: [operations-access-matrix.md](operations-access-matrix.md).
