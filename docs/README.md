@@ -54,6 +54,7 @@
 | [data-mapping.md](data-mapping.md) | Маппинг данных между инструментами |
 | [observability.md](observability.md) | Baseline наблюдаемости: логи, correlationId, алерты, апгрейды |
 | [live-uat-telegram.md](live-uat-telegram.md) | Живой UAT для Telegram команд, WF-2 PR webhook, OPENAI_API_KEY, стабильный HTTPS |
+| [tz-remaining-work.md](tz-remaining-work.md) | Полный список оставшихся работ до полного соответствия ТЗ |
 | [audit-and-history.md](audit-and-history.md) | Аудит и история решений |
 | [charter.md](charter.md) | Цели и принципы проекта |
 

@@ -27,7 +27,7 @@
 - **Приложение:** entry point `src/index.js`; при заданном `PORT` — HTTP server: GET /health, **GET /status** (env flags + n8n reachable). Запуск: `./scripts/start-app-with-keyring.sh` (env из keyring → в /status `env.github`, `env.linear` и т.д. = true) или `PORT=3000 npm start` (см. .env.example).
 - **Скрипты:** `system-check.sh`, `load-env-from-keyring.sh`, **`start-app-with-keyring.sh`**, **`configure-ngrok-from-keyring.sh`** (один раз прописать authtoken ngrok в ~/.config/ngrok), **`linear-apply-labels.js`** (labels в Linear: Infra/Documentation), `run-n8n.sh`, **`update-wf1-linear-telegram.js`** … **`update-wf6-notion-reminder.js`**, **`register-sentry-webhook.js`**, **`register-sentry-webhook.sh`**, `import-n8n-workflow.sh`, `import-all-n8n-workflows.sh`, **`export-n8n-workflows.sh`**, **`sync-n8n-credentials-from-keyring.js`**, `notion-create-delivery-hub-structure.sh`, `get-telegram-chat-id.sh`, `health-check-env.sh`.
 - **run-n8n-with-ngrok.sh:** после старта n8n пытается автообновить GitHub webhook WF-2 и зарегистрировать Sentry webhook WF-3 (если есть `SENTRY_AUTH_TOKEN`).
-- **Доки:** runbooks (в т.ч. [linear-phase3-runbook.md](linear-phase3-runbook.md), [n8n-workflows/README.md](n8n-workflows/README.md)), гайды по Notion/Sentry/n8n (step-by-step), keyring, Linear, MCP, audit.
+- **Доки:** runbooks (в т.ч. [linear-phase3-runbook.md](linear-phase3-runbook.md), [n8n-workflows/README.md](n8n-workflows/README.md), [live-uat-telegram.md](live-uat-telegram.md)), гайды по Notion/Sentry/n8n (step-by-step), keyring, Linear, MCP, audit, и consolidated backlog [tz-remaining-work.md](tz-remaining-work.md).
 
 ---
 
