@@ -74,6 +74,7 @@ Post-hardening regression deploy:
 Post-hardening regression:
 - Issue: `AIP-14`
 - Title: `test issue` (from `/create test issue`)
+- Cleanup: test artifacts `AIP-13` and `AIP-14` later moved to state `Canceled` via automation script.
 
 ## Notes
 

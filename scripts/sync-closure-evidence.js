@@ -8,7 +8,8 @@
  *     --title "Post-hardening closure" \
  *     --summary "WF-2..WF-7 evidence synced" \
  *     --date 2026-02-28 \
- *     --linear AIP-11
+ *     --linear AIP-11 \
+ *     --state-type completed
  */
 
 const https = require("https");
@@ -105,7 +106,7 @@ async function gqlLinear(apiKey, query, variables = {}) {
   return data.data;
 }
 
-async function closeLinearIssueByIdentifier({ apiKey, teamId, issueIdentifier, comment }) {
+async function closeLinearIssueByIdentifier({ apiKey, teamId, issueIdentifier, comment, stateType = "completed" }) {
   const team = await gqlLinear(
     apiKey,
     `query($teamId:String!){team(id:$teamId){id key states{nodes{id name type}} issues(first:250){nodes{id identifier state{id name type}}}}}`,
@@ -115,13 +116,13 @@ async function closeLinearIssueByIdentifier({ apiKey, teamId, issueIdentifier, c
   const issue = (team.team.issues.nodes || []).find((i) => i.identifier === issueIdentifier);
   if (!issue) throw new Error(`Linear issue not found in team ${team.team.key}: ${issueIdentifier}`);
 
-  const done = (team.team.states.nodes || []).find((s) => String(s.type).toLowerCase() === "completed");
-  if (!done) throw new Error(`Done state not found in team ${team.team.key}`);
+  const target = (team.team.states.nodes || []).find((s) => String(s.type).toLowerCase() === String(stateType).toLowerCase());
+  if (!target) throw new Error(`State type '${stateType}' not found in team ${team.team.key}`);
 
   const updated = await gqlLinear(
     apiKey,
     `mutation($id:String!,$stateId:String!){issueUpdate(id:$id,input:{stateId:$stateId}){success issue{id identifier state{name type}}}}`,
-    { id: issue.id, stateId: done.id }
+    { id: issue.id, stateId: target.id }
   );
 
   if (comment && comment.trim()) {
@@ -145,6 +146,7 @@ async function main() {
   const date = args.date || new Date().toISOString().slice(0, 10);
   const details = (args.details || "").split("|").map((x) => x.trim()).filter(Boolean);
   const linearIssue = args.linear || "";
+  const linearStateType = args["state-type"] || "completed";
 
   const notionToken = process.env.NOTION_TOKEN || "";
   const notionDb = process.env.NOTION_SPRINT_LOG_DATABASE_ID || "";
@@ -178,7 +180,13 @@ async function main() {
         "",
         "Evidence updated in docs and Sprint Log.",
       ].join("\n");
-      results.linear = await closeLinearIssueByIdentifier({ apiKey, teamId, issueIdentifier: linearIssue, comment });
+      results.linear = await closeLinearIssueByIdentifier({
+        apiKey,
+        teamId,
+        issueIdentifier: linearIssue,
+        comment,
+        stateType: linearStateType,
+      });
     }
   }
 

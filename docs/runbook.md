@@ -64,7 +64,7 @@ See [runbook-n8n.md](runbook-n8n.md) for deploy and credentials.
 - **Synthetic probe**: `./scripts/synthetic-health-status-check.sh` (операционная проверка `/health` + `/status`).
 - **Closure evidence sync** (Notion Sprint Log + optional Linear Done/comment):
   - `source scripts/load-env-from-keyring.sh`
-  - `node scripts/sync-closure-evidence.js --title \"Closure sync\" --summary \"WF evidence synced\" --linear AIP-11`
+  - `node scripts/sync-closure-evidence.js --title \"Closure sync\" --summary \"WF evidence synced\" --linear AIP-11 --state-type completed`
 
 ---
 
