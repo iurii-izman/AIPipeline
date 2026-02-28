@@ -51,15 +51,16 @@ See [runbook-n8n.md](runbook-n8n.md) for deploy and credentials.
 
 ## 4. Setup guides (Day-0)
 
-- [day0-runbook.md](day0-runbook.md) — full checklist.
+- [archive/day0-runbook.md](archive/day0-runbook.md) — Day-0 чек-лист (архив).
 - [notion-delivery-hub.md](notion-delivery-hub.md), [linear-setup.md](linear-setup.md), [sentry-setup.md](sentry-setup.md); Telegram — [keyring-credentials.md](keyring-credentials.md), [mcp-enable-howto.md](mcp-enable-howto.md).
 
 ---
 
 ## 5. Health and alerts
 
+- **App**: when running (**`./scripts/start-app-with-keyring.sh`** or `PORT=3000 npm start`): **GET /health**, **GET /status** (env flags + n8n reachable). With keyring, env flags in /status are true. n8n WF-5 calls `http://host.containers.internal:3000/status` to reply to Telegram /status.
 - **Sentry**: project DSN in app; alerts → n8n → Telegram (when configured).
-- **n8n**: http://localhost:5678 when container is running.
+- **n8n**: http://localhost:5678 when container is running. Check: `./scripts/health-check-env.sh` (includes n8n HTTP when container is up).
 
 ---
 

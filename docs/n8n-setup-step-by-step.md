@@ -143,9 +143,22 @@ podman start n8n
 3. Выбери любую ноду, которой нужен доступ (например **GitHub** или **Telegram**).
 4. В настройках ноды будет блок **«Credential to connect with»** — там кнопка **«Create New»** / **«Add credential»**. Она тоже ведёт в создание Credential.
 
-Дальше — как создать каждую учётку.
+Дальше — автоматически из keyring или вручную по шагам.
 
-### 4.2. Добавить Credential — GitHub
+### 4.2. (Опционально) Создать Credentials из keyring одной командой
+
+Если ключи уже лежат в keyring (как в [keyring-credentials.md](keyring-credentials.md)), можно **не вводить их вручную**: скрипт отправит их в n8n через API и создаст учётки с именами **AIPipeline Linear**, **AIPipeline Telegram**, **AIPipeline Notion**, **AIPipeline GitHub**.
+
+```bash
+source scripts/load-env-from-keyring.sh
+node scripts/sync-n8n-credentials-from-keyring.js
+```
+
+Требуется: n8n запущен, в keyring есть `N8N_API_KEY` (User: `aipipeline-api`, Server: `n8n`) и сами ключи (Linear, Telegram, Notion, GitHub). После запуска в **Settings → Credentials** появятся 4 записи; в workflow достаточно выбрать их в полях «Credential to connect with». Повторный запуск создаёт дубликаты — лишние можно удалить в UI.
+
+Если скрипт не используешь — создай учётки вручную по шагам 4.3–4.5 ниже.
+
+### 4.3. Добавить Credential — GitHub (вручную)
 
 1. На странице **Credentials** нажми **«Add credential»** / **«Create credential»** / **«+»**.
 2. В поиске или списке выбери **«GitHub»** (или **GitHub API**).
@@ -154,21 +167,21 @@ podman start n8n
   - **Access Token:** вставь свой GitHub Personal Access Token (тот же, что в keyring для MCP — AIPipeline — GitHub PAT). В keyring его можно посмотреть/скопировать через Seahorse или выполнив в терминале: `secret-tool lookup server github.com user aipipeline` (выведет токен).
 4. Нажми **Save** / **Create**.
 
-### 4.3. Добавить Credential — Linear
+### 4.4. Добавить Credential — Linear (вручную)
 
 1. **Add credential** → найди **«Linear»** / **Linear API**.
 2. **Credential name:** например `AIPipeline Linear`.
 3. **API Key:** вставь Linear API Key из keyring (запись AIPipeline — Linear API Key). В терминале: `secret-tool lookup server linear.app user aipipeline`.
 4. **Save**.
 
-### 4.4. Добавить Credential — Notion
+### 4.5. Добавить Credential — Notion (вручную)
 
 1. **Add credential** → **«Notion»** / **Notion API**.
 2. **Credential name:** например `AIPipeline Notion`.
 3. **Internal Integration Secret / API Key:** вставь Notion token из keyring (AIPipeline — Notion). В терминале: `secret-tool lookup server notion.so user aipipeline`.
 4. **Save**.
 
-### 4.5. Добавить Credential — Telegram
+### 4.6. Добавить Credential — Telegram (вручную)
 
 1. **Add credential** → **«Telegram»** / **Telegram API**.
 2. **Credential name:** например `AIPipeline Telegram`.
@@ -176,6 +189,22 @@ podman start n8n
 4. **Save**.
 
 Chat ID для отправки сообщений в конкретный чат задаётся уже в ноде **Telegram → Send Message** (поле Chat ID) — туда подставь значение из keyring (AIPipeline — Telegram Chat ID).
+
+### 4.7. Telegram webhook (HTTPS)
+
+Ошибка **«Bad webhook: An HTTPS URL must be provided»** при включении workflow с **Telegram Trigger** — нормальная: Telegram принимает только HTTPS. На одном localhost без туннеля webhook не зарегистрируется.
+
+**Вариант A — ngrok (для локальной разработки):**
+
+1. **ngrok:** скачай бинарник в репо: `mkdir -p .bin && curl -sSL -o .bin/ngrok.tgz "https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz" && tar -xzf .bin/ngrok.tgz -C .bin` (или установи с [ngrok.com/download](https://ngrok.com/download)).
+2. **Авторизация ngrok:** зарегистрируйся на [dashboard.ngrok.com/signup](https://dashboard.ngrok.com/signup), возьми authtoken на [dashboard.ngrok.com/get-started/your-authtoken](https://dashboard.ngrok.com/get-started/your-authtoken). Либо добавь в keyring: `secret-tool store --label="AIPipeline — ngrok" server ngrok.com user aipipeline` (вставь token). Либо выполни: `./.bin/ngrok config add-authtoken YOUR_TOKEN`.
+3. **Один скрипт (рекомендуется):** `./scripts/run-n8n-with-ngrok.sh` — запустит ngrok, получит HTTPS-URL, перезапустит n8n с `WEBHOOK_URL`, выведет URL. Терминал оставь открытым (ngrok работает в фоне). В n8n открой WF-5 и включи workflow (Active).
+4. **Вручную:** в одном терминале `./.bin/ngrok http 5678`, скопируй HTTPS-URL. В другом: `podman stop n8n && podman rm n8n && export WEBHOOK_URL=https://ТВОЙ-URL.ngrok-free.app/ && source scripts/load-env-from-keyring.sh && ./scripts/run-n8n.sh`. В n8n включи WF-5.
+5. Пока ngrok запущен, в Telegram можно слать `/status` и получать ответ.
+
+**Почему «Provided secret is not valid» (403):** n8n (Telegram Trigger typeVersion ≥ 1.1) проверяет заголовок `X-Telegram-Bot-Api-Secret-Token`. Секрет формируется как `workflowId_nodeId` и передаётся в Telegram при регистрации webhook, поэтому **реальные запросы от Telegram приходят с этим заголовком и проходят**. Запросы без заголовка (например, ручной curl) получают 403 — это ожидаемо.
+
+**Вариант B:** n8n развёрнут на сервере с доменом и HTTPS — в переменных окружения контейнера задай `WEBHOOK_URL=https://n8n.твой-домен.com/`.
 
 ### 4.6. (По желанию) Sentry
 
@@ -235,4 +264,4 @@ Chat ID для отправки сообщений в конкретный ча�
 | 6   | (Позже)  | Создавать workflow, подключать ноды к созданным Credentials; для webhook — включить workflow (Active = On).                                    |
 
 
-Ссылки: [runbook-n8n.md](runbook-n8n.md), [keyring-credentials.md](keyring-credentials.md), [day0-runbook.md](day0-runbook.md).
+Ссылки: [runbook-n8n.md](runbook-n8n.md), [keyring-credentials.md](keyring-credentials.md), [archive/day0-runbook.md](archive/day0-runbook.md).

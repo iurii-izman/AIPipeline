@@ -23,7 +23,7 @@ AI-native delivery pipeline for solo development: Linear, Notion, GitHub, Cursor
 |----------|------------|
 | [docs/keyring-credentials.md](docs/keyring-credentials.md) | Keyring: записи, атрибуты, как обновить |
 | [docs/mcp-enable-howto.md](docs/mcp-enable-howto.md) | Как включить MCP в Cursor (env из keyring) |
-| [docs/day0-runbook.md](docs/day0-runbook.md) | Чек-лист Day-0 (для справки) |
+| [docs/archive/day0-runbook.md](docs/archive/day0-runbook.md) | Day-0 чек-лист (архив, для справки) |
 | [docs/runbook.md](docs/runbook.md) | Code review, MCP, n8n, health |
 | [docs/definition-of-done.md](docs/definition-of-done.md) | DoD для PR и задач |
 | [docs/runbook-n8n.md](docs/runbook-n8n.md) | n8n на Podman |
@@ -54,8 +54,21 @@ MCP: Notion, GitHub, Linear, Telegram, filesystem (`.cursor/mcp.json`). Секр
 
 - `npm run status` или `./scripts/health-check-env.sh` — проверка keyring, приложения, n8n
 - `./scripts/system-check.sh` — среда (OS, Node, Podman, toolbox)
-- `npm run lint` / `npm run build` / `npm test`
+- `npm run lint` / `npm run build` / `npm test` (smoke + health server test)
+- **`./scripts/start-app-with-keyring.sh`** — запуск приложения с env из keyring (GET /health, /status с env flags true)
+- `PORT=3000 npm start` — HTTP server без keyring (GET /health, GET /status для n8n/Telegram)
 - `./scripts/run-n8n.sh` — запуск n8n в Podman
+- `./scripts/run-n8n-with-ngrok.sh` — ngrok туннель на 5678 + перезапуск n8n с HTTPS WEBHOOK_URL (для Telegram Trigger); нужен ngrok authtoken (keyring или `ngrok config add-authtoken`)
+- `./scripts/import-n8n-workflow.sh [workflow.json]` — импорт одного workflow в n8n по API
+- `./scripts/import-all-n8n-workflows.sh` — импорт всех workflow из docs/n8n-workflows/*.json
+- `node scripts/update-wf5-status-workflow.js` — донастройка WF-5 (Telegram Trigger, /status, GET /status, Telegram Send); затем в UI назначить credentials и включить
+- `node scripts/update-wf1-linear-telegram.js` — донастройка WF-1 (Schedule → Linear → IF → Telegram)
+- `node scripts/update-wf2-github-pr-linear.js` — WF-2: Schedule → GitHub PRs → Telegram
+- `node scripts/update-wf3-sentry-telegram.js` — WF-3: Webhook Sentry → IF → Linear + Telegram
+- `node scripts/update-wf4-daily-digest.js` — WF-4: Schedule 09:00 → Linear → digest → Telegram
+- `node scripts/update-wf6-notion-reminder.js` — WF-6: Schedule Пн 10:00 → reminder → Telegram
+  После скриптов WF-2…WF-6: в n8n привязать credentials, для WF-3 — задать Team и URL в Sentry. См. [docs/what-to-do-manually.md](docs/what-to-do-manually.md)
+- `source scripts/load-env-from-keyring.sh && node scripts/sync-n8n-credentials-from-keyring.js` — создать в n8n credentials (Linear, Telegram, Notion, GitHub) из keyring, без ручного ввода API ключей
 
 ## License
 

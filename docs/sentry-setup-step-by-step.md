@@ -58,6 +58,8 @@
 
 После этого агент в Cursor сможет обращаться к Sentry через MCP (проекты, issues и т.д.).
 
+**Если появилось «Нет доступных приложений» при открытии ссылки:** это OAuth callback (в адресе есть `state=...`). Система не знает, каким приложением открыть протокол. Что сделать: нажми **Отменить** в диалоге; убедись, что **Cursor запущен**; повтори попытку подключения Sentry MCP (Refresh или заново Add server) и снова разреши «Открыть приложение xdg-open» — иногда Cursor перехватывает callback при повторной попытке. Если не помогает — в Cursor может быть альтернатива (например, вставка ссылки вручную или другой способ OAuth на Linux); см. справку Cursor по MCP.
+
 ---
 
 ## Шаг 6. (Опционально) Алерты → n8n → Telegram
@@ -82,4 +84,4 @@
 | 5 | Cursor → MCP → Add remote `https://mcp.sentry.dev/mcp` → OAuth в браузере |
 | 6 | (Опц.) Sentry Alert → Webhook → URL n8n workflow |
 
-Ссылки: [sentry-setup.md](sentry-setup.md), [keyring-credentials.md](keyring-credentials.md), [day0-runbook.md](day0-runbook.md).
+Ссылки: [sentry-setup.md](sentry-setup.md), [keyring-credentials.md](keyring-credentials.md), [archive/day0-runbook.md](archive/day0-runbook.md).

@@ -26,9 +26,10 @@ A task is done when:
 
 | Object   | Format                 | Example                          |
 |----------|------------------------|----------------------------------|
-| Branches | `{LINEAR-ID}-{short-desc}` | `ENG-123-fix-auth-token`     |
-| Commits  | `ENG-XXX: description` | `ENG-123: add retry logic`       |
-| PR       | `ENG-XXX: {Title from Linear}` | `ENG-123: Fix auth token` |
+| Branches | `{LINEAR-ID}-{short-desc}` | `AIP-8-n8n-webhooks`, `ENG-123-fix-auth-token` |
+| Commits  | `ENG-XXX: description` или `AIP-XX: description` | `AIP-8: configure webhooks` |
+| PR title | `{LINEAR-ID}: {Title from Linear}` | `AIP-8: n8n deploy via Podman` |
+| PR body  | **Обязательно:** `Closes AIP-XX` (или `Fixes AIP-XX`) — тогда Linear закроет задачу при merge | `Closes AIP-8` |
 | n8n WF   | `WF-{N}: description`  | `WF-3: Sentry Alert → Telegram`  |
 | Notion   | `{Type}: {Title}`      | `Spec: CRM Sync Architecture`    |
 | Telegram | `#project-{topic}`     | `#project-alerts`                |

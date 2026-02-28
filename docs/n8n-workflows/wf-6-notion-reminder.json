@@ -1,0 +1,34 @@
+{
+  "name": "WF-6: Notion → NotebookLM reminder (AIPipeline)",
+  "nodes": [
+    {
+      "id": "b2c3d4e5-0001-4000-8000-000000000001",
+      "name": "Every Monday 10:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0],
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 10 * * 1" }]
+        }
+      }
+    },
+    {
+      "id": "b2c3d4e5-0002-4000-8000-000000000002",
+      "name": "Set reminder message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [260, 0],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"message\": \"📚 Monday: check Notion for updated specs and resync NotebookLM sources. See docs/n8n-workflows/README.md.\"\n}"
+      }
+    }
+  ],
+  "connections": {
+    "Every Monday 10:00": {
+      "main": [[{ "node": "Set reminder message", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {}
+}

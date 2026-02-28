@@ -12,7 +12,7 @@ You are working in the **AIPipeline** repo: an AI-native delivery pipeline (Line
 ## Key docs
 
 - **PIPELINE.md** — full blueprint (phases 0–7, MCP, n8n).
-- **docs/day0-runbook.md** — setup checklist.
+- **docs/archive/day0-runbook.md** — Day-0 setup checklist (архив).
 - **docs/runbook.md** — code review, MCP, n8n, health.
 - **docs/definition-of-done.md** — DoR/DoD, naming.
 - **docs/mcp-enable-howto.md** — MCP env and Cursor launch. **docs/README.md** — doc index, next steps. **AGENTS.md** — handoff prompt.

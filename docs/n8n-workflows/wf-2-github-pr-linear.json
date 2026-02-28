@@ -1,0 +1,29 @@
+{
+  "name": "WF-2: GitHub PR → Linear + Telegram (AIPipeline)",
+  "nodes": [
+    {
+      "id": "e5f6a7b8-0001-4000-8000-000000000001",
+      "name": "When clicking 'Test workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0]
+    },
+    {
+      "id": "e5f6a7b8-0002-4000-8000-000000000002",
+      "name": "Placeholder: add GitHub webhook + Linear + Telegram",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [220, 0],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"info\": \"Add: GitHub Trigger (PR opened/merged) → extract issue ID from branch → Linear update status → Telegram. See docs/n8n-workflows/README.md WF-2.\"\n}"
+      }
+    }
+  ],
+  "connections": {
+    "When clicking 'Test workflow'": {
+      "main": [[{ "node": "Placeholder: add GitHub webhook + Linear + Telegram", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {}
+}

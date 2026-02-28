@@ -28,7 +28,7 @@
 
 1. **Кто что сделал по задаче:** Linear issue → комментарии, ссылки на PR → GitHub commit history.
 2. **Почему так решили:** Notion → Decisions / ADR; в коммитах — ссылка на Linear/Notion при необходимости.
-3. **Как настроено сейчас:** docs/ (runbook, mcp-setup, keyring-credentials), .env.example (какие переменные нужны).
+3. **Как настроено сейчас:** docs/ (runbook, mcp-enable-howto, keyring-credentials), .env.example (какие переменные нужны).
 4. **Что лежит в keyring:** [keyring-credentials.md](keyring-credentials.md) — таблица и блок «Инвентарь».
 5. **Когда что упало:** Sentry; при настроенных алертах — история в Telegram / n8n.
 

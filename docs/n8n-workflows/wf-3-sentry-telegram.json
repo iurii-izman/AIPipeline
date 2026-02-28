@@ -1,0 +1,29 @@
+{
+  "name": "WF-3: Sentry Alert → Telegram + Linear (AIPipeline)",
+  "nodes": [
+    {
+      "id": "f6a7b8c9-0001-4000-8000-000000000001",
+      "name": "When clicking 'Test workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0]
+    },
+    {
+      "id": "f6a7b8c9-0002-4000-8000-000000000002",
+      "name": "Placeholder: add Sentry webhook + IF + Linear + Telegram",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [220, 0],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"info\": \"Add: Sentry Webhook (new issue) → IF critical → Linear issue (bug-critical) + Telegram; else Linear (bug) + Telegram. See docs/n8n-workflows/README.md WF-3.\"\n}"
+      }
+    }
+  ],
+  "connections": {
+    "When clicking 'Test workflow'": {
+      "main": [[{ "node": "Placeholder: add Sentry webhook + IF + Linear + Telegram", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {}
+}

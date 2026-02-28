@@ -36,6 +36,8 @@ _load N8N_API_KEY n8n aipipeline-api
 
 # Optional
 _load SENTRY_DSN sentry.io aipipeline
+_load SENTRY_AUTH_TOKEN sentry.io aipipeline-auth
+_load NGROK_AUTHTOKEN ngrok.com aipipeline
 
 if [[ "${1:-}" == "--cursor" ]]; then
   cd "$REPO_ROOT"

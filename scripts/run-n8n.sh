@@ -36,12 +36,13 @@ fi
 podman run -d \
   --name "$CONTAINER_NAME" \
   --restart unless-stopped \
+  --add-host=host.containers.internal:host-gateway \
   -p 5678:5678 \
   -v "$VOLUME_NAME:/home/node/.n8n" \
   -e N8N_BASIC_AUTH_ACTIVE=true \
   -e N8N_BASIC_AUTH_USER="$USER" \
   -e N8N_BASIC_AUTH_PASSWORD="$PASS" \
-  -e WEBHOOK_URL=http://localhost:5678/ \
+  -e "WEBHOOK_URL=${WEBHOOK_URL:-http://localhost:5678/}" \
   "$IMAGE"
 
 echo "n8n started. Open http://localhost:5678"

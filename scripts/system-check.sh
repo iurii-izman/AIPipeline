@@ -47,3 +47,18 @@ echo ""
 
 echo "=== Network (key ports) ==="
 ss -tlnp 2>/dev/null | grep -E ':(5678|3000|8080|9090)' || echo "No known service ports active"
+echo ""
+
+# Phase 0.5: Ready / Setup / Blockers (delivery-pipeline.md)
+echo "=== Phase 0.5: Environment Report ==="
+READY=""
+SETUP=""
+BLOCKERS=""
+
+command -v node >/dev/null 2>&1 && READY="${READY:+$READY }Node.js" || SETUP="${SETUP:+$SETUP }Node.js (toolbox: ./scripts/setup-toolbox-aipipeline.sh)"
+command -v podman >/dev/null 2>&1 && READY="${READY:+$READY }Podman" || SETUP="${SETUP:+$SETUP }Podman"
+command -v git >/dev/null 2>&1 && READY="${READY:+$READY }git" || SETUP="${SETUP:+$SETUP }git"
+command -v npx >/dev/null 2>&1 && READY="${READY:+$READY }npx" || SETUP="${SETUP:+$SETUP }npx"
+[[ -n "$READY" ]] && echo "✅ Ready: $READY"
+[[ -n "$SETUP" ]] && echo "🔧 Setup: $SETUP"
+[[ -n "$BLOCKERS" ]] && echo "❓ Blockers: $BLOCKERS" || true
