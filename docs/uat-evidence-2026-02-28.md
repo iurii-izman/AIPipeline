@@ -4,7 +4,7 @@
 
 ## WF-5 Telegram commands (n8n executions)
 
-Workflow: `WF-5: Telegram Command Center (AIPipeline)`  
+Workflow: `WF-5: Telegram Command Center (AIPipeline)`
 Workflow ID: `41jAGQw9qAMs52dN`
 
 | Command | Execution ID | Started (UTC) | Status | Last node |
