@@ -38,6 +38,7 @@
 1. Все проверки `core` выполнены.
 2. `stack-control status extended` показывает `observability: healthy`.
 3. `check-observability-stack.sh` проходит (`loki/grafana/promtail` доступны).
+4. `check-observability-alerts.sh` не сигналит пороговые алерты.
 
 ### Full acceptance (extended + cloudflared)
 

@@ -21,6 +21,16 @@ APP_PID_FILE="$STATE_DIR/app.pid"
 
 mkdir -p "$STATE_DIR" "$LOG_DIR"
 
+audit_event() {
+  local action="$1"
+  local status="$2"
+  local details="${3:-{}}"
+  (
+    cd "$REPO_ROOT"
+    node ./scripts/write-audit-event.js --action "$action" --status "$status" --details "$details" >/dev/null 2>&1 || true
+  )
+}
+
 profile="${2:-core}"
 cmd="${1:-status}"
 
@@ -181,14 +191,28 @@ do_status() {
 
 case "$cmd" in
   start)
-    do_start
+    if do_start; then
+      audit_event "stack_control.start" "success" "{\"profile\":\"$profile\"}"
+    else
+      audit_event "stack_control.start" "failed" "{\"profile\":\"$profile\"}"
+      exit 1
+    fi
     ;;
   stop)
-    do_stop
+    if do_stop; then
+      audit_event "stack_control.stop" "success" "{\"profile\":\"$profile\"}"
+    else
+      audit_event "stack_control.stop" "failed" "{\"profile\":\"$profile\"}"
+      exit 1
+    fi
     ;;
   restart)
-    do_stop
-    do_start
+    if do_stop && do_start; then
+      audit_event "stack_control.restart" "success" "{\"profile\":\"$profile\"}"
+    else
+      audit_event "stack_control.restart" "failed" "{\"profile\":\"$profile\"}"
+      exit 1
+    fi
     ;;
   status)
     do_status

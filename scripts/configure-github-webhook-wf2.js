@@ -11,6 +11,8 @@
 
 const https = require("https");
 const http = require("http");
+const fs = require("fs");
+const path = require("path");
 
 const token = process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
 const owner = process.env.GITHUB_OWNER || "iurii-izman";
@@ -18,7 +20,30 @@ const repo = process.env.GITHUB_REPO || "AIPipeline";
 
 if (!token) {
   console.error("GITHUB_PERSONAL_ACCESS_TOKEN is required");
+  writeAudit("github_webhook_wf2.configure", "failed", { reason: "missing_github_token" });
   process.exit(1);
+}
+
+function writeAudit(action, status, details = {}) {
+  try {
+    const repoRoot = path.resolve(__dirname, "..");
+    const logDir = path.join(repoRoot, ".runtime-logs");
+    fs.mkdirSync(logDir, { recursive: true });
+    fs.appendFileSync(
+      path.join(logDir, "audit.log"),
+      `${JSON.stringify({
+        eventType: "audit",
+        ts: new Date().toISOString(),
+        action,
+        status,
+        actor: process.env.USER || process.env.USERNAME || "unknown",
+        details,
+      })}\n`,
+      "utf8"
+    );
+  } catch (error) {
+    void error;
+  }
 }
 
 function reqHttps(method, path, body) {
@@ -87,6 +112,7 @@ function getNgrokUrl() {
 
   if (!baseUrl || !baseUrl.startsWith("https://")) {
     console.error("WEBHOOK_BASE_URL is required (or run ngrok and expose local :4040 API)");
+    writeAudit("github_webhook_wf2.configure", "failed", { reason: "missing_or_invalid_webhook_base_url" });
     process.exit(1);
   }
 
@@ -101,6 +127,13 @@ function getNgrokUrl() {
       config: { url: hookUrl, content_type: "json", insecure_ssl: "0" },
     });
     console.log(`updated hook ${updated.id}: ${hookUrl}`);
+    writeAudit("github_webhook_wf2.configure", "success", {
+      operation: "update",
+      hookId: updated.id,
+      owner,
+      repo,
+      hookUrl,
+    });
   } else {
     const created = await reqHttps("POST", `/repos/${owner}/${repo}/hooks`, {
       active: true,
@@ -108,8 +141,20 @@ function getNgrokUrl() {
       config: { url: hookUrl, content_type: "json", insecure_ssl: "0" },
     });
     console.log(`created hook ${created.id}: ${hookUrl}`);
+    writeAudit("github_webhook_wf2.configure", "success", {
+      operation: "create",
+      hookId: created.id,
+      owner,
+      repo,
+      hookUrl,
+    });
   }
 })().catch((e) => {
+  writeAudit("github_webhook_wf2.configure", "failed", {
+    reason: e && e.message ? String(e.message).slice(0, 240) : "unknown_error",
+    owner,
+    repo,
+  });
   console.error(e.message || e);
   process.exit(1);
 });

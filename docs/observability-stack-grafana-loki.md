@@ -8,7 +8,7 @@
 - `aipipeline-promtail` (читает `./.runtime-logs/*.log`)
 - `aipipeline-grafana` на `http://localhost:3001` (`admin/admin`)
 - Provisioned datasource `Loki`
-- Provisioned dashboard `AIPipeline Overview`
+- Provisioned dashboard `AIPipeline Overview` (error signals + DLQ/workflow failures + audit trail + full logs)
 
 ## Скрипты
 
@@ -18,6 +18,7 @@
 ./scripts/run-observability-stack.sh start
 ./scripts/run-observability-stack.sh status
 ./scripts/check-observability-stack.sh
+./scripts/check-observability-alerts.sh
 ./scripts/run-observability-stack.sh logs
 ./scripts/run-observability-stack.sh stop
 ```
@@ -45,6 +46,8 @@ Promtail читает из:
    - `curl -s http://localhost:3000/status`
 4. Открой Grafana: `http://localhost:3001`
 5. Dashboard: `AIPipeline / AIPipeline Overview`
+6. Alert probe:
+   - `./scripts/check-observability-alerts.sh`
 
 ## Примечания
 
