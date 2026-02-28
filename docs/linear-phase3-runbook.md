@@ -1,6 +1,6 @@
 # Linear — Фаза 3: вести задачи по workflow и labels
 
-**Цель:** единообразно вести задачи в Linear: статусы (workflow), приоритет, labels, шаблон «Agent-Ready».  
+**Цель:** единообразно вести задачи в Linear: статусы (workflow), приоритет, labels, шаблон «Agent-Ready».
 **Ссылки:** [linear-setup.md](linear-setup.md), [PIPELINE.md](../PIPELINE.md) Фаза 3, [definition-of-done.md](definition-of-done.md).
 
 ---

@@ -66,7 +66,7 @@ MCP: Notion, GitHub, Linear, Telegram, filesystem (`.cursor/mcp.json`). Секр
 - `node scripts/update-wf2-github-pr-linear.js` — WF-2: Schedule → GitHub PRs → Telegram
 - `node scripts/update-wf3-sentry-telegram.js` — WF-3: Webhook Sentry → IF → Linear + Telegram
 - `node scripts/update-wf4-daily-digest.js` — WF-4: Schedule 09:00 → Linear → digest → Telegram
-- `node scripts/update-wf6-notion-reminder.js` — WF-6: Schedule Пн 10:00 → reminder → Telegram  
+- `node scripts/update-wf6-notion-reminder.js` — WF-6: Schedule Пн 10:00 → reminder → Telegram
   После скриптов WF-2…WF-6: в n8n привязать credentials, для WF-3 — задать Team и URL в Sentry. См. [docs/what-to-do-manually.md](docs/what-to-do-manually.md)
 - `source scripts/load-env-from-keyring.sh && node scripts/sync-n8n-credentials-from-keyring.js` — создать в n8n credentials (Linear, Telegram, Notion, GitHub) из keyring, без ручного ввода API ключей
 

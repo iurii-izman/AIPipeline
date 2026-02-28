@@ -23,8 +23,8 @@
 
 **Сделано скриптом:** Webhook → IF (level error/fatal) → Linear: Create issue → Telegram.
 
-**Если ещё не делал:**  
-- **Вариант А (вручную):** n8n → WF-3 → нода «Sentry Webhook» → скопировать **Production Webhook URL** → Sentry → Alerts → правило → Actions → **Send a notification via Webhook** → вставить URL.  
+**Если ещё не делал:**
+- **Вариант А (вручную):** n8n → WF-3 → нода «Sentry Webhook» → скопировать **Production Webhook URL** → Sentry → Alerts → правило → Actions → **Send a notification via Webhook** → вставить URL.
 - **Вариант Б (скрипт):** В keyring: **Sentry Auth Token** (User: `aipipeline-auth`, Server: `sentry.io`). Один раз настроить ngrok: **`./scripts/configure-ngrok-from-keyring.sh`** (или `source scripts/load-env-from-keyring.sh && ./.bin/ngrok config add-authtoken "$NGROK_AUTHTOKEN"`). Затем запустить **`./.bin/ngrok http 5678`** (в одном терминале), в другом: `source scripts/load-env-from-keyring.sh && export WEBHOOK_BASE_URL=$(curl -s http://127.0.0.1:4040/api/tunnels | node -e "const j=JSON.parse(require('fs').readFileSync(0,'utf8')); const t=(j.tunnels||[]).find(x=>x.public_url&&x.public_url.startsWith('https')); console.log(t?t.public_url:'');") && ./scripts/register-sentry-webhook.sh`.
 
 Team в Linear и Chat ID уже заданы; WF-3 включён (Active).
