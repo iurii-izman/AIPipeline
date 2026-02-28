@@ -1,7 +1,7 @@
 # Текущая фаза
 
-**Источник статуса (что сделано / не сделано):** [status-summary.md](status-summary.md).  
-**Единый список следующих шагов:** [NEXT-STEPS.md](NEXT-STEPS.md).  
+**Источник статуса (что сделано / не сделано):** [status-summary.md](status-summary.md).
+**Единый список следующих шагов:** [NEXT-STEPS.md](NEXT-STEPS.md).
 **План фаз:** [PIPELINE.md](../PIPELINE.md).
 
 ---
