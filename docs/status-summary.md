@@ -29,6 +29,7 @@
 - **run-n8n-with-ngrok.sh:** после старта n8n пытается автообновить GitHub webhook WF-2 и зарегистрировать Sentry webhook WF-3 (если есть `SENTRY_AUTH_TOKEN`).
 - **run-n8n-with-cloudflared.sh:** добавлен скрипт для stable HTTPS endpoint через Cloudflare Tunnel (restart n8n с `WEBHOOK_URL`, автообновление webhook WF-2 и попытка автообновления WF-3).
 - **Live Telegram UAT (2026-02-28):** подтверждены рабочие команды `/tasks`, `/status`, `/search`, `/standup`, `/errors`, `/create`, `/deploy staging`; детали и evidence в `docs/live-uat-telegram.md`.
+- **UAT evidence:** execution IDs (n8n), deploy run (GitHub Actions), созданный issue (`AIP-13`) зафиксированы в `docs/uat-evidence-2026-02-28.md`.
 - **Доки:** runbooks (в т.ч. [linear-phase3-runbook.md](linear-phase3-runbook.md), [n8n-workflows/README.md](n8n-workflows/README.md), [live-uat-telegram.md](live-uat-telegram.md)), гайды по Notion/Sentry/n8n (step-by-step), keyring, Linear, MCP, audit, и consolidated backlog [tz-remaining-work.md](tz-remaining-work.md).
 
 ---

@@ -7,11 +7,13 @@
 1. Добавить `OPENAI_API_KEY` в keyring/env для включения LLM-ветки WF-3 (сейчас fallback).
 2. Прогнать живой UAT из реального Telegram-чата по командам:
    - `/tasks`, `/errors`, `/search test`, `/create test issue`, `/deploy staging`, `/standup`.
+   Статус: выполнено (см. `docs/live-uat-telegram.md`).
 3. Зафиксировать артефакты UAT:
    - скриншоты ответов бота;
    - execution IDs в n8n;
    - ссылки на GitHub Actions run (`/deploy`);
    - созданный issue в Linear (`/create`).
+   Статус: выполнено по execution/run/issue evidence (см. `docs/uat-evidence-2026-02-28.md`); скриншоты чата остаются пользовательским артефактом.
 4. Перевести webhook URL с ngrok на стабильный публичный HTTPS endpoint и обновить:
    - WF-2 GitHub webhook target;
    - WF-3 Sentry webhook target.

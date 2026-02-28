@@ -27,6 +27,7 @@
 
 - **Подробный чек-лист:** [next-steps-step-by-step.md](next-steps-step-by-step.md). **Проверка окружения:** `./scripts/health-check-env.sh`.
 - **Живой UAT и webhook-проверки:** [live-uat-telegram.md](live-uat-telegram.md).
+- **UAT evidence (n8n/GitHub/Linear):** [uat-evidence-2026-02-28.md](uat-evidence-2026-02-28.md).
 - **Выбор стабильного HTTPS endpoint (после UAT):** [stable-https-options.md](stable-https-options.md).
 - **Реализация stable endpoint через Cloudflare Tunnel:** [cloudflare-tunnel-setup.md](cloudflare-tunnel-setup.md).
 - **Оставшиеся работы до полного соответствия ТЗ:** [tz-remaining-work.md](tz-remaining-work.md).
