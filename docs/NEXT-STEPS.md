@@ -26,6 +26,7 @@
 ## Пошагово и после аудита
 
 - **Подробный чек-лист:** [next-steps-step-by-step.md](next-steps-step-by-step.md). **Проверка окружения:** `./scripts/health-check-env.sh`.
+- **Живой UAT и webhook-проверки:** [live-uat-telegram.md](live-uat-telegram.md).
 
 ---
 
