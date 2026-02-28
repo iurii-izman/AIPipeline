@@ -13,7 +13,7 @@
 
 - ~~В Cursor: «find recent specs in Notion».~~ ✅ Выполнено (поиск через MCP, созданы первая спека и ADR).
 - В Telegram: `/status` (если есть n8n workflow для команд).
-- Открыть PR: убедиться, что BugBot и Linear link работают. (Проверочный PR: `chore/verify-pr-bugbot-linear` — создать и прогнать вручную при необходимости.)
+- Открыть PR: убедиться, что BugBot и Linear link работают. Ветка `chore/verify-pr-bugbot-linear` уже запушена — открой PR: https://github.com/iurii-izman/AIPipeline/pull/new/chore/verify-pr-bugbot-linear
 
 ## Дальше по PIPELINE.md
 

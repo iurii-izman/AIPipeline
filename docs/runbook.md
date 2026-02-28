@@ -37,7 +37,7 @@ Project rules live in `.cursor/rules/` (workflow, coding-standards, integration-
 
 - Config: `.cursor/mcp.json`. Secrets только из **env** (`${env:VAR}`); везде **токены/OAuth**, не пароли.
 - Хранить ключи в **keyring** (см. [keyring-credentials.md](keyring-credentials.md)); перед Cursor: `source scripts/load-env-from-keyring.sh` или запуск `./scripts/load-env-from-keyring.sh --cursor`.
-- Переменные: NOTION_TOKEN, GITHUB_PERSONAL_ACCESS_TOKEN, LINEAR_API_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID. См. [mcp-setup.md](mcp-setup.md).
+- Переменные: NOTION_TOKEN, GITHUB_PERSONAL_ACCESS_TOKEN, LINEAR_API_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID. См. [mcp-enable-howto.md](mcp-enable-howto.md).
 - **Sentry MCP**: OAuth по адресу https://mcp.sentry.dev/mcp (в настройках MCP в Cursor).
 - После добавления токенов: **Cursor** → **Settings** → **MCP** → **Refresh**; проверить зелёный статус.
 
@@ -50,7 +50,7 @@ See [runbook-n8n.md](runbook-n8n.md) for deploy and credentials.
 ## 4. Setup guides (Day-0)
 
 - [day0-runbook.md](day0-runbook.md) — full checklist.
-- [notion-delivery-hub.md](notion-delivery-hub.md), [linear-setup.md](linear-setup.md), [sentry-setup.md](sentry-setup.md), [telegram-bot-setup.md](telegram-bot-setup.md) — per-service setup.
+- [notion-delivery-hub.md](notion-delivery-hub.md), [linear-setup.md](linear-setup.md), [sentry-setup.md](sentry-setup.md); Telegram — [keyring-credentials.md](keyring-credentials.md), [mcp-enable-howto.md](mcp-enable-howto.md).
 
 ---
 

@@ -2,6 +2,8 @@
 
 Error tracking and (optionally) MCP. Free tier: 5K errors/month.
 
+**Пошаговый гайд (куда жмять, что вводить):** [sentry-setup-step-by-step.md](sentry-setup-step-by-step.md)
+
 ## Create project
 
 1. Sign up / log in at sentry.io.

@@ -26,11 +26,12 @@
 | GitHub PAT | `AIPipeline — GitHub PAT` | твой_github_логин или `aipipeline` | `github.com` | GitHub → Settings → Developer settings → PAT (scope: repo, read:org) | ☑ |
 | Linear API Key | `AIPipeline — Linear API Key` | твой_email или `aipipeline` | `linear.app` | Linear → Settings → API → Personal API keys | ☑ |
 | Notion token | `AIPipeline — Notion` / `AIPipeline — Notion Integration Token` | `aipipeline` или имя integration | `notion.so` | Notion → Internal Integration → token | ☑ |
-| Telegram Bot Token | `AIPipeline — Telegram Bot Token` | username бота (например `aipipeline_delivery_bot`) | `api.telegram.org` | @BotFather → /newbot → token | ☐ |
-| Telegram Chat ID | `AIPipeline — Telegram Chat ID` | название группы/канала или `aipipeline-alerts` | `api.telegram.org` | getUpdates после сообщения в группе или из n8n | ☐ |
-| n8n Basic Auth User | `AIPipeline — n8n Basic Auth User` | логин для n8n UI | `localhost:5678` или `n8n` | задаёшь при первом запуске n8n | ☐ |
-| n8n Basic Auth Password | `AIPipeline — n8n Basic Auth Password` | тот же логин или `n8n` | `localhost:5678` или `n8n` | задаёшь при первом запуске n8n | ☐ |
-| Sentry DSN (опц.) | `AIPipeline — Sentry DSN` | имя проекта в Sentry | `sentry.io` | Sentry → Project → Client Keys (DSN) | ☐ |
+| Telegram Bot Token | `AIPipeline — Telegram Bot Token` или `AIPipelineTG_bot` | `aipipeline_delivery_bot` | `api.telegram.org` | @BotFather → /newbot → token | ☑ |
+| Telegram Chat ID | `AIPipeline — Telegram Chat ID` | `aipipeline-alerts` | `api.telegram.org` | getUpdates после сообщения в группе или из n8n | ☑ |
+| n8n Basic Auth User | `AIPipeline — n8n Basic Auth User` | `aipipeline` | `n8n` | логин для входа в UI n8n | ☑ |
+| n8n Basic Auth Password | `AIPipeline — n8n Basic Auth Password` | `aipipeline-password` | `n8n` | пароль для входа в UI n8n | ☑ |
+| n8n API Key (опц.) | `AIPipeline — N8n API` | `aipipeline-api` | `n8n` | n8n → Settings → API → Create API Key (для вызова API/workflow извне). Чтобы скрипт подхватывал как `N8N_API_KEY`, в записи должны быть **User:** `aipipeline-api`, **Server:** `n8n`. | ☑ |
+| Sentry DSN (опц.) | `AIPipeline — Sentry DSN` | `aipipeline` | `sentry.io` | Sentry → Project → Client Keys (DSN) | ☑ |
 
 **Примечание:** Sentry MCP использует OAuth (логин в браузере), в keyring его хранить не обязательно. В keyring — DSN для SDK в коде и для n8n, если нужен.
 
@@ -66,9 +67,18 @@ secret-tool store --label="AIPipeline — Telegram Chat ID" server api.telegram.
 # n8n Basic Auth (логин и пароль — две отдельные записи)
 secret-tool store --label="AIPipeline — n8n Basic Auth User" server n8n user aipipeline
 secret-tool store --label="AIPipeline — n8n Basic Auth Password" server n8n user aipipeline-password
+
+# n8n API Key (для вызова API n8n из скриптов; Settings → API в n8n)
+secret-tool store --label="AIPipeline — N8n API" server n8n user aipipeline-api
 ```
 
 > **Важно:** CLI-шаблоны выше используют `server` (не `service`), чтобы быть совместимыми с GUI-записями. Если ранее ключи создавались с `service`, скрипт всё равно их найдёт (fallback).
+
+### Обновить только пароль (не трогая User/Server)
+
+Через GUI (Seahorse / COSMIC Keys): открой ключницу → найди запись по Label → открой её (двойной клик или ПКМ → **Свойства** / **Edit**) → в поле **Password** введи новое значение → сохрани. User и Server не меняй — иначе скрипт перестанет находить запись.
+
+Для **Telegram Chat ID**: сначала получи правильный chat_id группы — в группе напиши любое сообщение, затем выполни `./scripts/get-telegram-chat-id.sh`; в выводе будет `chat_id=-100...` для группы. Это значение вставь в Password записи «AIPipeline — Telegram Chat ID» (как выше).
 
 ## Как использовать с Cursor / скриптами
 
@@ -95,6 +105,6 @@ secret-tool store --label="AIPipeline — n8n Basic Auth Password" server n8n us
 
 ## Ссылки
 
-- [mcp-setup.md](mcp-setup.md) — какие переменные нужны для MCP.
+- [mcp-enable-howto.md](mcp-enable-howto.md) — какие переменные нужны для MCP.
 - [day0-runbook.md](day0-runbook.md) — порядок настройки и получения токенов.
 - PIPELINE.md — Приложение Б (безопасность, секреты только в env/keyring).

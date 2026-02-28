@@ -1,5 +1,7 @@
 # Текущая фаза и следующие шаги
 
+**Статус:** активный. Следующие шаги (единый список): [README.md](README.md#следующие-шаги-единый-список).
+
 Обновляется по мере продвижения. Source of truth: [PIPELINE.md](../PIPELINE.md).
 
 ---
@@ -23,27 +25,21 @@
 - **GitHub Issues:** #2 (Notion setup), #3 (Telegram), #4 (Linear sync), #5 (n8n), #6 (pre-commit — closed).
 
 **Дополнительно сделано агентом (автопилот):**
-- Linear: в тикеты AIP-5, AIP-6, AIP-7, AIP-8 добавлены описания и ссылки на GitHub issues.
-- Notion: скрипт `scripts/notion-create-delivery-hub-structure.sh` — после создания root-страницы и шаринга с integration пользователь задаёт `NOTION_DELIVERY_HUB_PAGE_ID` и скрипт создаёт подстраницы (Specs, Meetings, Runbooks, Integration Mapping, Decision Records, Quick Links).
-- Доки: [notion-delivery-hub.md](notion-delivery-hub.md), [day0-runbook.md](day0-runbook.md) обновлены под этот сценарий; [mcp-enable-howto.md](mcp-enable-howto.md) — про опциональность Telegram MCP; в `.env.example` добавлен `NOTION_DELIVERY_HUB_PAGE_ID`.
+- Linear: в тикеты AIP-5..AIP-8 добавлены описания и ссылки на GitHub issues.
+- Notion: скрипт `notion-create-delivery-hub-structure.sh` (идемпотентный — при повторном запуске не создаёт дубликаты). Пользователь создал root-страницу и запустил скрипт; агент удалил дубликаты подстраниц в Notion через API и добавил в скрипт проверку «уже есть» → SKIP.
+- Доки: [notion-delivery-hub.md](notion-delivery-hub.md), [notion-setup-step-by-step.md](notion-setup-step-by-step.md), [day0-runbook.md](day0-runbook.md), [mcp-enable-howto.md](mcp-enable-howto.md); в `.env.example` — `NOTION_DELIVERY_HUB_PAGE_ID`.
 
-**Дальше (нужно участие пользователя):**
-1. **Notion:** создать root-страницу «AIPipeline — Delivery Hub», расшарить с интеграцией → выполнить `NOTION_DELIVERY_HUB_PAGE_ID=<uuid> ./scripts/notion-create-delivery-hub-structure.sh` (GitHub #2 / AIP-5).
-2. **Telegram:** бот через @BotFather, группа, token + Chat ID → keyring (GitHub #3 / AIP-6). Telegram MCP станет зелёным после перезапуска Cursor через `aipipeline-cursor`.
-3. **Sentry:** проект, DSN → keyring; Sentry MCP — OAuth в Cursor.
-4. **n8n:** `scripts/run-n8n.sh` → Podman, настройка workflows в UI (GitHub #5 / AIP-8).
+**Day-0 завершён.** Опционально: Sentry MCP в Cursor (remote `https://mcp.sentry.dev/mcp`, OAuth); N8N_API_KEY в keyring (User: `aipipeline-api`, Server: `n8n`) для вызова n8n API; проверки из [day0-runbook.md](day0-runbook.md) (Notion, /status, PR).
 
-Полный чек-лист: [day0-runbook.md](day0-runbook.md).
+Краткий итог списком: [status-summary.md](status-summary.md). Полный чек-лист: [day0-runbook.md](day0-runbook.md).
 
 ---
 
-## Что только пользователь может сделать
+## Что только пользователь может сделать (опционально)
 
-- **Notion:** создать root-страницу и расшарить с integration.
-- **Telegram:** создать бота и группу, сохранить токены в keyring.
-- **Sentry:** создать проект, получить DSN.
-- **n8n:** первый запуск и конфигурация workflows в UI.
-- **Перезапуск Cursor** через `aipipeline-cursor` после добавления новых ключей в keyring.
+- **Sentry MCP:** OAuth в Cursor (MCP → Add remote).
+- **N8N_API_KEY:** если нужен вызов n8n API из скриптов — запись в keyring с User: `aipipeline-api`, Server: `n8n`.
+- **Проверки Day-0:** запрос к Notion, /status в Telegram, открыть PR (BugBot, Linear).
 
 Всё остальное (доки, скрипты, labels, issues, правила, шаблоны) автоматизировано агентом.
 
@@ -51,8 +47,9 @@
 
 ## После Day-0
 
-- **Фаза 2:** наполнять Notion (протоколы, спеки, ADR) по шаблонам.
+- **Фаза 2 (начата):** наполнять Notion (протоколы, спеки, ADR) по шаблонам. Агент создал через MCP: первую спеку «Spec: Health check & env verification» в Specs, первый ADR «ADR: Secrets in keyring (no .env in repo)» в Decision Records.
 - **Фаза 3:** вести задачи в Linear по workflow и labels.
 - **Фаза 4+:** добавлять код/интеграции, подключать n8n workflow (WF-1…WF-6), при необходимости NotebookLM.
 
-Проверка среды: `./scripts/system-check.sh` (на **хосте** — полная картина: Node, Podman, Flatpak; **внутри toolbox** — среда контейнера; чтобы в toolbox был Node — см. `./scripts/setup-toolbox-aipipeline.sh`).
+Проверка среды: `./scripts/system-check.sh` (на **хосте** — полная картина: Node, Podman, Flatpak; **внутри toolbox** — среда контейнера; чтобы в toolbox был Node — см. `./scripts/setup-toolbox-aipipeline.sh`).  
+Проверка окружения (keyring, приложение, n8n): `./scripts/health-check-env.sh`.

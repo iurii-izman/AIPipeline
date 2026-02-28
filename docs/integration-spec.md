@@ -19,7 +19,7 @@ Integrations between pipeline tools. Entity mapping and API details go in Notion
 ## Auth and secrets
 
 - All tokens in env (`.env`); never in repo or Notion.
-- MCP: `${env:VAR}` in `.cursor/mcp.json` (see [mcp-setup.md](mcp-setup.md)).
+- MCP: `${env:VAR}` in `.cursor/mcp.json` (see [mcp-enable-howto.md](mcp-enable-howto.md)).
 - n8n: credentials stored in n8n UI.
 
 ## References

@@ -6,9 +6,13 @@
   "scripts": {
     "lint": "node -e \"require('./src/index')\"",
     "build": "node -e \"require('./src/index')\"",
-    "test": "node tests/smoke.test.js"
+    "test": "node tests/smoke.test.js",
+    "status": "./scripts/health-check-env.sh"
   },
   "engines": {
     "node": ">=22"
+  },
+  "dependencies": {
+    "@sentry/node": "^10.40.0"
   }
 }

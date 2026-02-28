@@ -15,7 +15,7 @@ You are working in the **AIPipeline** repo: an AI-native delivery pipeline (Line
 - **docs/day0-runbook.md** — setup checklist.
 - **docs/runbook.md** — code review, MCP, n8n, health.
 - **docs/definition-of-done.md** — DoR/DoD, naming.
-- **docs/mcp-setup.md** — MCP env vars for Cursor.
+- **docs/mcp-enable-howto.md** — MCP env and Cursor launch. **docs/README.md** — doc index, next steps. **AGENTS.md** — handoff prompt.
 
 ## Workflow
 

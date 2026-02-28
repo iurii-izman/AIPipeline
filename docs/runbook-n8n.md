@@ -2,6 +2,8 @@
 
 Deploy and operate n8n on Fedora Atomic with Podman.
 
+**Пошаговый гайд (keyring → запуск → первый вход):** [n8n-setup-step-by-step.md](n8n-setup-step-by-step.md)
+
 ## Deploy (first time)
 
 ```bash
