@@ -13,6 +13,7 @@
 - **Фаза 0.5:** проверка среды (`system-check.sh` с Ready/Setup/Blockers), мини-интервью, план, скелет репо.
 - **Keyring:** скрипт `load-env-from-keyring.sh` (поиск по `server` + `service`), документация [keyring-credentials.md](keyring-credentials.md).
 - **В keyring лежат:** GitHub PAT, Linear API Key, Notion token, Sentry DSN, Telegram Bot Token, Telegram Chat ID, **n8n Basic Auth (User/Password)**, **ngrok authtoken** (для run-n8n-with-ngrok.sh).
+- **Доп. env для WF-5/WF-4:** `LINEAR_TEAM_ID`, `SENTRY_ORG_SLUG`, `SENTRY_PROJECT_SLUG`, `NOTION_SPRINT_LOG_DATABASE_ID`, `GITHUB_OWNER`, `GITHUB_REPO`, `GITHUB_WORKFLOW_STAGING`, `GITHUB_WORKFLOW_PRODUCTION` добавлены в keyring и подхватываются `load-env-from-keyring.sh`.
 - **GitHub:** репо, ruleset (защита main, owner bypass), 19 labels, pre-commit.ci, CI workflow (lint/build/test).
 - **Linear:** проект «AIPipeline Phase 1 — Day-0 Setup», 13 labels, issues AIP-1..AIP-10, интеграция с GitHub. **Фаза 3:** runbook [linear-phase3-runbook.md](linear-phase3-runbook.md) — workflow, labels, шаблон Agent-Ready, процесс ведения задач.
 - **Notion:** root-страница Delivery Hub создана пользователем; скрипт `notion-create-delivery-hub-structure.sh` (идемпотентный) создаёт подстраницы: Specs, Meetings, Runbooks, Integration Mapping, Decision Records, Risks & Issues, Access Matrix, Sprint Log, Guides, Quick Links. **Фаза 2 выполнена (автопилот):** Specs — 3 (Health check, MCP/env, n8n WF-1); Meetings — 1 (Phase 2 kickoff); Runbooks — 1 (n8n Podman); Integration Mapping — 2 (Linear↔GitHub, Notion↔Cursor MCP); Decision Records — 4 (Secrets keyring, Branch naming, PR required + ранее); Quick Links заполнены. Всё через MCP по шаблонам.
@@ -20,14 +21,17 @@
 - **Sentry:** проект на sentry.io (org aipipeline, project node), DSN в keyring, SDK в коде (`src/instrument.js`, `@sentry/node`), инициализация по `SENTRY_DSN`. Sentry MCP в Cursor (remote OAuth); на Linux добавлен cursor:// handler.
 - **n8n:** keyring (Basic Auth User/Password), контейнер (Podman), запуск через `./scripts/run-n8n.sh`, первый вход и Credentials — по [n8n-setup-step-by-step.md](n8n-setup-step-by-step.md). **Credentials из keyring:** скрипт `sync-n8n-credentials-from-keyring.js` создаёт в n8n AIPipeline Linear, Telegram, Notion, GitHub через API (без ручного ввода ключей). N8N_API_KEY в keyring для импорта workflow и создания credentials.
 - **Приложение:** entry point `src/index.js`; при заданном `PORT` — HTTP server: GET /health, **GET /status** (env flags + n8n reachable). Запуск: `./scripts/start-app-with-keyring.sh` (env из keyring → в /status `env.github`, `env.linear` и т.д. = true) или `PORT=3000 npm start` (см. .env.example).
-- **Скрипты:** `system-check.sh`, `load-env-from-keyring.sh`, **`start-app-with-keyring.sh`**, **`configure-ngrok-from-keyring.sh`** (один раз прописать authtoken ngrok в ~/.config/ngrok), **`linear-apply-labels.js`** (labels в Linear: Infra/Documentation), `run-n8n.sh`, **`update-wf1-linear-telegram.js`** … **`update-wf6-notion-reminder.js`**, **`register-sentry-webhook.js`**, **`register-sentry-webhook.sh`**, `import-n8n-workflow.sh`, `import-all-n8n-workflows.sh`, **`sync-n8n-credentials-from-keyring.js`**, `notion-create-delivery-hub-structure.sh`, `get-telegram-chat-id.sh`, `health-check-env.sh`.
+- **Скрипты:** `system-check.sh`, `load-env-from-keyring.sh`, **`start-app-with-keyring.sh`**, **`configure-ngrok-from-keyring.sh`** (один раз прописать authtoken ngrok в ~/.config/ngrok), **`linear-apply-labels.js`** (labels в Linear: Infra/Documentation), `run-n8n.sh`, **`update-wf1-linear-telegram.js`** … **`update-wf6-notion-reminder.js`**, **`register-sentry-webhook.js`**, **`register-sentry-webhook.sh`**, `import-n8n-workflow.sh`, `import-all-n8n-workflows.sh`, **`export-n8n-workflows.sh`**, **`sync-n8n-credentials-from-keyring.js`**, `notion-create-delivery-hub-structure.sh`, `get-telegram-chat-id.sh`, `health-check-env.sh`.
 - **Доки:** runbooks (в т.ч. [linear-phase3-runbook.md](linear-phase3-runbook.md), [n8n-workflows/README.md](n8n-workflows/README.md)), гайды по Notion/Sentry/n8n (step-by-step), keyring, Linear, MCP, audit.
 
 ---
 
 ## Не сделано / опционально
 
-- В Telegram `/status`, `/help` — WF-5 активен; для /status нужны ngrok и приложение. Остальные команды (/tasks, /errors, /search, /create) — в разработке. Проверки выполнены (Notion, PR #10 и #12–#19, CI зелёный).
+- Полная работоспособность команд WF-5 зависит от env в n8n: `LINEAR_TEAM_ID`, `SENTRY_AUTH_TOKEN`/`SENTRY_ORG_SLUG`/`SENTRY_PROJECT_SLUG`, `NOTION_TOKEN`, GitHub workflow vars.
+- Для WF-2 нужен GitHub webhook на `.../webhook/wf2-github-pr` (PR events).
+- WF-3 LLM-классификация severity (из ТЗ) пока не реализована: используется IF `error/fatal`.
+- Опционально: Grafana/Loki, NotebookLM playbook (ручной процесс), n8n MCP enable.
 
 ---
 
@@ -50,4 +54,8 @@
 | WF-5: URL /status → host.containers.internal, run-n8n.sh --add-host; секрет Telegram (403) — только без заголовка; start-app-with-keyring.sh для env flags в /status | ✅ |
 | Подсказки по WF-2, WF-3, WF-4, WF-6 (триггер, credentials, первый шаг) в docs/n8n-workflows/README.md | ✅ |
 | WF-1 (Linear → Telegram): ноды через update-wf1-linear-telegram.js, **включён (Active)** | ✅ |
-| WF-2, WF-3, WF-4, WF-6: ноды добавлены скриптами, **все включены (Active)**; WF-3: webhook в Sentry — вручную (URL в Alerts) или через `./scripts/register-sentry-webhook.sh` (SENTRY_AUTH_TOKEN в keyring + ngrok). Ngrok: authtoken из keyring — один раз `source scripts/load-env-from-keyring.sh && ./.bin/ngrok config add-authtoken "$NGROK_AUTHTOKEN"` | ✅ |
+| WF-2: event-driven (GitHub PR webhook) + parse `AIP-XX` + попытка Linear update to Done + Telegram | ✅ (hook активен; URL нужно обновлять при смене ngrok/public host) |
+| WF-4: digest + optional Notion Sprint Log write (`NOTION_SPRINT_LOG_DATABASE_ID`) | ✅ |
+| WF-5: команды `/status`, `/help`, `/tasks`, `/errors`, `/search`, `/create`, `/deploy`, `/standup` | ✅ (нужны env/credentials) |
+| WF-6: отправка reminder только если есть обновления в Notion за 7 дней | ✅ |
+| Runtime ↔ repo sync: `./scripts/export-n8n-workflows.sh` экспортирует WF-1…WF-6 в `docs/n8n-workflows/*.json` | ✅ |

@@ -1,29 +1,181 @@
 {
   "name": "WF-3: Sentry Alert → Telegram + Linear (AIPipeline)",
+  "active": true,
   "nodes": [
     {
-      "id": "f6a7b8c9-0001-4000-8000-000000000001",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wf3-sentry",
+        "options": {}
+      },
+      "id": "webhook-sentry",
+      "name": "Sentry Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "wf3-sentry"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.body?.event?.level || $json.event?.level || '' }}",
+              "rightValue": "error",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "c2",
+              "leftValue": "={{ $json.body?.event?.level || $json.event?.level || '' }}",
+              "rightValue": "fatal",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "if-severity",
+      "name": "IF error or fatal",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        272,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "teamId": "d27ffe88-769f-4b73-8db9-fa11bd9bf915",
+        "title": "={{ ($json.body?.event || $json.event || {}).title || ($json.body?.message || $json.message) || 'Sentry alert' }}",
+        "additionalFields": {}
+      },
+      "id": "linear-create",
+      "name": "Linear: Create issue",
+      "type": "n8n-nodes-base.linear",
+      "typeVersion": 1,
+      "position": [
+        512,
+        -96
+      ],
+      "credentials": {
+        "linearApi": {
+          "id": "SPM4RCmtiiJxQxSv",
+          "name": "AIPipeline Linear"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "1877269414",
+        "text": "=🚨 Sentry: {{ ($json.body?.event || $json.event || {}).title || $json.body?.message || $json.message || 'Alert' }}\nLevel: {{ $json.body?.event?.level || $json.event?.level || 'n/a' }}",
+        "additionalFields": {}
+      },
+      "id": "telegram-wf3",
+      "name": "Telegram: notify",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        752,
+        -96
+      ],
+      "webhookId": "933b2fcc-ffbe-44f7-8c30-7e4bc7605830",
+      "credentials": {
+        "telegramApi": {
+          "id": "CumMgGtm8MpeMfxm",
+          "name": "AIPipeline Telegram"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "manual-wf3",
       "name": "When clicking 'Test workflow'",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [0, 0]
+      "position": [
+        0,
+        224
+      ]
     },
     {
-      "id": "f6a7b8c9-0002-4000-8000-000000000002",
-      "name": "Placeholder: add Sentry webhook + IF + Linear + Telegram",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [220, 0],
       "parameters": {
         "mode": "raw",
-        "jsonOutput": "{\n  \"info\": \"Add: Sentry Webhook (new issue) → IF critical → Linear issue (bug-critical) + Telegram; else Linear (bug) + Telegram. See docs/n8n-workflows/README.md WF-3.\"\n}"
-      }
+        "jsonOutput": "{\"info\":\"WF-3: Activate workflow, copy Webhook Production URL from Sentry Webhook node, add in Sentry → Alerts → Webhook. Set Team in Linear Create issue node.\"}",
+        "options": {}
+      },
+      "id": "placeholder-wf3",
+      "name": "Placeholder",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        224
+      ]
     }
   ],
   "connections": {
+    "Sentry Webhook": {
+      "main": [
+        [
+          {
+            "node": "IF error or fatal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF error or fatal": {
+      "main": [
+        [
+          {
+            "node": "Linear: Create issue",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Linear: Create issue": {
+      "main": [
+        [
+          {
+            "node": "Telegram: notify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "When clicking 'Test workflow'": {
-      "main": [[{ "node": "Placeholder: add Sentry webhook + IF + Linear + Telegram", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Placeholder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "settings": {}
+  "settings": {
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  }
 }

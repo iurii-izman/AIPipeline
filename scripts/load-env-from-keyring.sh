@@ -25,7 +25,9 @@ _load() {
 # MCP / Cursor
 _load GITHUB_PERSONAL_ACCESS_TOKEN github.com aipipeline
 _load LINEAR_API_KEY linear.app aipipeline
+_load LINEAR_TEAM_ID linear.app aipipeline-team-id
 _load NOTION_TOKEN notion.so aipipeline
+_load NOTION_SPRINT_LOG_DATABASE_ID notion.so aipipeline-sprint-log-db
 _load TELEGRAM_BOT_TOKEN api.telegram.org aipipeline_delivery_bot
 _load TELEGRAM_CHAT_ID api.telegram.org aipipeline-alerts
 
@@ -37,7 +39,13 @@ _load N8N_API_KEY n8n aipipeline-api
 # Optional
 _load SENTRY_DSN sentry.io aipipeline
 _load SENTRY_AUTH_TOKEN sentry.io aipipeline-auth
+_load SENTRY_ORG_SLUG sentry.io aipipeline-org-slug
+_load SENTRY_PROJECT_SLUG sentry.io aipipeline-project-slug
 _load NGROK_AUTHTOKEN ngrok.com aipipeline
+_load GITHUB_OWNER github.com aipipeline-owner
+_load GITHUB_REPO github.com aipipeline-repo
+_load GITHUB_WORKFLOW_STAGING github.com aipipeline-workflow-staging
+_load GITHUB_WORKFLOW_PRODUCTION github.com aipipeline-workflow-production
 
 if [[ "${1:-}" == "--cursor" ]]; then
   cd "$REPO_ROOT"

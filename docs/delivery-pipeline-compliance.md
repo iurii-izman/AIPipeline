@@ -17,7 +17,7 @@
 | Фаза 5 (NotebookLM) | ⚪ Ручное | WF-6 reminder есть; сам NotebookLM — пользователь |
 | Фаза 6 (Sprint 1) | 🟡 Частично | Инфраструктура (1–11, 31, 36–38) — сделано; Data Mapping, PoC — под конкретный проект |
 | Фаза 7 (DoR/DoD) | ✅ | definition-of-done.md |
-| WF-1…WF-6 | 🟡 Частично | WF-5: /status, /help ✅; /tasks, /errors, /search, /create, /standup — в разработке |
+| WF-1…WF-6 | 🟡 Частично | Базовая реализация всех WF есть; остаются env-dependent и optional пункты (LLM в WF-3, Grafana/Loki, NotebookLM manual) |
 
 ---
 
@@ -59,24 +59,24 @@
 | WF | Требование | Реализация | Статус |
 |----|------------|------------|--------|
 | WF-1 | Linear → Telegram (In Review/Blocked) | Schedule 10 min → Linear Get → IF → Telegram | ✅ |
-| WF-2 | GitHub PR → Linear + Telegram | Schedule 15 min → GitHub List PRs → digest → Telegram | ✅ (вариант: digest вместо trigger) |
+| WF-2 | GitHub PR → Linear + Telegram | **Webhook** `/webhook/wf2-github-pr` → parse `AIP-XX` → Linear GraphQL update to Done (merge) → Telegram | ✅ |
 | WF-3 | Sentry → Telegram + Linear | Webhook → IF (error/fatal) → Linear Create → Telegram | ✅ (без LLM-классификации) |
-| WF-4 | Daily Standup Digest | Cron 09:00 → Linear → Code (aggregate) → Telegram | ✅ |
+| WF-4 | Daily Standup Digest | Cron 09:00 → Linear → Code (aggregate) → Telegram + optional Notion Sprint Log write | ✅ |
 | WF-5 | /status | Telegram Trigger → IF /status → GET /status → Telegram | ✅ |
-| WF-5 | /tasks, /errors, /deploy, /search, /create, /standup, /help | — | ❌ |
-| WF-6 | NotebookLM Resync Reminder | Cron Пн 10:00 → Telegram напоминание | ✅ |
+| WF-5 | /tasks, /errors, /deploy, /search, /create, /standup, /help | Реализовано в `update-wf5-status-workflow.js` (ветки с fallback при отсутствии env) | ✅ |
+| WF-6 | NotebookLM Resync Reminder | Cron Пн 10:00 → Notion search updated last 7 days → IF → Telegram | ✅ |
 
 ### Telegram Command Center (полный список из ТЗ)
 
 | Команда | Действие | Статус |
 |---------|----------|--------|
 | /status | Статус спринта (env + n8n) | ✅ |
-| /tasks | Мои задачи (Linear API) | ❌ |
-| /errors | Последние ошибки (Sentry API) | ❌ |
-| /deploy [env] | Запустить деплой (GitHub Actions) | ❌ |
-| /create [title] | Создать задачу (Linear API) | ❌ |
-| /search [query] | Поиск в Notion | ❌ |
-| /standup | Ручной дайджест | ❌ |
+| /tasks | Мои задачи (Linear API) | ✅ |
+| /errors | Последние ошибки (Sentry API) | ✅ (нужны `SENTRY_*` env) |
+| /deploy [env] | Запустить деплой (GitHub Actions) | ✅ (нужны `GITHUB_*` env) |
+| /create [title] | Создать задачу (Linear API) | ✅ (нужен `LINEAR_TEAM_ID`) |
+| /search [query] | Поиск в Notion | ✅ (нужен `NOTION_TOKEN`) |
+| /standup | Ручной дайджест | ✅ |
 | /help | Список команд (статический) | ✅ |
 
 ### Опциональные (ТЗ)
@@ -95,6 +95,6 @@
 2. ~~**WF-5:** /help~~ ✅
 3. ~~**system-check:** Ready/Setup/Blockers~~ ✅
 4. ~~**Onboarding Guide**~~ ✅
-5. **WF-5:** /tasks, /errors, /search, /create, /deploy, /standup — по мере необходимости (требуют n8n нод и credentials). Подсказки: [n8n-workflows/README.md](n8n-workflows/README.md).
+5. **WF-5:** команды реализованы; осталось обеспечить env в n8n для полной функциональности (`LINEAR_TEAM_ID`, `SENTRY_*`, `GITHUB_*`, `NOTION_TOKEN`).
 
 **Применение изменений:** перезапустить `update-wf5-status-workflow.js` для /help; выполнить `notion-create-delivery-hub-structure.sh` для новых страниц (если Delivery Hub уже создан — скрипт добавит недостающие).

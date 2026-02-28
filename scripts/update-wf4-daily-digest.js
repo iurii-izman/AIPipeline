@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 /**
- * Update WF-4: Schedule 09:00 будни → Linear Get issues → Code (aggregate digest) → Telegram Send.
- * Requires: N8N_API_KEY, TELEGRAM_CHAT_ID. Run: source scripts/load-env-from-keyring.sh && node scripts/update-wf4-daily-digest.js
+ * Update WF-4: weekday 09:00 -> Linear digest -> Telegram + optional Notion Sprint Log page create.
+ *
+ * Optional env in n8n container:
+ *   NOTION_TOKEN
+ *   NOTION_SPRINT_LOG_DATABASE_ID
  */
 
 const http = require("http");
@@ -9,9 +12,6 @@ const http = require("http");
 const N8N_URL = process.env.N8N_URL || "http://localhost:5678";
 const N8N_API_KEY = process.env.N8N_API_KEY;
 const WF4_ID = "We206nVkSkQI2fEh";
-const LINEAR_CRED_ID = "SPM4RCmtiiJxQxSv";
-const TELEGRAM_CRED_ID = "CumMgGtm8MpeMfxm";
-const CHAT_ID = process.env.TELEGRAM_CHAT_ID || "";
 
 if (!N8N_API_KEY) {
   console.error("N8N_API_KEY not set.");
@@ -53,16 +53,6 @@ function request(method, path, body) {
   });
 }
 
-const codeJs = `const items = $input.all();
-const byState = {};
-for (const i of items) {
-  const s = (i.json.state && i.json.state.name) ? i.json.state.name : 'Other';
-  byState[s] = (byState[s] || 0) + 1;
-}
-const lines = Object.entries(byState).map(([k, v]) => k + ': ' + v);
-const text = '📋 Daily digest\\n' + (lines.length ? lines.join('\\n') : 'No issues');
-return [{ json: { text } }];`;
-
 const workflow = {
   name: "WF-4: Daily Standup Digest (AIPipeline)",
   nodes: [
@@ -72,28 +62,25 @@ const workflow = {
       type: "n8n-nodes-base.scheduleTrigger",
       typeVersion: 1.2,
       position: [0, 0],
-      parameters: {
-        rule: { interval: [{ field: "cronExpression", expression: "0 9 * * 1-5" }] },
-      },
+      parameters: { rule: { interval: [{ field: "cronExpression", expression: "0 9 * * 1-5" }] } },
     },
     {
       id: "linear-wf4",
       name: "Linear: Get issues",
       type: "n8n-nodes-base.linear",
       typeVersion: 1,
-      position: [240, 0],
+      position: [220, 0],
       parameters: { resource: "issue", operation: "getAll", returnAll: true },
-      credentials: { linearApi: { id: LINEAR_CRED_ID, name: "AIPipeline Linear" } },
+      credentials: { linearApi: { name: "AIPipeline Linear" } },
     },
     {
-      id: "code-digest",
+      id: "digest-wf4",
       name: "Build digest",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
-      position: [480, 0],
+      position: [440, 0],
       parameters: {
-        mode: "runOnceForAllItems",
-        jsCode: codeJs,
+        jsCode: `const items = $input.all().map(i => i.json);\nconst byState = {};\nfor (const i of items) {\n  const s = i.state?.name || 'Other';\n  byState[s] = (byState[s] || 0) + 1;\n}\nconst today = new Date().toISOString().slice(0, 10);\nconst lines = Object.entries(byState).map(([k, v]) => '• ' + k + ': ' + v);\nconst text = '📋 *Daily digest* (' + today + ')\\n' + (lines.join('\\n') || 'No issues');\nreturn [{ json: { text, date: today, lines: lines.join('\\n') || 'No issues' } }];`,
       },
     },
     {
@@ -101,26 +88,74 @@ const workflow = {
       name: "Telegram: send digest",
       type: "n8n-nodes-base.telegram",
       typeVersion: 1.2,
-      position: [720, 0],
+      position: [660, -80],
       parameters: {
         operation: "sendMessage",
-        chatId: CHAT_ID || "YOUR_CHAT_ID",
+        chatId: "={{ $env.TELEGRAM_CHAT_ID || 'YOUR_CHAT_ID' }}",
         text: "={{ $json.text }}",
+        additionalFields: { parse_mode: "Markdown" },
       },
-      credentials: { telegramApi: { id: TELEGRAM_CRED_ID, name: "AIPipeline Telegram" } },
+      credentials: { telegramApi: { name: "AIPipeline Telegram" } },
+    },
+    {
+      id: "if-notion-config",
+      name: "If Notion Sprint Log configured",
+      type: "n8n-nodes-base.if",
+      typeVersion: 2.3,
+      position: [660, 120],
+      parameters: {
+        conditions: {
+          options: { caseSensitive: true },
+          conditions: [
+            { leftValue: "={{ $env.NOTION_TOKEN || '' }}", rightValue: "", operator: { type: "string", operation: "notEmpty" } },
+            { leftValue: "={{ $env.NOTION_SPRINT_LOG_DATABASE_ID || '' }}", rightValue: "", operator: { type: "string", operation: "notEmpty" } },
+          ],
+          combinator: "and",
+        },
+        options: {},
+      },
+    },
+    {
+      id: "notion-create-log",
+      name: "Notion: create Sprint Log page",
+      type: "n8n-nodes-base.httpRequest",
+      typeVersion: 4.2,
+      position: [880, 120],
+      parameters: {
+        method: "POST",
+        url: "https://api.notion.com/v1/pages",
+        sendHeaders: true,
+        headerParameters: {
+          parameters: [
+            { name: "Authorization", value: "={{ 'Bearer ' + $env.NOTION_TOKEN }}" },
+            { name: "Notion-Version", value: "2025-09-03" },
+            { name: "Content-Type", value: "application/json" },
+          ],
+        },
+        sendBody: true,
+        specifyBody: "json",
+        jsonBody: "={{ { parent: { database_id: $env.NOTION_SPRINT_LOG_DATABASE_ID }, properties: { title: { title: [ { type: 'text', text: { content: 'Daily Digest ' + $('Build digest').first().json.date } } ] } }, children: [ { object: 'block', type: 'paragraph', paragraph: { rich_text: [ { type: 'text', text: { content: $('Build digest').first().json.lines } } ] } } ] } }}",
+        options: {},
+      },
     },
   ],
   connections: {
     "Every weekday 09:00": { main: [[{ node: "Linear: Get issues", type: "main", index: 0 }]] },
     "Linear: Get issues": { main: [[{ node: "Build digest", type: "main", index: 0 }]] },
-    "Build digest": { main: [[{ node: "Telegram: send digest", type: "main", index: 0 }]] },
+    "Build digest": {
+      main: [
+        [{ node: "Telegram: send digest", type: "main", index: 0 }],
+        [{ node: "If Notion Sprint Log configured", type: "main", index: 0 }],
+      ],
+    },
+    "If Notion Sprint Log configured": { main: [[{ node: "Notion: create Sprint Log page", type: "main", index: 0 }], []] },
   },
   settings: {},
 };
 
 async function main() {
   await request("PUT", `/api/v1/workflows/${WF4_ID}`, workflow);
-  console.log("WF-4 updated. In n8n UI: check credentials, set Chat ID if needed, activate.");
+  console.log("WF-4 updated. Optional Notion write is enabled when NOTION_TOKEN + NOTION_SPRINT_LOG_DATABASE_ID are present in n8n env.");
 }
 
 main().catch((e) => {

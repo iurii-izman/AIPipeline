@@ -61,12 +61,13 @@ MCP: Notion, GitHub, Linear, Telegram, filesystem (`.cursor/mcp.json`). Секр
 - `./scripts/run-n8n-with-ngrok.sh` — ngrok туннель на 5678 + перезапуск n8n с HTTPS WEBHOOK_URL (для Telegram Trigger); нужен ngrok authtoken (keyring или `ngrok config add-authtoken`)
 - `./scripts/import-n8n-workflow.sh [workflow.json]` — импорт одного workflow в n8n по API
 - `./scripts/import-all-n8n-workflows.sh` — импорт всех workflow из docs/n8n-workflows/*.json
-- `node scripts/update-wf5-status-workflow.js` — донастройка WF-5 (Telegram Trigger, /status, GET /status, Telegram Send); затем в UI назначить credentials и включить
+- `./scripts/export-n8n-workflows.sh` — экспорт WF-1…WF-6 из n8n API в `docs/n8n-workflows/*.json` (синхронизация runtime → repo)
+- `node scripts/update-wf5-status-workflow.js` — WF-5 Command Center: `/status`, `/help`, `/tasks`, `/errors`, `/search`, `/create`, `/deploy`, `/standup`
 - `node scripts/update-wf1-linear-telegram.js` — донастройка WF-1 (Schedule → Linear → IF → Telegram)
-- `node scripts/update-wf2-github-pr-linear.js` — WF-2: Schedule → GitHub PRs → Telegram
+- `node scripts/update-wf2-github-pr-linear.js` — WF-2: GitHub PR Webhook → parse `AIP-XX` → Linear update (Done) → Telegram
 - `node scripts/update-wf3-sentry-telegram.js` — WF-3: Webhook Sentry → IF → Linear + Telegram
-- `node scripts/update-wf4-daily-digest.js` — WF-4: Schedule 09:00 → Linear → digest → Telegram
-- `node scripts/update-wf6-notion-reminder.js` — WF-6: Schedule Пн 10:00 → reminder → Telegram
+- `node scripts/update-wf4-daily-digest.js` — WF-4: Schedule 09:00 → Linear digest → Telegram + optional Notion Sprint Log write
+- `node scripts/update-wf6-notion-reminder.js` — WF-6: Schedule Пн 10:00 → Notion updated last 7 days? → Telegram reminder
   После скриптов WF-2…WF-6: в n8n привязать credentials, для WF-3 — задать Team и URL в Sentry. См. [docs/what-to-do-manually.md](docs/what-to-do-manually.md)
 - `source scripts/load-env-from-keyring.sh && node scripts/sync-n8n-credentials-from-keyring.js` — создать в n8n credentials (Linear, Telegram, Notion, GitHub) из keyring, без ручного ввода API ключей
 

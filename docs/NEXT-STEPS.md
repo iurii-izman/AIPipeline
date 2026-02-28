@@ -37,4 +37,6 @@
 ## Дальше
 
 - Новые задачи из Linear по [linear-phase3-runbook.md](linear-phase3-runbook.md): ветка `AIP-XX-short-desc`, PR с `Closes AIP-XX`.
-- WF-5: при необходимости в n8n UI привязать Telegram credentials к нодам WF-5 и сохранить.
+- WF-2: webhook `pull_request` настроен (активен) на `/webhook/wf2-github-pr`; при смене ngrok/public URL — обновить webhook URL в GitHub.
+- WF-5: env для полного Command Center заполнены (`LINEAR_TEAM_ID`, `SENTRY_*`, `NOTION_SPRINT_LOG_DATABASE_ID`, `GITHUB_*`).
+- После правок WF в n8n синхронизировать JSON в репо: `source scripts/load-env-from-keyring.sh && ./scripts/export-n8n-workflows.sh`.
