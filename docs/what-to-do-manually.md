@@ -72,6 +72,33 @@ WF-6 теперь отправляет reminder только если нашёл
 
 ---
 
+## Stable HTTPS endpoint (Cloudflare Tunnel)
+
+Сейчас поддерживаются два режима:
+
+- `run-n8n-with-ngrok.sh` (быстрый, но URL может меняться),
+- `run-n8n-with-cloudflared.sh` (стабильный URL после ручной настройки Cloudflare).
+
+Ручной блок (один раз):
+
+1. Поднять Tunnel + hostname в Cloudflare Zero Trust.
+2. Получить Tunnel token.
+3. Добавить в keyring:
+   - `server=cloudflare.com user=aipipeline-tunnel-token`
+   - `server=cloudflare.com user=aipipeline-public-url`
+4. Установить `cloudflared` на хост.
+
+После этого запуск:
+
+```bash
+source scripts/load-env-from-keyring.sh
+./scripts/run-n8n-with-cloudflared.sh --daemon
+```
+
+Подробный runbook: [cloudflare-tunnel-setup.md](cloudflare-tunnel-setup.md).
+
+---
+
 ## Синхронизация JSON в репо
 
 После любых правок workflow в n8n UI:

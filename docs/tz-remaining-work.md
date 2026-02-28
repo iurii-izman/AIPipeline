@@ -15,6 +15,7 @@
 4. Перевести webhook URL с ngrok на стабильный публичный HTTPS endpoint и обновить:
    - WF-2 GitHub webhook target;
    - WF-3 Sentry webhook target.
+   Статус: автоматизация подготовлена (`scripts/run-n8n-with-cloudflared.sh`), остаётся ручной блок Cloudflare account/domain/tunnel setup.
 
 ## B) Functional hardening (phase-6 production patterns)
 

@@ -55,6 +55,7 @@
 | [observability.md](observability.md) | Baseline наблюдаемости: логи, correlationId, алерты, апгрейды |
 | [live-uat-telegram.md](live-uat-telegram.md) | Живой UAT для Telegram команд, WF-2 PR webhook, OPENAI_API_KEY, стабильный HTTPS |
 | [stable-https-options.md](stable-https-options.md) | Сравнение вариантов стабильного HTTPS endpoint (плюсы/минусы, рейтинг) |
+| [cloudflare-tunnel-setup.md](cloudflare-tunnel-setup.md) | Пошаговая миграция на Cloudflare Tunnel (stable URL) |
 | [tz-remaining-work.md](tz-remaining-work.md) | Полный список оставшихся работ до полного соответствия ТЗ |
 | [audit-and-history.md](audit-and-history.md) | Аудит и история решений |
 | [charter.md](charter.md) | Цели и принципы проекта |

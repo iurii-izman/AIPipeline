@@ -37,6 +37,8 @@
 | Sentry Project Slug (опц.) | `AIPipeline — Sentry Project Slug` | `aipipeline-project-slug` | `sentry.io` | Slug проекта в Sentry API (нужен для WF-5 `/errors`) | ☑ |
 | OpenAI API Key (опц.) | `AIPipeline — OpenAI API Key` | `aipipeline` | `openai.com` | Для LLM-классификации severity в WF-3 | ☐ |
 | OpenAI Model (опц.) | `AIPipeline — OpenAI Model` | `aipipeline-model` | `openai.com` | Модель для WF-3 (`gpt-4o-mini` по умолчанию) | ☐ |
+| Cloudflare Tunnel Token (опц.) | `AIPipeline — Cloudflared Tunnel Token` | `aipipeline-tunnel-token` | `cloudflare.com` | Zero Trust → Tunnels → Run tunnel token | ☐ |
+| Cloudflare Public Base URL (опц.) | `AIPipeline — Cloudflare Public Base URL` | `aipipeline-public-url` | `cloudflare.com` | Стабильный URL tunnel host, напр. `https://n8n.example.com` | ☐ |
 | Linear Team ID (опц.) | `AIPipeline — Linear Team ID` | `aipipeline-team-id` | `linear.app` | Linear GraphQL: `teams { id key }`; нужен для WF-5 `/create` | ☑ |
 | Notion Sprint Log DB ID (опц.) | `AIPipeline — Notion Sprint Log Database ID` | `aipipeline-sprint-log-db` | `notion.so` | ID database для WF-4 записи Sprint Log | ☑ |
 | GitHub Owner (опц.) | `AIPipeline — GitHub Owner` | `aipipeline-owner` | `github.com` | owner repo (WF-5 `/deploy`) | ☑ |
@@ -93,6 +95,12 @@ secret-tool store --label="AIPipeline — n8n Basic Auth Password" server n8n us
 
 # n8n API Key (для вызова API n8n из скриптов; Settings → API в n8n)
 secret-tool store --label="AIPipeline — N8n API" server n8n user aipipeline-api
+
+# Cloudflare tunnel token (stable HTTPS for webhooks)
+secret-tool store --label="AIPipeline — Cloudflared Tunnel Token" server cloudflare.com user aipipeline-tunnel-token
+
+# Cloudflare public URL (example: https://n8n.example.com)
+secret-tool store --label="AIPipeline — Cloudflare Public Base URL" server cloudflare.com user aipipeline-public-url
 ```
 
 > **Важно:** CLI-шаблоны выше используют `server` (не `service`), чтобы быть совместимыми с GUI-записями. Если ранее ключи создавались с `service`, скрипт всё равно их найдёт (fallback).

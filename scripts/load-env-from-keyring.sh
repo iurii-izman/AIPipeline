@@ -44,6 +44,8 @@ _load SENTRY_PROJECT_SLUG sentry.io aipipeline-project-slug
 _load OPENAI_API_KEY openai.com aipipeline
 _load OPENAI_MODEL openai.com aipipeline-model
 _load NGROK_AUTHTOKEN ngrok.com aipipeline
+_load CLOUDFLARED_TUNNEL_TOKEN cloudflare.com aipipeline-tunnel-token
+_load CLOUDFLARE_PUBLIC_BASE_URL cloudflare.com aipipeline-public-url
 _load GITHUB_OWNER github.com aipipeline-owner
 _load GITHUB_REPO github.com aipipeline-repo
 _load GITHUB_WORKFLOW_STAGING github.com aipipeline-workflow-staging
