@@ -58,6 +58,14 @@ Team в Linear и Chat ID уже заданы; WF-3 включён (Active).
 
 ---
 
+## WF-5 (Telegram Command Center: /status, /help)
+
+**Сделано скриптом:** Telegram Trigger → If /status → GET /status → Telegram; If /help → список команд; неизвестная команда → «Use /help».
+
+**Ты делаешь:** после `node scripts/update-wf5-status-workflow.js` n8n может вернуть ошибку про Telegram credentials — открыть WF-5 в UI, в нодах **«Telegram Trigger»** и **«Telegram Send»** выбрать credential **AIPipeline Telegram**, сохранить. Для ответа на /status нужны ngrok и приложение: `./scripts/start-app-with-keyring.sh` (или `PORT=3000 npm start`).
+
+---
+
 ## Кратко по workflow
 
 | Workflow | Обязательно вручную | Опционально |
@@ -65,6 +73,7 @@ Team в Linear и Chat ID уже заданы; WF-3 включён (Active).
 | WF-2     | Всё настроено, включён | Правка owner/repo, ветка с Linear update |
 | WF-3     | ~~Добавить Webhook URL в Sentry~~ ✅ Зарегистрировано через `register-sentry-webhook.sh` (при ngrok + SENTRY_AUTH_TOKEN в keyring) | — |
 | WF-4     | Включён | Фильтр в Linear |
+| WF-5     | Назначить Telegram credential в UI после update-wf5; для /status — ngrok + app | /tasks, /errors, /search — в разработке |
 | WF-6     | Включён | Notion search + IF |
 
 Запуск скриптов (уже выполнены):
@@ -73,5 +82,6 @@ Team в Linear и Chat ID уже заданы; WF-3 включён (Active).
 - `node scripts/update-wf3-sentry-telegram.js`
 - `node scripts/update-wf4-daily-digest.js`
 - `node scripts/update-wf6-notion-reminder.js`
+- `node scripts/update-wf5-status-workflow.js` (WF-5: /status, /help)
 
 Перед запуском: `source scripts/load-env-from-keyring.sh` (для `TELEGRAM_CHAT_ID` и т.п.).

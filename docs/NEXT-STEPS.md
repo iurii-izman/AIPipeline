@@ -29,7 +29,9 @@
 
 ---
 
-## После аудита документации
+## После аудита и compliance
 
-- Ветка **chore/phase2-notion-complete** с аудитом и Phase 4 запушена. Чтобы подтянуть изменения в **main**: открыть PR из этой ветки в main → ревью → merge.
-- **Дальше:** брать новые задачи из Linear (создавать в Backlog/Todo по необходимости), вести по [linear-phase3-runbook.md](linear-phase3-runbook.md); при разработке — ветка `AIP-XX-short-desc`, PR с `Closes AIP-XX`. По PIPELINE.md — следующие фазы (код, интеграции, WF-доработки).
+- **PR #11** (chore/phase2-notion-complete): аудит доки, compliance с delivery-pipeline.md, Notion (Risks & Issues, Access Matrix, Sprint Log, Guides), WF-5 /help, system-check Phase 0.5, onboarding-guide. Готов к ревью → после CI и одобрения — merge в main.
+- **Notion:** страницы Risks & Issues, Access Matrix, Sprint Log, Guides созданы в Delivery Hub (скрипт выполнен).
+- **WF-5:** обновление с /help отправлено в n8n; при сохранении n8n может требовать назначить Telegram credentials в UI → открыть WF-5, привязать AIPipeline Telegram к нодам, сохранить и включить.
+- **Дальше:** новые задачи из Linear по [linear-phase3-runbook.md](linear-phase3-runbook.md); ветка `AIP-XX-short-desc`, PR с `Closes AIP-XX`.
