@@ -42,6 +42,7 @@
 - **Live Telegram UAT (2026-02-28):** подтверждены рабочие команды `/tasks`, `/status`, `/search`, `/standup`, `/errors`, `/create`, `/deploy staging`; детали и evidence в `docs/live-uat-telegram.md`.
 - **UAT evidence:** execution IDs (n8n), deploy run (GitHub Actions), созданный issue (`AIP-13`) зафиксированы в `docs/uat-evidence-2026-02-28.md`.
 - **Post-hardening closure (2026-02-28):** regression evidence синхронизирован в Notion Sprint Log (запись создана), задача Linear `AIP-11` переведена в `Done` с closure-комментарием.
+- **Closure automation:** добавлен скрипт `scripts/sync-closure-evidence.js` (Notion Sprint Log sync + Linear state/comment). Через него тестовые UAT-issues `AIP-13` и `AIP-14` переведены в `Canceled`.
 - **Доки:** runbooks (в т.ч. [linear-phase3-runbook.md](linear-phase3-runbook.md), [n8n-workflows/README.md](n8n-workflows/README.md), [live-uat-telegram.md](live-uat-telegram.md)), гайды по Notion/Sentry/n8n (step-by-step), keyring, Linear, MCP, audit, и consolidated backlog [tz-remaining-work.md](tz-remaining-work.md).
 
 ---
