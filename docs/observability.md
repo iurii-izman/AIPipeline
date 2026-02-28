@@ -74,6 +74,7 @@
 source scripts/load-env-from-keyring.sh
 node scripts/update-wf7-dlq-parking.js
 ./scripts/export-n8n-workflows.sh
+./scripts/synthetic-health-status-check.sh
 curl -i http://localhost:3000/health
 curl -i http://localhost:3000/status
 ```

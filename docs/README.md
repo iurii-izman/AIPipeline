@@ -77,6 +77,7 @@
 
 - Day-0 и AIP-1…AIP-10 закрыты (PR #10, #12–#19 в main). CI зелёный; Linear ↔ GitHub по `Closes AIP-XX`.
 - **Фаза 3–4** ✅: приоритеты и labels в Linear; WF-1…WF-6 активны; при взятии новой задачи — ветка `AIP-XX-short-desc`, в PR — `Closes AIP-XX` ([linear-phase3-runbook.md](linear-phase3-runbook.md)).
+- **Фаза 3–4** ✅: приоритеты и labels в Linear; WF-1…WF-7 активны; при взятии новой задачи — ветка `AIP-XX-short-desc`, в PR — `Closes AIP-XX` ([linear-phase3-runbook.md](linear-phase3-runbook.md)).
 - Дальше: новые задачи из Linear, ведение по runbook; опционально — донастройка WF в n8n ([what-to-do-manually.md](what-to-do-manually.md)).
 
 Проверка окружения: `./scripts/health-check-env.sh`.

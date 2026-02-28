@@ -15,9 +15,9 @@
 | Фаза 3 (Linear) | ✅ | Workflow, labels, Agent-Ready |
 | Фаза 4 (GitHub scaffold) | ✅ | deploy-staging/production реализованы как validate + webhook deploy (с dry-run fallback) |
 | Фаза 5 (NotebookLM) | ⚪ Ручное | WF-6 reminder есть; сам NotebookLM — пользователь |
-| Фаза 6 (Sprint 1) | 🟡 Частично | Инфраструктура (1–11, 31, 36–38) — сделано; Data Mapping, PoC — под конкретный проект |
+| Фаза 6 (Sprint 1) | ✅ | Hardening закрыт: retry/backoff, rate-limit handling, partial-failure policy, DLQ/replay |
 | Фаза 7 (DoR/DoD) | ✅ | definition-of-done.md |
-| WF-1…WF-6 | 🟡 Частично | Базовая реализация всех WF есть; остаются env-dependent и optional пункты (LLM в WF-3, Grafana/Loki, NotebookLM manual) |
+| WF-1…WF-7 | ✅ | Все workflow реализованы и активны, включая centralized DLQ/replay |
 
 ---
 
@@ -39,7 +39,7 @@
 | 1.3 Cursor ↔ Linear | ✅ |
 | 1.4 MCP: Notion, GitHub, Linear, Sentry, Telegram, filesystem | ✅ |
 | 1.5 Claude Code + MCP (субагенты .claude/agents) | ✅ |
-| 1.6 n8n: Podman, credentials, WF-1…WF-6, тест /status | ✅ (тест /status — нужны ngrok + app) |
+| 1.6 n8n: Podman, credentials, WF-1…WF-7, тест /status | ✅ |
 | 1.7 Sentry: проект, SDK, MCP, webhook → n8n | ✅ |
 
 ### Фаза 2: Notion Delivery Hub
@@ -59,12 +59,13 @@
 | WF | Требование | Реализация | Статус |
 |----|------------|------------|--------|
 | WF-1 | Linear → Telegram (In Review/Blocked) | Schedule 10 min → Linear Get → IF → Telegram | ✅ |
-| WF-2 | GitHub PR → Linear + Telegram | **Webhook** `/webhook/wf2-github-pr` → parse `AIP-XX` → Linear GraphQL update to Done (merge) → Telegram | ✅ |
-| WF-3 | Sentry → Telegram + Linear | Webhook → LLM classify (`OPENAI_API_KEY`) или heuristic fallback → Linear Create (critical/bug) → Telegram | ✅ |
-| WF-4 | Daily Standup Digest | Cron 09:00 → Linear → Code (aggregate) → Telegram + optional Notion Sprint Log write | ✅ |
+| WF-2 | GitHub PR → Linear + Telegram | Webhook → parse `AIP-XX` → Linear update to Done + partial-failure fallback + DLQ parking | ✅ |
+| WF-3 | Sentry → Telegram + Linear | Webhook → LLM/heuristic classify → Linear Create + partial-failure fallback + DLQ parking | ✅ |
+| WF-4 | Daily Standup Digest | Cron 09:00 → Linear digest → Telegram + optional Notion write + Notion-failure alert/DLQ | ✅ |
 | WF-5 | /status | Telegram Trigger → IF /status → GET /status → Telegram | ✅ |
-| WF-5 | /tasks, /errors, /deploy, /search, /create, /standup, /help | Реализовано в `update-wf5-status-workflow.js` (ветки с fallback при отсутствии env) | ✅ |
+| WF-5 | /tasks, /errors, /deploy, /search, /create, /standup, /help | Реализовано в `update-wf5-status-workflow.js` (fallback + rate-limit handling + DLQ on Telegram send fail) | ✅ |
 | WF-6 | NotebookLM Resync Reminder | Cron Пн 10:00 → Notion search updated last 7 days → IF → Telegram | ✅ |
+| WF-7 | DLQ parking + replay | Webhooks `/webhook/wf-dlq-park`, `/webhook/wf-dlq-replay` + static storage + Telegram alerts | ✅ |
 
 ### Telegram Command Center (полный список из ТЗ)
 
@@ -87,14 +88,21 @@
 | n8n MCP в Cursor | ❌ (встроен в n8n) |
 | NotebookLM notebook | Ручная настройка пользователем |
 
+### Hardening and evidence (2026-02-28)
+
+| Элемент | Статус |
+|---------|--------|
+| Retry/backoff на внешних API узлах WF-2…WF-5 | ✅ |
+| Rate-limit handling (Sentry/Linear/Notion/GitHub) | ✅ |
+| Partial-failure policy (Linear/Telegram/Notion cases) | ✅ |
+| DLQ parking + replay runbook | ✅ (`WF-7`, `docs/dlq-replay-runbook.md`) |
+| Live UAT + post-hardening evidence | ✅ (`docs/live-uat-telegram.md`, `docs/uat-evidence-2026-02-28.md`) |
+| Notion Sprint Log evidence sync | ✅ |
+
 ---
 
 ## План действий (оставшееся)
 
-1. ~~**Notion:** Risks & Issues, Access Matrix, Sprint Log~~ ✅
-2. ~~**WF-5:** /help~~ ✅
-3. ~~**system-check:** Ready/Setup/Blockers~~ ✅
-4. ~~**Onboarding Guide**~~ ✅
-5. **WF-5:** команды реализованы; осталось обеспечить env в n8n для полной функциональности (`LINEAR_TEAM_ID`, `SENTRY_*`, `GITHUB_*`, `NOTION_TOKEN`).
-
-**Применение изменений:** перезапустить `update-wf5-status-workflow.js` для /help; выполнить `notion-create-delivery-hub-structure.sh` для новых страниц (если Delivery Hub уже создан — скрипт добавит недостающие).
+1. Поддерживать env completeness в n8n для всех веток WF-5 (`LINEAR_TEAM_ID`, `SENTRY_*`, `GITHUB_*`, `NOTION_TOKEN`).
+2. Для advanced observability (опционально): Grafana/Loki + алерты.
+3. Поддерживать evidence-sync в Notion Sprint Log после каждого live regression.

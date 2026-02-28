@@ -17,6 +17,8 @@
 
 - Базовый health:
   - `./scripts/health-check-env.sh`
+- Синтетический probe app endpoint'ов:
+  - `./scripts/synthetic-health-status-check.sh`
 - Локальная валидация проекта:
   - `npm run lint && npm run build && npm test`
 - Проверка stable endpoint:
