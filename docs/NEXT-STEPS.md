@@ -30,6 +30,10 @@
   - WF-3 выделяет `db_timeout_cascade` как отдельный P0 incident type;
   - Linear/Telegram уведомления для DB timeout cascade содержат immediate actions;
   - добавлен runbook `docs/sentry-db-timeout-cascade-runbook.md`.
+- Observability completion внедрён:
+  - alert-oriented probe `scripts/check-observability-alerts.sh` (synthetic + Loki error signal + n8n failed executions + audit stream);
+  - audit stream критических операций (`.runtime-logs/audit.log`) добавлен в stack/webhook scripts;
+  - Grafana dashboard `AIPipeline Overview` расширен: Error Signal, DLQ/Workflow Failures, Audit Trail.
 
 ## Операционные проверки
 
@@ -43,6 +47,8 @@
   - `./scripts/check-stable-endpoint.sh`
 - Проверка observability stack:
   - `./scripts/check-observability-stack.sh`
+- Проверка observability alerts:
+  - `./scripts/check-observability-alerts.sh`
 - Сборка NotebookLM source-bundle:
   - `./scripts/notebooklm-build-source-bundle.sh`
 - Единый статус сервисных профилей:

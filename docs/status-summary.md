@@ -69,6 +69,12 @@
   - critical Linear issue title/description для DB timeout cascade теперь включает immediate actions;
   - Telegram critical notification для DB cascade теперь имеет P0-префикс и action hint;
   - добавлен runbook `docs/sentry-db-timeout-cascade-runbook.md`.
+- **AIP-16 observability completion (2026-03-01):**
+  - добавлен alert probe `scripts/check-observability-alerts.sh` (synthetic + Loki error signal + n8n failures + audit stream);
+  - добавлен audit stream `.runtime-logs/audit.log` для критических операций control plane/webhook reconfiguration;
+  - `stack-control.sh`, `configure-github-webhook-wf2.js`, `register-sentry-webhook.js` пишут audit events;
+  - `stack-health-report.sh` теперь включает `alerts probe`;
+  - Grafana dashboard `AIPipeline Overview` расширен панелями `Error Signal`, `DLQ/Workflow Failures`, `Audit Trail`.
 - **Доки:** runbooks (в т.ч. [linear-phase3-runbook.md](linear-phase3-runbook.md), [n8n-workflows/README.md](n8n-workflows/README.md), [live-uat-telegram.md](live-uat-telegram.md)), гайды по Notion/Sentry/n8n (step-by-step), keyring, Linear, MCP, audit, и consolidated backlog [tz-remaining-work.md](tz-remaining-work.md).
 
 ---
@@ -110,6 +116,7 @@
 | Optional observability stack (Grafana/Loki/Promtail) | ✅ |
 | Operations profiles/services/bots governance (access matrix + acceptance + evidence cycle) | ✅ |
 | Critical Sentry incident hardening (`db_timeout_cascade`) | ✅ |
+| Observability alerting + audit stream | ✅ |
 | WF-4: digest + optional Notion Sprint Log write (`NOTION_SPRINT_LOG_DATABASE_ID`) | ✅ |
 | WF-5: команды `/status`, `/help`, `/tasks`, `/errors`, `/search`, `/create`, `/deploy`, `/standup` | ✅ (нужны env/credentials) |
 | WF-6: отправка reminder только если есть обновления в Notion за 7 дней | ✅ |

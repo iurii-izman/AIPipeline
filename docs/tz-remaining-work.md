@@ -50,9 +50,9 @@
    - error rate WF-3;
    - failed executions WF-2…WF-7;
    - synthetic `/health`/`/status` checks.
-   Статус: частично (базовый operational baseline есть, централизованные dashboards не внедрены).
+   Статус: выполнено (Grafana dashboard с error/DLQ signals + `scripts/check-observability-alerts.sh`).
 3. Audit log критических операций (`/deploy`, workflow state change, webhook reconfiguration).
-   Статус: частично (через execution history + DLQ alerts; отдельный audit stream не внедрён).
+   Статус: выполнено (`.runtime-logs/audit.log`, audit events в stack/webhook scripts, panel `Audit Trail`).
 4. Least-privilege scopes токенов (GitHub/Linear/Notion/Sentry).
    Статус: выполнено в `docs/token-least-privilege.md`.
 

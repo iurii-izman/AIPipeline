@@ -33,6 +33,11 @@
   - `POST /webhook/wf-dlq-replay`
 - хранение parked событий в workflow static data + Telegram alerts
 
+6. Audit stream для критических операций:
+- файл `.runtime-logs/audit.log` (JSONL, `eventType=audit`)
+- источники: `stack-control.sh`, `configure-github-webhook-wf2.js`, `register-sentry-webhook.js`
+- назначение: trace операций `/deploy`-related control plane и webhook reconfiguration
+
 ## Где смотреть
 
 - App logs: stdout процесса (`npm start` / `start-app-with-keyring.sh`)
@@ -40,6 +45,7 @@
 - n8n execution history: UI или `/api/v1/executions`
 - DLQ events: WF-7 execution history + webhook replay runs
 - Telegram alerts: рабочий чат бота
+- audit stream: `.runtime-logs/audit.log` + Grafana panel `Audit Trail`
 
 ## Correlation model
 
@@ -53,6 +59,8 @@
 |--------|---------|--------|
 | Sentry incident | WF-3 -> Telegram | Notify + create Linear issue |
 | Workflow external API failure | WF-2/WF-3/WF-4/WF-5 -> WF-7 | Park in DLQ + Telegram alert |
+| Error signal threshold breach | Loki query + alert probe script | Investigate recent failures |
+| Critical ops audit event | Audit log stream | Trace operation owner + result |
 | WF-5 command failure | Telegram response + n8n execution | Return fallback message, inspect execution |
 | App unavailable | `/status` via WF-5 | Troubleshoot app/n8n/network |
 
@@ -81,6 +89,8 @@ source scripts/load-env-from-keyring.sh
 node scripts/update-wf7-dlq-parking.js
 ./scripts/export-n8n-workflows.sh
 ./scripts/synthetic-health-status-check.sh
+./scripts/check-observability-stack.sh
+./scripts/check-observability-alerts.sh
 curl -i http://localhost:3000/health
 curl -i http://localhost:3000/status
 ```

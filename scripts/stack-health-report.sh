@@ -46,6 +46,11 @@ core_report() {
   check_http "http://localhost:5678/healthz" "n8n /healthz"
   check_http "http://localhost:3100/ready" "loki /ready"
   check_http "http://localhost:3001/api/health" "grafana /api/health"
+  if ./scripts/check-observability-alerts.sh >/dev/null 2>&1; then
+    echo "alerts probe: OK"
+  else
+    echo "alerts probe: FAIL"
+  fi
 
   check_proc "cloudflared.*tunnel.*--token" "cloudflared"
 
