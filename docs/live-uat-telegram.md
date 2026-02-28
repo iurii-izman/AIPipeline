@@ -10,6 +10,10 @@ source scripts/load-env-from-keyring.sh
 ./scripts/start-app-with-keyring.sh
 ./scripts/run-n8n-with-ngrok.sh
 ```
+Если нужно не терять tunnel при закрытии терминала:
+```bash
+./scripts/run-n8n-with-ngrok.sh --daemon
+```
 2. Проверить health:
 ```bash
 ./scripts/health-check-env.sh
