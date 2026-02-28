@@ -30,3 +30,10 @@
 Кратко: (1) `./scripts/health-check-env.sh` — проверка окружения. (2) **WF-1…WF-6 все активны.** (3) WF-3: если ещё не делал — в Sentry вставить Webhook URL из n8n (нода «Sentry Webhook») или выполнить `./scripts/register-sentry-webhook.sh` при запущенном ngrok и SENTRY_AUTH_TOKEN в keyring.
 
 Состояние окружения: `./scripts/health-check-env.sh`.
+
+---
+
+## После аудита документации
+
+- Ветка **chore/phase2-notion-complete** с аудитом и Phase 4 запушена. Чтобы подтянуть изменения в **main**: открыть PR из этой ветки в main → ревью → merge.
+- **Дальше:** брать новые задачи из Linear (создавать в Backlog/Todo по необходимости), вести по [linear-phase3-runbook.md](linear-phase3-runbook.md); при разработке — ветка `AIP-XX-short-desc`, PR с `Closes AIP-XX`. По PIPELINE.md — следующие фазы (код, интеграции, WF-доработки).
