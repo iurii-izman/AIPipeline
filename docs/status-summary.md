@@ -57,6 +57,9 @@
   - локальный observability stack Grafana/Loki/Promtail на Podman (`scripts/run-observability-stack.sh`, `scripts/check-observability-stack.sh`, `docs/observability-stack-grafana-loki.md`);
   - NotebookLM playbook + source-bundle automation (`scripts/notebooklm-build-source-bundle.sh`, `docs/notebooklm-playbook.md`);
   - n8n MCP server добавлен в `.cursor/mcp.json` (`n8n-mcp`, stdio).
+- **NotebookLM manual-tail operationalized (2026-03-01):**
+  - добавлен `scripts/notebooklm-weekly-refresh.sh` (build bundle + upload checklist + evidence template);
+  - manual upload шаг сохранён (NotebookLM UI), но weekly процесс теперь стандартизирован через `.out/notebooklm-upload-checklist.md`.
 - **Operations control plane (2026-02-28):**
   - добавлены сервисные профили `core/extended/full` через `scripts/stack-control.sh`;
   - добавлен единый health-report `scripts/stack-health-report.sh` (app/n8n/observability/cloudflared/env readiness);

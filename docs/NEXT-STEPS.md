@@ -51,6 +51,8 @@
   - `./scripts/check-observability-alerts.sh`
 - Сборка NotebookLM source-bundle:
   - `./scripts/notebooklm-build-source-bundle.sh`
+- Weekly NotebookLM refresh prep (bundle + checklist + evidence template):
+  - `./scripts/notebooklm-weekly-refresh.sh`
 - Единый статус сервисных профилей:
   - `./scripts/stack-control.sh status full`
 - Единый health snapshot:
@@ -68,7 +70,7 @@
 
 1. Поддерживать регулярный цикл evidence-sync в Notion Sprint Log/Runbook.
 2. Поддерживать closure audit (`audit-linear-github-closure.js`) в регулярном цикле.
-3. NotebookLM: weekly UI upload source-bundle (manual-only).
+3. NotebookLM: weekly UI upload source-bundle (manual-only), подготовка через `./scripts/notebooklm-weekly-refresh.sh`.
 
 ## Рабочий цикл дальше
 

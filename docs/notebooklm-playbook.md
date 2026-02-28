@@ -23,10 +23,10 @@
 Рекомендуемый weekly run:
 
 ```bash
-./scripts/notebooklm-build-source-bundle.sh
+./scripts/notebooklm-weekly-refresh.sh
 ```
 
-(можно повесить в cron/systemd timer отдельно)
+(генерирует bundle + upload checklist + evidence template в `./.out/`)
 
 ## Manual UI шаг (NotebookLM)
 
@@ -35,6 +35,7 @@ NotebookLM не предоставляет публичный API для пол�
 1. Открыть NotebookLM notebook проекта
 2. Upload/replace files из `./.out/notebooklm-sources/` или архива
 3. Проверить, что индексация завершена
+4. Взять шаблон evidence из `./.out/notebooklm-evidence-template.md`
 
 ## Связь с workflow
 
@@ -43,6 +44,6 @@ NotebookLM не предоставляет публичный API для пол�
 
 ## Recommended operating cadence
 
-1. Еженедельно: собрать bundle
+1. Еженедельно: `./scripts/notebooklm-weekly-refresh.sh`
 2. При major change в docs/pipeline: внеплановый sync
 3. После sync: зафиксировать короткий evidence note (дата, набор файлов)
