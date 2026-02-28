@@ -30,6 +30,9 @@
 - Для LLM-классификации severity добавить `OPENAI_API_KEY` (keyring: `openai.com` / `aipipeline`), иначе WF-3 использует heuristic fallback.
 При запуске `./scripts/run-n8n-with-ngrok.sh` скрипт пытается зарегистрировать webhook WF-3 автоматически (если есть `SENTRY_AUTH_TOKEN`).
 
+Для критического паттерна `DB timeout cascade` использовать оперативный регламент:
+- [sentry-db-timeout-cascade-runbook.md](sentry-db-timeout-cascade-runbook.md)
+
 ---
 
 ## WF-4 (Daily digest + Notion Sprint Log)

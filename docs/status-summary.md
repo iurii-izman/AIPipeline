@@ -64,6 +64,11 @@
   - формализован process-level acceptance checklist по профилям (`scripts/profile-acceptance-check.sh`);
   - добавлен регулярный evidence-sync cycle (`scripts/evidence-sync-cycle.sh`) для Sprint Log + optional Linear closure;
   - зафиксирован access matrix/ownership/rotation/audit trail: `docs/operations-access-matrix.md`.
+- **AIP-12 critical incident hardening (2026-03-01):**
+  - WF-3 классификация усилена для паттерна `db_timeout_cascade` (status-aware + payload-aware signals);
+  - critical Linear issue title/description для DB timeout cascade теперь включает immediate actions;
+  - Telegram critical notification для DB cascade теперь имеет P0-префикс и action hint;
+  - добавлен runbook `docs/sentry-db-timeout-cascade-runbook.md`.
 - **Доки:** runbooks (в т.ч. [linear-phase3-runbook.md](linear-phase3-runbook.md), [n8n-workflows/README.md](n8n-workflows/README.md), [live-uat-telegram.md](live-uat-telegram.md)), гайды по Notion/Sentry/n8n (step-by-step), keyring, Linear, MCP, audit, и consolidated backlog [tz-remaining-work.md](tz-remaining-work.md).
 
 ---
@@ -104,6 +109,7 @@
 | Observability baseline: structured logs + correlation ID + SLO-lite doc | ✅ |
 | Optional observability stack (Grafana/Loki/Promtail) | ✅ |
 | Operations profiles/services/bots governance (access matrix + acceptance + evidence cycle) | ✅ |
+| Critical Sentry incident hardening (`db_timeout_cascade`) | ✅ |
 | WF-4: digest + optional Notion Sprint Log write (`NOTION_SPRINT_LOG_DATABASE_ID`) | ✅ |
 | WF-5: команды `/status`, `/help`, `/tasks`, `/errors`, `/search`, `/create`, `/deploy`, `/standup` | ✅ (нужны env/credentials) |
 | WF-6: отправка reminder только если есть обновления в Notion за 7 дней | ✅ |

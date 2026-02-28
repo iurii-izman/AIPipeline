@@ -35,6 +35,7 @@
 | [notion-delivery-hub.md](notion-delivery-hub.md) | Структура Delivery Hub (Specs, Meetings, Runbooks и т.д.) |
 | [sentry-setup-step-by-step.md](sentry-setup-step-by-step.md) | Sentry: проект, DSN, keyring, SDK, MCP |
 | [sentry-setup.md](sentry-setup.md) | Краткий обзор Sentry |
+| [sentry-db-timeout-cascade-runbook.md](sentry-db-timeout-cascade-runbook.md) | Операционный runbook для критических Sentry инцидентов `db_timeout_cascade` |
 | [runbook-n8n.md](runbook-n8n.md) | n8n: деплой, операции, Podman |
 | [n8n-workflows/README.md](n8n-workflows/README.md) | n8n WF-1…WF-7: workflows, hardening policy, apply/sync |
 | [dlq-replay-runbook.md](dlq-replay-runbook.md) | Операционный runbook по DLQ parking/replay (WF-7) |
