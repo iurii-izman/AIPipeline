@@ -58,7 +58,7 @@ MCP: Notion, GitHub, Linear, Telegram, filesystem (`.cursor/mcp.json`). Секр
 - **`./scripts/start-app-with-keyring.sh`** — запуск приложения с env из keyring (GET /health, /status с env flags true)
 - `PORT=3000 npm start` — HTTP server без keyring (GET /health, GET /status для n8n/Telegram)
 - `./scripts/run-n8n.sh` — запуск n8n в Podman
-- `./scripts/run-n8n-with-ngrok.sh` — ngrok туннель на 5678 + перезапуск n8n с HTTPS WEBHOOK_URL (для Telegram Trigger); нужен ngrok authtoken (keyring или `ngrok config add-authtoken`)
+- `./scripts/run-n8n-with-ngrok.sh` — ngrok туннель на 5678 + перезапуск n8n с HTTPS WEBHOOK_URL (для Telegram Trigger); после старта пытается автообновить GitHub webhook WF-2 и зарегистрировать Sentry webhook WF-3
 - `./scripts/import-n8n-workflow.sh [workflow.json]` — импорт одного workflow в n8n по API
 - `./scripts/import-all-n8n-workflows.sh` — импорт всех workflow из docs/n8n-workflows/*.json
 - `./scripts/export-n8n-workflows.sh` — экспорт WF-1…WF-6 из n8n API в `docs/n8n-workflows/*.json` (синхронизация runtime → repo)
@@ -71,6 +71,10 @@ MCP: Notion, GitHub, Linear, Telegram, filesystem (`.cursor/mcp.json`). Секр
 - `node scripts/update-wf6-notion-reminder.js` — WF-6: Schedule Пн 10:00 → Notion updated last 7 days? → Telegram reminder
   После скриптов WF-2…WF-6: в n8n привязать credentials, для WF-3 — задать Team и URL в Sentry. См. [docs/what-to-do-manually.md](docs/what-to-do-manually.md)
 - `source scripts/load-env-from-keyring.sh && node scripts/sync-n8n-credentials-from-keyring.js` — создать в n8n credentials (Linear, Telegram, Notion, GitHub) из keyring, без ручного ввода API ключей
+
+GitHub deploy workflows:
+- `.github/workflows/deploy-staging.yml` — validate (lint/build/test) + webhook deploy (если задан `DEPLOY_WEBHOOK_STAGING`).
+- `.github/workflows/deploy-production.yml` — validate + guarded production deploy (manual confirm `DEPLOY` или `AUTO_DEPLOY_PRODUCTION=true`) + webhook deploy (если задан `DEPLOY_WEBHOOK_PRODUCTION`).
 
 ## License
 

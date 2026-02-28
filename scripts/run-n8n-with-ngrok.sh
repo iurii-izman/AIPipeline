@@ -79,5 +79,21 @@ if podman ps -a --format '{{.Names}}' 2>/dev/null | grep -q '^n8n$'; then
 fi
 "$SCRIPT_DIR/run-n8n.sh"
 echo "n8n started with WEBHOOK_URL=$WEBHOOK_URL"
-echo "Open n8n, activate WF-5 (Telegram Trigger). Keep this terminal running (ngrok)."
+echo "Auto-configuring GitHub webhook for WF-2..."
+if ! WEBHOOK_BASE_URL="${PUBLIC_URL%/}" node "$SCRIPT_DIR/configure-github-webhook-wf2.js"; then
+  echo "Warning: could not auto-configure GitHub webhook for WF-2. Run manually:"
+  echo "  source scripts/load-env-from-keyring.sh && WEBHOOK_BASE_URL=${PUBLIC_URL%/} node scripts/configure-github-webhook-wf2.js"
+fi
+
+echo "Trying auto-registration of Sentry webhook for WF-3 (optional)..."
+if [[ -n "${SENTRY_AUTH_TOKEN:-}" ]]; then
+  if ! WEBHOOK_BASE_URL="${PUBLIC_URL%/}" "$SCRIPT_DIR/register-sentry-webhook.sh"; then
+    echo "Warning: Sentry webhook auto-registration failed. You can run manually:"
+    echo "  source scripts/load-env-from-keyring.sh && WEBHOOK_BASE_URL=${PUBLIC_URL%/} ./scripts/register-sentry-webhook.sh"
+  fi
+else
+  echo "SENTRY_AUTH_TOKEN not set: skipping Sentry webhook auto-registration."
+fi
+
+echo "Open n8n and verify WF activation status. Keep this terminal running (ngrok)."
 wait $NGROK_PID

@@ -13,7 +13,7 @@
 | Фаза 1 (Day-0) | ✅ | Все пункты 1.1–1.7 выполнены |
 | Фаза 2 (Notion) | ✅ | Все страницы в скрипте; Onboarding — onboarding-guide.md |
 | Фаза 3 (Linear) | ✅ | Workflow, labels, Agent-Ready |
-| Фаза 4 (GitHub scaffold) | ✅ | deploy-staging/production — placeholders |
+| Фаза 4 (GitHub scaffold) | ✅ | deploy-staging/production реализованы как validate + webhook deploy (с dry-run fallback) |
 | Фаза 5 (NotebookLM) | ⚪ Ручное | WF-6 reminder есть; сам NotebookLM — пользователь |
 | Фаза 6 (Sprint 1) | 🟡 Частично | Инфраструктура (1–11, 31, 36–38) — сделано; Data Mapping, PoC — под конкретный проект |
 | Фаза 7 (DoR/DoD) | ✅ | definition-of-done.md |
