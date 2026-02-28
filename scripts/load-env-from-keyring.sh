@@ -49,6 +49,20 @@ _load GITHUB_REPO github.com aipipeline-repo
 _load GITHUB_WORKFLOW_STAGING github.com aipipeline-workflow-staging
 _load GITHUB_WORKFLOW_PRODUCTION github.com aipipeline-workflow-production
 
+# Compatibility fallbacks for OPENAI_API_KEY if stored with custom attributes.
+if [[ -z "${OPENAI_API_KEY:-}" ]]; then
+  OPENAI_API_KEY="$(secret-tool lookup server openai.com key OPENAI_API_KEY 2>/dev/null || true)"
+  export OPENAI_API_KEY
+fi
+if [[ -z "${OPENAI_API_KEY:-}" ]]; then
+  OPENAI_API_KEY="$(secret-tool lookup service openai.com key OPENAI_API_KEY 2>/dev/null || true)"
+  export OPENAI_API_KEY
+fi
+if [[ -z "${OPENAI_API_KEY:-}" ]]; then
+  OPENAI_API_KEY="$(secret-tool lookup service aipipeline server openai.com key OPENAI_API_KEY 2>/dev/null || true)"
+  export OPENAI_API_KEY
+fi
+
 if [[ "${1:-}" == "--cursor" ]]; then
   cd "$REPO_ROOT"
   CURSOR_CMD=""

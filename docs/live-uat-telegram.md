@@ -34,6 +34,24 @@ curl -s http://localhost:3000/status | jq .
 - `/deploy staging` запускает GitHub workflow dispatch;
 - ошибки команд не роняют workflow, а отдают usage/fallback ответ.
 
+## 2.1) Результат живого UAT (2026-02-28)
+
+Проверено в рабочем Telegram-чате:
+
+- `/tasks` -> ✅ ответ получен (`No open tasks for @IzmanIurii`).
+- `/status` -> ✅ ответ получен (env flags true, n8n reachable).
+- `/search test` -> ✅ ответ получен (`No Notion results`).
+- `/standup` -> ✅ ответ получен (сводка по состояниям задач).
+- `/create test issue` -> ✅ после фикса, создан issue `AIP-13`.
+- `/errors` -> ✅ после фикса, корректный ответ (`No unresolved Sentry issues`).
+- `/deploy staging` -> ✅ после фикса, dispatch принят (`deploy-staging.yml`, `ref=main`).
+
+Найденные и устранённые дефекты:
+
+1. `/create`: неверный формат `teamId` в Linear node.
+2. `/deploy staging`: `staging` ref отсутствовал в repo -> переведено на default `main` (или env override).
+3. `/errors`/`/deploy`: использование `fetch` в Code node ломалось на текущем n8n runtime (`fetch is not defined`) -> заменено на HTTP Request nodes.
+
 ## 3) UAT для WF-2 (GitHub PR -> Linear)
 
 1. Создать ветку `AIP-XX-uat-wf2`.
