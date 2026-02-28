@@ -61,6 +61,10 @@ See [runbook-n8n.md](runbook-n8n.md) for deploy and credentials.
 - **App**: when running (**`./scripts/start-app-with-keyring.sh`** or `PORT=3000 npm start`): **GET /health**, **GET /status** (env flags + n8n reachable). With keyring, env flags in /status are true. n8n WF-5 calls `http://host.containers.internal:3000/status` to reply to Telegram /status.
 - **Sentry**: project DSN in app; alerts → n8n → Telegram (when configured).
 - **n8n**: http://localhost:5678 when container is running. Check: `./scripts/health-check-env.sh` (includes n8n HTTP when container is up).
+- **Synthetic probe**: `./scripts/synthetic-health-status-check.sh` (операционная проверка `/health` + `/status`).
+- **Closure evidence sync** (Notion Sprint Log + optional Linear Done/comment):
+  - `source scripts/load-env-from-keyring.sh`
+  - `node scripts/sync-closure-evidence.js --title \"Closure sync\" --summary \"WF evidence synced\" --linear AIP-11`
 
 ---
 

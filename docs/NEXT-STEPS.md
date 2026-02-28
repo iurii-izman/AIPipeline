@@ -23,6 +23,8 @@
   - `npm run lint && npm run build && npm test`
 - Проверка stable endpoint:
   - `./scripts/check-stable-endpoint.sh`
+- Автосинхронизация closure evidence (Notion + Linear):
+  - `source scripts/load-env-from-keyring.sh && node scripts/sync-closure-evidence.js --title \"Closure sync\" --summary \"WF evidence synced\" --linear AIP-11`
 
 ## Что остаётся до полного closure
 
