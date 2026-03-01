@@ -31,7 +31,10 @@
 - Backup retention timer: `aipipeline-backup-retention.timer` installed/enabled (`systemctl --user status aipipeline-backup-retention.timer`)
 - DR cadence timer: `aipipeline-dr-cadence.timer` installed/enabled (`systemctl --user status aipipeline-dr-cadence.timer`)
 - DR cadence last successful run: `2026-03-01T20:24:59+02:00` (`/var/home/user/Projects/AIPipeline/.out/drills/dr-restore-drill-20260301-202456.json`)
-- Release Gate (remote): success with scorecard artifact upload (`https://github.com/iurii-izman/AIPipeline/actions/runs/22552125084`)
+- CI (remote): success with extended jobs (`eval-v2`, `iac-validate`, `cost-governance`, `sbom attestation`)  
+  `https://github.com/iurii-izman/AIPipeline/actions/runs/22552504618`
+- Release Gate (remote): success with scorecard + supply-chain + ai-ops artifacts  
+  `https://github.com/iurii-izman/AIPipeline/actions/runs/22552521848`
 - Git sync state: local `main` and `origin/main` are synchronized
 - IaC baseline: `infra/terraform` + `scripts/check-iac-baseline.sh` + CI job `iac-validate`
 - OTel pilot baseline: `OTEL_PILOT_ENABLED=true` + trace/span correlation in runtime logs
