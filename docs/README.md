@@ -8,6 +8,7 @@
 - [project-audit-and-roadmap.md](project-audit-and-roadmap.md) — полный audit/roadmap (A-G)
 - [changelog.md](changelog.md) — журнал внедрений и merge-милестоунов
 - [current-phase.md](current-phase.md) — краткий фокус фазы
+- [next-chat-prompt.md](next-chat-prompt.md) — готовый handoff prompt для продолжения в новом чате
 
 ## 2) Operations and Runbooks
 - [runbook.md](runbook.md) — операционный runbook верхнего уровня
@@ -27,16 +28,22 @@
 - [linear-phase3-runbook.md](linear-phase3-runbook.md)
 
 ## 4) Architecture and Standards
+- **Strategy:** [strategic-vision-and-tooling.md](strategic-vision-and-tooling.md) — decision-complete стратегия v2 (evidence, tooling decisions, 90-day plan, anti-roadmap)
 - [architecture.md](architecture.md)
 - [integration-spec.md](integration-spec.md)
 - [data-mapping.md](data-mapping.md)
+- [adr-001-full-primary-rollout.md](adr-001-full-primary-rollout.md)
+- [templates/ADR.md](templates/ADR.md)
 - [definition-of-done.md](definition-of-done.md)
 - [token-least-privilege.md](token-least-privilege.md)
 - [observability.md](observability.md)
+- [slo-lite-policy.md](slo-lite-policy.md)
+- [data-governance-policy.md](data-governance-policy.md)
 - [delivery-pipeline-compliance.md](delivery-pipeline-compliance.md)
 - [charter.md](charter.md)
 - [audit-and-history.md](audit-and-history.md)
 - [onboarding-guide.md](onboarding-guide.md)
+- [templates/release-scorecard-v2.md](templates/release-scorecard-v2.md)
 
 ## 5) Optional/Advanced
 - [observability-stack-grafana-loki.md](observability-stack-grafana-loki.md)

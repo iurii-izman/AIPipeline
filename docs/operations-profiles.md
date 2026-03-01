@@ -107,6 +107,51 @@ Restore из архива (требует остановить контейне�
 ./scripts/restore-n8n.sh --archive .backups/n8n-backup-YYYYmmdd-HHMMSS-weekly/n8n_data.tar.gz --confirm
 ```
 
+Авто-retention cleanup (старше 7 дней):
+
+```bash
+./scripts/cleanup-backups.sh --retention-days 7
+```
+
+User-level systemd timer (daily backup + cleanup):
+
+```bash
+./scripts/install-backup-retention-timer.sh --retention-days 7
+systemctl --user list-timers --all | rg aipipeline-backup-retention
+```
+
+Остановить и удалить timer/service:
+
+```bash
+./scripts/install-backup-retention-timer.sh --stop
+```
+
+DR restore drill evidence (dry-run by default):
+
+```bash
+./scripts/dr-restore-drill.sh
+```
+
+Проверка свежести DR cadence evidence (по умолчанию <=30 дней):
+
+```bash
+./scripts/check-dr-cadence.sh --strict
+./scripts/check-dr-cadence.sh --markdown
+```
+
+User-level systemd timer для автоматизации DR cadence:
+
+```bash
+./scripts/install-dr-cadence-timer.sh --calendar monthly --max-age-days 30
+systemctl --user list-timers --all | rg aipipeline-dr-cadence
+```
+
+Остановить и удалить timer/service:
+
+```bash
+./scripts/install-dr-cadence-timer.sh --stop
+```
+
 ## Env parity check
 
 Проверка паритета критичных env (app/n8n/deploy/model):
@@ -131,6 +176,13 @@ Bootstrap недостающих hardening env в keyring:
 ./scripts/release-quality-gate.sh --strict-parity
 ./scripts/release-quality-gate.sh --strict-parity --include-backup
 ./scripts/release-quality-gate.sh --skip-observability
+./scripts/release-quality-gate.sh --strict-parity --generate-scorecard --version vX.Y.Z --env staging
+```
+
+Data governance policy gate:
+
+```bash
+./scripts/check-data-governance-policy.sh --strict
 ```
 
 ## Рекомендованный режим
