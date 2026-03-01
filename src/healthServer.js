@@ -5,9 +5,17 @@
  */
 
 const http = require("http");
+const https = require("https");
 const { context: otelContext, trace, SpanStatusCode } = require("@opentelemetry/api");
 const { log, correlationIdFromRequest } = require("./logger.js");
-const { appendAiTelemetryEvent, appendDlqEvent, markDlqEvent, readAiTelemetryEvents } = require("./opsStore.js");
+const {
+  appendAiTelemetryEvent,
+  appendDlqEvent,
+  findDlqEventById,
+  markDlqEvent,
+  readAiTelemetryEvents,
+  readDlqEvents,
+} = require("./opsStore.js");
 
 const DEFAULT_PORT = 3000;
 const SERVER_SOCKETS = Symbol("aipipelineServerSockets");
@@ -84,6 +92,10 @@ function getTelemetryIngestToken() {
   return process.env.TELEMETRY_INGEST_TOKEN || "";
 }
 
+function getDlqReplayToken() {
+  return process.env.DLQ_REPLAY_TOKEN || getDlqIngestToken();
+}
+
 function checkBearerAuth(req, expectedToken) {
   if (!expectedToken) return true;
   const token = extractBearerToken(req);
@@ -158,6 +170,63 @@ function buildTelemetrySummary(events, sinceIso) {
     criticalMissRate: criticalMissDen ? criticalMissCount / criticalMissDen : 0,
     costUsdTotal: Number(costUsdTotal.toFixed(6)),
   };
+}
+
+function findReplayCandidate(events, preferredId) {
+  if (preferredId) {
+    return events.find((event) => String(event.id || "") === String(preferredId)) || null;
+  }
+  const parked = events.filter((event) => String(event.status || "parked") === "parked");
+  if (!parked.length) return null;
+  parked.sort((a, b) => String(a.parkedAt || "").localeCompare(String(b.parkedAt || "")));
+  return parked[0];
+}
+
+function dispatchReplay(target, payload, timeoutMs = 10_000) {
+  return new Promise((resolve, reject) => {
+    let u;
+    try {
+      u = new URL(target);
+    } catch (err) {
+      reject(new Error(`invalid replay target: ${target}`));
+      return;
+    }
+    const data = JSON.stringify(payload || {});
+    const client = u.protocol === "https:" ? https : http;
+    const req = client.request(
+      {
+        hostname: u.hostname,
+        port: u.port || (u.protocol === "https:" ? 443 : 80),
+        path: `${u.pathname || "/"}${u.search || ""}`,
+        method: "POST",
+        timeout: timeoutMs,
+        headers: {
+          "Content-Type": "application/json",
+          "Content-Length": Buffer.byteLength(data),
+        },
+      },
+      (res) => {
+        let body = "";
+        res.on("data", (chunk) => {
+          body += chunk.toString("utf8");
+        });
+        res.on("end", () => {
+          resolve({
+            statusCode: Number(res.statusCode || 0),
+            ok: Number(res.statusCode || 0) >= 200 && Number(res.statusCode || 0) < 300,
+            body,
+          });
+        });
+      }
+    );
+    req.on("error", reject);
+    req.on("timeout", () => {
+      req.destroy();
+      reject(new Error("replay request timeout"));
+    });
+    req.write(data);
+    req.end();
+  });
 }
 
 /**
@@ -425,6 +494,80 @@ function requestHandler(req, res) {
           res.writeHead(400);
           res.end(JSON.stringify({ ok: false, error: "invalid json payload" }));
           log("error", "dlq mark payload rejected", {
+            correlationId,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        });
+      return;
+    }
+
+    if (req.method === "GET" && url === "/dlq/events") {
+      if (!checkBearerAuth(req, getStatusAuthToken())) {
+        res.writeHead(401);
+        res.end();
+        return;
+      }
+      const all = readDlqEvents();
+      const limitRaw = req.url?.includes("?") ? new URL(`http://localhost${req.url}`).searchParams.get("limit") : null;
+      const limit = Number(limitRaw || "50");
+      const safeLimit = Number.isFinite(limit) && limit > 0 ? Math.min(limit, 500) : 50;
+      const rows = all.slice(-safeLimit).reverse();
+      res.setHeader("Content-Type", "application/json");
+      res.writeHead(200);
+      res.end(JSON.stringify({ ok: true, total: all.length, count: rows.length, rows }));
+      return;
+    }
+
+    if (req.method === "POST" && url === "/dlq/replay") {
+      if (!checkBearerAuth(req, getDlqReplayToken())) {
+        res.writeHead(401);
+        res.end();
+        return;
+      }
+      parseJsonBody(req)
+        .then(async (payload) => {
+          const id = String(payload.id || "").trim();
+          const event = id ? findDlqEventById(id) : findReplayCandidate(readDlqEvents(), "");
+          if (!event) {
+            res.writeHead(404);
+            res.end(JSON.stringify({ ok: false, error: "no replay candidate found" }));
+            return;
+          }
+          const replayTarget = String(event.replayTarget || "");
+          if (!replayTarget) {
+            markDlqEvent(event.id, {
+              status: "replay_skipped_no_target",
+              lastReplayError: "replayTarget is empty",
+              lastReplayResultAt: new Date().toISOString(),
+            });
+            res.writeHead(409);
+            res.end(JSON.stringify({ ok: false, id: event.id, error: "replayTarget is empty" }));
+            return;
+          }
+
+          const replayResult = await dispatchReplay(replayTarget, event.replayPayload || event.context || {});
+          const nextStatus = replayResult.ok ? "replayed" : "replay_failed";
+          markDlqEvent(event.id, {
+            status: nextStatus,
+            lastReplayError: replayResult.ok ? "" : `HTTP ${replayResult.statusCode}`,
+            lastReplayResultAt: new Date().toISOString(),
+          });
+          res.setHeader("Content-Type", "application/json");
+          res.writeHead(replayResult.ok ? 200 : 502);
+          res.end(
+            JSON.stringify({
+              ok: replayResult.ok,
+              id: event.id,
+              status: nextStatus,
+              replayTarget,
+              replayStatusCode: replayResult.statusCode,
+            })
+          );
+        })
+        .catch((err) => {
+          res.writeHead(500);
+          res.end(JSON.stringify({ ok: false, error: err instanceof Error ? err.message : String(err) }));
+          log("error", "durable dlq replay failed", {
             correlationId,
             error: err instanceof Error ? err.message : String(err),
           });

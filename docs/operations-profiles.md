@@ -202,8 +202,21 @@ curl -H "Authorization: Bearer $STATUS_AUTH_TOKEN" \
   "http://localhost:3000/telemetry/ai-summary?days=30"
 
 npm run eval:v2
+npm run telemetry:seed
 npm run cost:report
 npm run cost:budget
+```
+
+Durable DLQ operational endpoints:
+
+```bash
+curl -H "Authorization: Bearer $STATUS_AUTH_TOKEN" \
+  "http://localhost:3000/dlq/events?limit=50"
+
+curl -X POST http://localhost:3000/dlq/replay \
+  -H "Authorization: Bearer $DLQ_REPLAY_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"id":"dlq_xxxxx"}'
 ```
 
 Supply-chain provenance pilot:

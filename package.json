@@ -16,6 +16,7 @@
     "eval:alpha": "node scripts/run-ai-eval.js --dataset evals/datasets/sentry-severity-alpha.json --model-tag alpha-heuristic-v1 --fail-on-gate",
     "eval:safety": "node scripts/run-ai-safety-eval.js --dataset evals/datasets/sentry-safety-alpha.json --model-tag safety-heuristic-v1 --fail-on-gate",
     "eval:v2": "node scripts/run-ai-eval-v2.js --dataset evals/datasets/sentry-severity-alpha.json --model-tag alpha-heuristic-v2 --fail-on-gate",
+    "telemetry:seed": "node scripts/seed-ai-telemetry-from-eval.js --dataset evals/datasets/sentry-severity-alpha.json --limit 50 --clear-window",
     "sbom:generate": "mkdir -p .out/sbom && cyclonedx-npm --output-file .out/sbom/cyclonedx-npm.json --output-format json",
     "provenance:generate": "./scripts/generate-provenance-pilot.sh",
     "cost:report": "node scripts/generate-cost-report.js --days 30",

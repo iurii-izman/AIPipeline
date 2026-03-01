@@ -9,6 +9,8 @@ WF-7 централизует парковку ошибок из WF-2/WF-3/WF-4/
 - Durable storage mirror endpoints (app):
   - `POST /dlq/park`
   - `POST /dlq/mark`
+  - `GET /dlq/events`
+  - `POST /dlq/replay`
 
 ## Preconditions
 
@@ -64,6 +66,7 @@ curl -sS -X POST https://n8n.aipipeline.cc/webhook/wf-dlq-replay \
 3. После успешного replay статус item в WF-7 меняется на `replayed`.
 4. При ошибке replay статус меняется на `replay_failed`.
 5. Durable mirror в `.runtime-logs/dlq-events.jsonl` должен обновляться через `/dlq/park` и `/dlq/mark`.
+6. Для app-level replay использовать `POST /dlq/replay` (с `DLQ_REPLAY_TOKEN`) и контролировать `GET /dlq/events`.
 
 ## Troubleshooting
 

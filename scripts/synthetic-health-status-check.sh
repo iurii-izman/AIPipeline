@@ -9,9 +9,14 @@ set -euo pipefail
 APP_BASE_URL="${APP_BASE_URL:-http://localhost:3000}"
 TIMEOUT_SECONDS="${TIMEOUT_SECONDS:-6}"
 CURL_OPTS=(--silent --show-error --max-time "$TIMEOUT_SECONDS")
+AUTH_ARGS=()
+
+if [[ -n "${STATUS_AUTH_TOKEN:-}" ]]; then
+  AUTH_ARGS=(-H "Authorization: Bearer ${STATUS_AUTH_TOKEN}")
+fi
 
 health_code="$(curl "${CURL_OPTS[@]}" -o /tmp/aip-health.out -w "%{http_code}" "$APP_BASE_URL/health" || true)"
-status_code="$(curl "${CURL_OPTS[@]}" -o /tmp/aip-status.out -w "%{http_code}" "$APP_BASE_URL/status" || true)"
+status_code="$(curl "${CURL_OPTS[@]}" "${AUTH_ARGS[@]}" -o /tmp/aip-status.out -w "%{http_code}" "$APP_BASE_URL/status" || true)"
 
 ok=true
 if [[ "$health_code" != "200" ]]; then

@@ -80,11 +80,22 @@ function appendAiTelemetryEvent(event) {
   return filePath;
 }
 
+function readDlqEvents() {
+  return readJsonLines(getDlqStoreFile());
+}
+
+function findDlqEventById(id) {
+  const rows = readDlqEvents();
+  return rows.find((row) => String(row.id || "") === String(id)) || null;
+}
+
 module.exports = {
   appendAiTelemetryEvent,
   appendDlqEvent,
+  findDlqEventById,
   getAiTelemetryStoreFile,
   getDlqStoreFile,
   markDlqEvent,
   readAiTelemetryEvents,
+  readDlqEvents,
 };

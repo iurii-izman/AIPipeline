@@ -12,6 +12,7 @@ function parseArgs(argv) {
     minCases: 100,
     onlineWindowDays: 30,
     minOnlineSamples: 20,
+    requireOnline: false,
     maxFallbackRate: 0.2,
     maxMismatchRate: 0.15,
     maxCriticalMissRate: 0.1,
@@ -43,6 +44,10 @@ function parseArgs(argv) {
     if (a === "--min-online-samples" && argv[i + 1]) {
       out.minOnlineSamples = Number(argv[i + 1]);
       i += 1;
+      continue;
+    }
+    if (a === "--require-online") {
+      out.requireOnline = true;
       continue;
     }
     if (a === "--max-fallback-rate" && argv[i + 1]) {
@@ -159,7 +164,8 @@ function main() {
     onlineSummary.mismatchRate <= args.maxMismatchRate &&
     onlineSummary.criticalMissRate <= args.maxCriticalMissRate;
 
-  const pass = offlineResult.pass && (!onlineGateEnabled || onlinePass);
+  const onlineRequirementSatisfied = !args.requireOnline || onlineGateEnabled;
+  const pass = offlineResult.pass && onlineRequirementSatisfied && (!onlineGateEnabled || onlinePass);
 
   const outDir = path.resolve(process.cwd(), ".out/evals");
   fs.mkdirSync(outDir, { recursive: true });
@@ -188,6 +194,8 @@ function main() {
       },
       pass: onlineGateEnabled ? onlinePass : true,
       note: onlineGateEnabled ? "online gate enforced" : "online gate skipped (insufficient sample)",
+      required: Boolean(args.requireOnline),
+      requirementSatisfied: onlineRequirementSatisfied,
       since: sinceIso,
     },
     summary: {

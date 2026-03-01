@@ -1,6 +1,6 @@
 import http from "node:http";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { resetRateLimiter, start } from "../src/healthServer.js";
+import { resetRateLimiter, start, stop } from "../src/healthServer.js";
 
 function request(
   url: string,
@@ -62,9 +62,24 @@ function getStatus(url: string): Promise<number> {
 
 describe("health server", () => {
   let server: http.Server | undefined;
+  let hangingN8n: http.Server | undefined;
   const originalStatusAuthToken = process.env.STATUS_AUTH_TOKEN;
   const originalRateLimit = process.env.HEALTH_RATE_LIMIT_MAX_REQUESTS;
   const originalMaxBodyBytes = process.env.MAX_REQUEST_BODY_BYTES;
+  const originalShutdownTimeoutMs = process.env.SHUTDOWN_TIMEOUT_MS;
+  const originalN8nUrl = process.env.N8N_URL;
+  const originalN8nProbeTimeoutMs = process.env.N8N_PROBE_TIMEOUT_MS;
+  const originalDlqStoreFile = process.env.DLQ_STORE_FILE;
+  const originalAiTelemetryStoreFile = process.env.AI_TELEMETRY_STORE_FILE;
+  const originalDlqReplayToken = process.env.DLQ_REPLAY_TOKEN;
+
+  function restoreEnv(name: string, value: string | undefined): void {
+    if (value === undefined) {
+      delete process.env[name];
+      return;
+    }
+    process.env[name] = value;
+  }
 
   beforeEach(() => {
     resetRateLimiter();
@@ -75,10 +90,18 @@ describe("health server", () => {
 
   afterEach(() => {
     if (server) server.close();
+    if (hangingN8n) hangingN8n.close();
     server = undefined;
-    process.env.STATUS_AUTH_TOKEN = originalStatusAuthToken;
-    process.env.HEALTH_RATE_LIMIT_MAX_REQUESTS = originalRateLimit;
-    process.env.MAX_REQUEST_BODY_BYTES = originalMaxBodyBytes;
+    hangingN8n = undefined;
+    restoreEnv("STATUS_AUTH_TOKEN", originalStatusAuthToken);
+    restoreEnv("HEALTH_RATE_LIMIT_MAX_REQUESTS", originalRateLimit);
+    restoreEnv("MAX_REQUEST_BODY_BYTES", originalMaxBodyBytes);
+    restoreEnv("SHUTDOWN_TIMEOUT_MS", originalShutdownTimeoutMs);
+    restoreEnv("N8N_URL", originalN8nUrl);
+    restoreEnv("N8N_PROBE_TIMEOUT_MS", originalN8nProbeTimeoutMs);
+    restoreEnv("DLQ_STORE_FILE", originalDlqStoreFile);
+    restoreEnv("AI_TELEMETRY_STORE_FILE", originalAiTelemetryStoreFile);
+    restoreEnv("DLQ_REPLAY_TOKEN", originalDlqReplayToken);
     resetRateLimiter();
   });
 
@@ -151,5 +174,143 @@ describe("health server", () => {
       body: "hello",
     });
     expect(res.statusCode).toBe(413);
+  });
+
+  it("gracefully drains in-flight request and rejects new connections during shutdown", async () => {
+    process.env.N8N_PROBE_TIMEOUT_MS = "200";
+    process.env.SHUTDOWN_TIMEOUT_MS = "2000";
+
+    const hangingServer = await new Promise<http.Server>((resolve) => {
+      const s = http.createServer((_req, _res) => {
+        // Intentionally keep socket open until caller timeout in checkN8n.
+      });
+      s.listen(0, () => resolve(s));
+    });
+    hangingN8n = hangingServer;
+    const hangingAddress = hangingServer.address();
+    if (!hangingAddress || typeof hangingAddress === "string") {
+      throw new Error("hanging n8n server did not provide numeric address");
+    }
+    process.env.N8N_URL = `http://127.0.0.1:${hangingAddress.port}`;
+
+    const runningServer = await start(0);
+    server = runningServer;
+    const address = runningServer.address();
+    if (!address || typeof address === "string") throw new Error("Server did not provide numeric address");
+    const port = address.port;
+
+    const inFlightStatusRequest = request(`http://127.0.0.1:${port}/status`);
+    await new Promise((resolve) => setTimeout(resolve, 25));
+
+    const stopPromise = stop(runningServer, 2000);
+    await new Promise((resolve) => setTimeout(resolve, 25));
+
+    const postStopConnection:
+      | { ok: true; statusCode: number }
+      | { ok: false; err: unknown } = await request(`http://127.0.0.1:${port}/health`).then(
+      (res) => ({ ok: true as const, statusCode: res.statusCode }),
+      (err) => ({ ok: false as const, err })
+    );
+    if (postStopConnection.ok) {
+      expect(postStopConnection.statusCode).not.toBe(200);
+    } else {
+      expect(postStopConnection.ok).toBe(false);
+    }
+
+    const inFlightStatusResponse = await inFlightStatusRequest;
+    expect(inFlightStatusResponse.statusCode).toBe(200);
+
+    const stopResult = await stopPromise;
+    expect(stopResult.forced).toBe(false);
+  });
+
+  it("accepts telemetry events and returns online summary", async () => {
+    process.env.AI_TELEMETRY_STORE_FILE = `.out/tests/ai-telemetry-${Date.now()}.jsonl`;
+    const runningServer = await start(0);
+    server = runningServer;
+    const address = runningServer.address();
+    if (!address || typeof address === "string") throw new Error("Server did not provide numeric address");
+    const port = address.port;
+
+    const eventPayload = {
+      source: "test",
+      model: "gpt-4o-mini",
+      fallbackUsed: true,
+      expectedSeverity: "critical",
+      predictedSeverity: "critical",
+      promptTokens: 1000,
+      completionTokens: 100,
+    };
+    const ingest = await request(`http://127.0.0.1:${port}/telemetry/ai-event`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(eventPayload),
+    });
+    expect(ingest.statusCode).toBe(202);
+
+    const summary = await getJson(`http://127.0.0.1:${port}/telemetry/ai-summary?days=30`);
+    expect(summary.ok).toBe(true);
+    expect(Number(summary.sampleSize)).toBeGreaterThanOrEqual(1);
+    expect(Number(summary.fallbackRate)).toBeGreaterThanOrEqual(0);
+  });
+
+  it("supports durable dlq park/list/replay flow", async () => {
+    process.env.DLQ_STORE_FILE = `.out/tests/dlq-${Date.now()}.jsonl`;
+    process.env.DLQ_REPLAY_TOKEN = "dlq-token";
+
+    const replayTarget = await new Promise<http.Server>((resolve) => {
+      const s = http.createServer((req, res) => {
+        if (req.method === "POST") {
+          res.writeHead(200);
+          res.end(JSON.stringify({ ok: true }));
+          return;
+        }
+        res.writeHead(405);
+        res.end();
+      });
+      s.listen(0, () => resolve(s));
+    });
+    hangingN8n = replayTarget;
+    const replayAddress = replayTarget.address();
+    if (!replayAddress || typeof replayAddress === "string") {
+      throw new Error("Replay target did not provide numeric address");
+    }
+
+    const runningServer = await start(0);
+    server = runningServer;
+    const address = runningServer.address();
+    if (!address || typeof address === "string") throw new Error("Server did not provide numeric address");
+    const port = address.port;
+
+    const parkPayload = {
+      sourceWorkflow: "WF-TEST",
+      failureType: "integration_failure",
+      reason: "test failure",
+      replayTarget: `http://127.0.0.1:${replayAddress.port}/replay`,
+      replayPayload: { hello: "world" },
+    };
+    const park = await request(`http://127.0.0.1:${port}/dlq/park`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(parkPayload),
+    });
+    expect(park.statusCode).toBe(202);
+
+    const listed = await getJson(`http://127.0.0.1:${port}/dlq/events?limit=10`);
+    expect(listed.ok).toBe(true);
+    const rows = Array.isArray(listed.rows) ? listed.rows : [];
+    expect(rows.length).toBeGreaterThan(0);
+    const id = String((rows[0] as Record<string, unknown>).id || "");
+    expect(id).not.toBe("");
+
+    const replay = await request(`http://127.0.0.1:${port}/dlq/replay`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer dlq-token",
+      },
+      body: JSON.stringify({ id }),
+    });
+    expect(replay.statusCode).toBe(200);
   });
 });
