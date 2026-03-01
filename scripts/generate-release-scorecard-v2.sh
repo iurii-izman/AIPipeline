@@ -97,7 +97,7 @@ Owner: ${owner}
 
 - npm audit (high+): TODO
 - CodeQL: TODO
-- SonarCloud: TODO
+- Docs link integrity: TODO
 - SBOM (CycloneDX): ${latest_sbom:-TODO}
 - Provenance (SLSA pilot): ${latest_provenance:-TODO}
 

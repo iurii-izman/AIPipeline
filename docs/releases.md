@@ -8,6 +8,7 @@
 
 | Тег | Версия в package.json | Описание |
 |-----|------------------------|----------|
+| **v0.1.0-beta.1 (RC)** | 0.1.0-beta.1 | Beta RC: full docs audit/cleanup, docs-links gate, workflow/data/release governance loops closed |
 | **v0.1.0-alpha.2** | 0.1.0-alpha.2 | Альфа 2: audit SSoT, WF-1…WF-7 hardening, strict parity/release gate, docs IA cleanup |
 | v0.1.0-alpha.1 | 0.1.0-alpha.1 | Альфа 1: Day-0 завершён, WF-1…WF-6, GET /health, GET /status |
 
@@ -95,6 +96,11 @@
 13. **Workflow governance invariants**
    - Проверка durable DLQ + RBAC workflow-инвариантов:
      - `npm run workflow:governance`
+
+14. **Beta RC package (recommended)**
+   - RC notes + rollout window: [release-notes/v0.1.0-beta.1-rc.md](release-notes/v0.1.0-beta.1-rc.md)
+   - Release tag: `v0.1.0-beta.1` (prerelease)
+   - После publish обновить evidence links в RC notes.
 
 ---
 

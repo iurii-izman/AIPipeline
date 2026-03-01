@@ -4,7 +4,7 @@
 
 ## Snapshot
 - Stage: `late-alpha / early-MVP`
-- Release: `v0.1.0-alpha.2`
+- Release: `v0.1.0-beta.1` (RC)
 - Branch model: `main` as canonical branch
 - Latest major execution: merged PR #24 (2026-03-01)
 - Docs inventory: `79` files in `docs/`

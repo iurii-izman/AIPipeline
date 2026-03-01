@@ -23,7 +23,7 @@ Owner: @owner
 
 - npm audit (high+): pass/fail
 - CodeQL: pass/fail
-- SonarCloud: pass/fail
+- Docs link integrity: pass/fail
 - SBOM (CycloneDX): attached yes/no
 - Provenance (SLSA pilot): attached yes/no
 
@@ -31,6 +31,7 @@ Owner: @owner
 
 - Eval alpha: pass/fail
 - Eval safety: pass/fail
+- Eval v2 (offline+online): pass/fail
 - Model mode change in scope: yes/no
 - If yes, safety gate evidence attached: yes/no
 
@@ -40,6 +41,7 @@ Owner: @owner
 - Observability alerts probe: pass/fail
 - Backup retention timer healthy: yes/no
 - DR cadence within 30 days: yes/no
+- Cost report (30d): attached yes/no
 
 ## 6) Data Governance and Access
 
@@ -59,8 +61,11 @@ Owner: @owner
 - CI run:
 - Release gate output:
 - Eval reports:
+- Eval v2 report:
 - SBOM artifact:
+- Provenance artifact:
 - DR evidence report:
+- Cost report:
 - Change log / PR list:
 
 ## 9) Sign-off
@@ -68,4 +73,3 @@ Owner: @owner
 - Engineering:
 - Security:
 - Product/Owner:
-

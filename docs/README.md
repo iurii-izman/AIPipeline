@@ -53,6 +53,7 @@
 ## 6) Evidence and UAT
 - [live-uat-telegram.md](live-uat-telegram.md)
 - [uat-evidence-2026-02-28.md](uat-evidence-2026-02-28.md)
+- [release-notes/v0.1.0-beta.1-rc.md](release-notes/v0.1.0-beta.1-rc.md)
 
 ## 7) Archived
 - [archive/README.md](archive/README.md)

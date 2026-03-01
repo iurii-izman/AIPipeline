@@ -4,6 +4,19 @@
 
 ## 2026-03-01 (Autopilot Blocks 1-8)
 
+### Autopilot Block 13: Beta RC package prep (`v0.1.0-beta.1`)
+- Prepared beta RC package artifacts and governance docs:
+  - bumped `package.json`/`package-lock.json` version to `0.1.0-beta.1`;
+  - added RC release notes + rollout window:
+    - `docs/release-notes/v0.1.0-beta.1-rc.md`;
+  - updated release docs/status for beta RC:
+    - `docs/releases.md`
+    - `docs/status-summary.md`
+    - `docs/README.md`.
+- Updated release scorecard security section to match current repo controls:
+  - `scripts/generate-release-scorecard-v2.sh` now tracks `Docs link integrity` instead of stale Sonar reference;
+  - `docs/templates/release-scorecard-v2.md` synced with current gates (`docs-links`, eval-v2, provenance, cost report).
+
 ### Autopilot Block 12: Full docs audit + archive consolidation + link integrity gate
 - Completed full docs/code reality audit and cleaned docs IA for beta readiness:
   - archived legacy setup/docs snapshots:
