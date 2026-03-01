@@ -88,6 +88,7 @@
   - добавлен phased roadmap 20 шагов + setup hardening checklist + Cursor-ready implementation plan;
   - formalized alpha-test track для WF-3 model classification в режиме `Full Primary` с guardrails, rollback и kill switch.
   - документ актуализирован после крупных реализаций: пересобран в «living SSoT» с текущим прогрессом (~80%), статусами `Closed/Partial/Open` по Top-20 и обновлёнными фазами исполнения.
+  - execution branch `claude/analyze-ai-project-Yc1iR` смёржен в `main` через PR #24 (2026-03-01), required checks green.
 - **P0 hardening iteration (2026-03-01):**
   - `src/healthServer.js`: добавлены auth guard для `/status` (`STATUS_AUTH_TOKEN`), rate limiting (`HEALTH_RATE_LIMIT_*`), request body size guard (`MAX_REQUEST_BODY_BYTES`);
   - `src/modules/{linear,notion,github}-client`: добавлен timeout/abort транспорт через `src/lib/http/fetchWithTimeout.ts` и `RequestOptions { timeoutMs?: number; signal?: AbortSignal }`;
