@@ -77,6 +77,34 @@ jobs:
       - name: Integration tests
         run: npm run test:integration
 
+  e2e-fixtures:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - name: Install
+        run: npm ci
+      - name: E2E fixture tests
+        run: npm run test:e2e
+
+  eval-alpha:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - name: Install
+        run: npm ci
+      - name: Run offline alpha eval gate
+        run: npm run eval:alpha
+
   security-audit:
     runs-on: ubuntu-latest
     steps:

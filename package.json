@@ -12,6 +12,8 @@
     "build": "npm run typecheck",
     "test": "vitest run",
     "test:integration": "vitest run tests/integration",
+    "test:e2e": "vitest run tests/e2e",
+    "eval:alpha": "node scripts/run-ai-eval.js --dataset evals/datasets/sentry-severity-alpha.json --model-tag alpha-heuristic-v1 --fail-on-gate",
     "coverage": "vitest run --coverage",
     "status": "./scripts/health-check-env.sh"
   },

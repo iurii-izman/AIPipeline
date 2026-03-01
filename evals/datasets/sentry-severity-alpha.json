@@ -1,0 +1,57 @@
+[
+  {
+    "caseId": "alpha-001",
+    "source": "sentry",
+    "input": {
+      "title": "Database timeout cascade on checkout",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "P0 candidate"
+    }
+  },
+  {
+    "caseId": "alpha-002",
+    "source": "sentry",
+    "input": {
+      "title": "UI warning in settings page",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "component render warning"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-003",
+    "source": "sentry",
+    "input": {
+      "title": "Fatal OOM in worker",
+      "level": "fatal",
+      "project": "node",
+      "payloadSnippet": "outofmemory crash loop"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "critical_generic"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  }
+]

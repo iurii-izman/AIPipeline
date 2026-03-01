@@ -44,6 +44,11 @@
   - CI jobs `integration` + `security-audit` (`npm audit --audit-level=high`);
   - CodeQL workflow добавлен (`.github/workflows/codeql.yml`);
   - deploy webhook curl в staging/production усилен retry+timeout policy.
+- E2E fixtures + AI eval harness skeleton (итерация 2026-03-01) внедрён:
+  - `tests/e2e/workflow-fixtures.test.ts` покрывает ключевые workflow-invariants для WF-2/WF-3/WF-5/WF-7;
+  - `src/evals/*` + `tests/evals/metrics.test.ts` добавляют offline eval metrics/gate primitives;
+  - `scripts/run-ai-eval.js` + dataset `evals/datasets/sentry-severity-alpha.json` дают воспроизводимый alpha eval gate (`npm run eval:alpha`);
+  - CI дополнен jobs `e2e-fixtures` и `eval-alpha`.
 
 ## Операционные проверки
 
@@ -79,10 +84,11 @@
 ## Что остаётся до полного closure
 
 1. Включить и проверить новые env-параметры в runtime n8n/app: `STATUS_AUTH_TOKEN`, `HEALTH_RATE_LIMIT_MAX_REQUESTS`, `HEALTH_RATE_LIMIT_WINDOW_MS`, `MAX_REQUEST_BODY_BYTES`, `GITHUB_WEBHOOK_SECRET`, `SENTRY_WEBHOOK_SECRET`, `MODEL_CLASSIFIER_MODE`, `MODEL_KILL_SWITCH`.
-2. При необходимости подключить branch protection rule для новых CI checks (`integration`, `security-audit`, `CodeQL`) в GitHub UI.
-3. Поддерживать регулярный цикл evidence-sync в Notion Sprint Log/Runbook.
-4. Поддерживать closure audit (`audit-linear-github-closure.js`) в регулярном цикле.
-5. NotebookLM: weekly UI upload source-bundle (manual-only), подготовка через `./scripts/notebooklm-weekly-refresh.sh`.
+2. При необходимости подключить branch protection rule для новых CI checks (`integration`, `e2e-fixtures`, `eval-alpha`, `security-audit`, `CodeQL`) в GitHub UI.
+3. Расширить eval dataset (>=50 кейсов) для реалистичного quality gate перед rollout `MODEL_CLASSIFIER_MODE=full_primary`.
+4. Поддерживать регулярный цикл evidence-sync в Notion Sprint Log/Runbook.
+5. Поддерживать closure audit (`audit-linear-github-closure.js`) в регулярном цикле.
+6. NotebookLM: weekly UI upload source-bundle (manual-only), подготовка через `./scripts/notebooklm-weekly-refresh.sh`.
 
 ## Рабочий цикл дальше
 

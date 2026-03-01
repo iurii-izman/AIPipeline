@@ -67,7 +67,10 @@ n8n container gets env from `run-n8n.sh` (if variables exist in shell/keyring):
 - `GITHUB_PERSONAL_ACCESS_TOKEN`, `GITHUB_OWNER`, `GITHUB_REPO`, `GITHUB_WORKFLOW_STAGING`, `GITHUB_WORKFLOW_PRODUCTION`
 - `SENTRY_AUTH_TOKEN`, `SENTRY_ORG_SLUG`, `SENTRY_PROJECT_SLUG`
 - `OPENAI_API_KEY`, `OPENAI_MODEL` (optional, for WF-3 LLM branch)
+- `MODEL_CLASSIFIER_MODE` (`full_primary|shadow|heuristic_only`) and `MODEL_KILL_SWITCH` (`true|false`) for WF-3 gating
 - `TELEGRAM_CHAT_ID`
+- `GITHUB_WEBHOOK_SECRET` (optional but recommended, WF-2 signature verify)
+- `SENTRY_WEBHOOK_SECRET` (optional but recommended, WF-3 signature verify)
 
 Runtime note:
 - `run-n8n.sh` sets `N8N_BLOCK_ENV_ACCESS_IN_NODE=false`, otherwise `$env.*` expressions in workflows will fail.

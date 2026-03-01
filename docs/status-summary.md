@@ -100,6 +100,13 @@
   - добавлен отдельный SAST workflow `.github/workflows/codeql.yml`;
   - deploy workflows (`deploy-staging.yml`, `deploy-production.yml`) усилены retry/timeout параметрами `curl`;
   - общий baseline тестов теперь `51/51` passed + отдельный `npm run test:integration` (`3/3`).
+- **E2E fixtures + AI eval harness skeleton (2026-03-01):**
+  - добавлен `tests/e2e/workflow-fixtures.test.ts` для regression-проверок exported workflow fixtures WF-2/WF-3/WF-5/WF-7;
+  - добавлен eval module `src/evals/{types.ts,metrics.ts}` + unit tests `tests/evals/metrics.test.ts`;
+  - добавлен runtime eval CLI `scripts/run-ai-eval.js` + runtime helper `src/evals/runtime.js`;
+  - добавлен dataset `evals/datasets/sentry-severity-alpha.json` и npm scripts `test:e2e`, `eval:alpha`;
+  - CI (`.github/workflows/ci.yml`) расширен job-ами `e2e-fixtures` и `eval-alpha`;
+  - новый baseline: `59/59` tests passed (включая e2e/eval unit) + `eval:alpha` gate pass.
 - **Доки:** runbooks (в т.ч. [linear-phase3-runbook.md](linear-phase3-runbook.md), [n8n-workflows/README.md](n8n-workflows/README.md), [live-uat-telegram.md](live-uat-telegram.md)), гайды по Notion/Sentry/n8n (step-by-step), keyring, Linear, MCP, audit, и consolidated backlog [tz-remaining-work.md](tz-remaining-work.md).
 
 ---
