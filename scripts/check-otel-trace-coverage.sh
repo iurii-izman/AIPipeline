@@ -37,8 +37,9 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ "${OTEL_PILOT_ENABLED:-false}" != "true" ]]; then
-  echo "otel trace coverage check: skipped (OTEL_PILOT_ENABLED is not true)"
+otel_enabled="${OTEL_ENABLED:-${OTEL_PILOT_ENABLED:-false}}"
+if [[ "$otel_enabled" != "true" ]]; then
+  echo "otel trace coverage check: skipped (OTEL_ENABLED/OTEL_PILOT_ENABLED is not true)"
   exit 0
 fi
 

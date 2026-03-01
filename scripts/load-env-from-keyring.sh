@@ -58,6 +58,14 @@ _load GITHUB_WEBHOOK_SECRET github.com aipipeline-webhook-secret
 _load SENTRY_WEBHOOK_SECRET sentry.io aipipeline-webhook-secret
 _load MODEL_CLASSIFIER_MODE openai.com aipipeline-classifier-mode
 _load MODEL_KILL_SWITCH openai.com aipipeline-kill-switch
+_load OTEL_ENABLED otel.aipipeline enabled
+_load OTEL_EXPORTER_MODE otel.aipipeline exporter-mode
+_load OTEL_EXPORTER_OTLP_ENDPOINT otel.aipipeline otlp-endpoint
+_load OTEL_EXPORTER_OTLP_HEADERS otel.aipipeline otlp-headers
+_load WF5_RBAC_ALLOWED_CHAT_IDS telegram.rbac aipipeline-allowed-chat-ids
+_load WF5_RBAC_ALLOWED_USER_IDS telegram.rbac aipipeline-allowed-user-ids
+_load WF5_RBAC_ALLOWED_USERNAMES telegram.rbac aipipeline-allowed-usernames
+_load WF5_PRIVILEGED_COMMANDS telegram.rbac aipipeline-privileged-commands
 
 # Compatibility fallbacks for OPENAI_API_KEY if stored with custom attributes.
 if [[ -z "${OPENAI_API_KEY:-}" ]]; then

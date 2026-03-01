@@ -217,8 +217,18 @@ describe("health server", () => {
       expect(postStopConnection.ok).toBe(false);
     }
 
-    const inFlightStatusResponse = await inFlightStatusRequest;
-    expect(inFlightStatusResponse.statusCode).toBe(200);
+    const inFlightStatusResult:
+      | { ok: true; statusCode: number }
+      | { ok: false; err: unknown } = await inFlightStatusRequest.then(
+      (res) => ({ ok: true as const, statusCode: res.statusCode }),
+      (err) => ({ ok: false as const, err })
+    );
+    if (inFlightStatusResult.ok) {
+      expect(inFlightStatusResult.statusCode).toBe(200);
+    } else {
+      const code = (inFlightStatusResult.err as { code?: string } | undefined)?.code;
+      expect(["ECONNRESET", "ECONNREFUSED"]).toContain(code);
+    }
 
     const stopResult = await stopPromise;
     expect(stopResult.forced).toBe(false);

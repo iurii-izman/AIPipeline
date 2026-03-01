@@ -4,7 +4,7 @@
  *
  * Webhooks:
  * - POST /webhook/wf-dlq-park   { sourceWorkflow, failureType, reason, replayTarget?, replayPayload?, context? }
- * - POST /webhook/wf-dlq-replay { id? }  // replays by id or oldest parked item
+ * - POST /webhook/wf-dlq-replay { id? }  // replays by id or oldest parked item in durable store
  */
 
 const http = require("http");
@@ -13,7 +13,7 @@ const N8N_URL = process.env.N8N_URL || "http://localhost:5678";
 const N8N_API_KEY = process.env.N8N_API_KEY;
 const WORKFLOW_NAME = "WF-7: DLQ Parking + Replay (AIPipeline)";
 const DLQ_DURABLE_PARK_URL = process.env.DLQ_DURABLE_PARK_URL || "http://host.containers.internal:3000/dlq/park";
-const DLQ_DURABLE_MARK_URL = process.env.DLQ_DURABLE_MARK_URL || "http://host.containers.internal:3000/dlq/mark";
+const DLQ_DURABLE_REPLAY_URL = process.env.DLQ_DURABLE_REPLAY_URL || "http://host.containers.internal:3000/dlq/replay";
 
 if (!N8N_API_KEY) {
   console.error("N8N_API_KEY not set.");
@@ -81,8 +81,8 @@ const workflow = {
       parameters: {
         jsCode: `const body = $json.body || $json || {};
 const now = new Date().toISOString();
-const base = {
-  id: 'dlq_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8),
+const item = {
+  id: body.id || ('dlq_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8)),
   status: 'parked',
   parkedAt: now,
   sourceWorkflow: body.sourceWorkflow || body.workflow || 'unknown',
@@ -92,57 +92,17 @@ const base = {
   replayTarget: body.replayTarget || '',
   replayPayload: body.replayPayload || null,
   context: body.context || {},
-  attempts: 0,
+  attempts: Number(body.attempts || 0),
 };
-return [{ json: base }];`,
+return [{ json: item }];`,
       },
-    },
-    {
-      id: "wf7-store-park",
-      name: "Persist parked event",
-      type: "n8n-nodes-base.code",
-      typeVersion: 2,
-      position: [440, -120],
-      parameters: {
-        jsCode: `const db = $getWorkflowStaticData('global');
-if (!Array.isArray(db.dlq)) db.dlq = [];
-const item = $json;
-db.dlq.unshift(item);
-if (db.dlq.length > 500) db.dlq = db.dlq.slice(0, 500);
-const text = [
-  '⚠️ *DLQ parked event*',
-  'ID: ' + item.id,
-  'Workflow: ' + item.sourceWorkflow,
-  'Failure: ' + item.failureType,
-  'Reason: ' + String(item.reason).slice(0, 500),
-  item.rateLimited ? 'Rate-limit: yes' : 'Rate-limit: no',
-  item.replayTarget ? ('Replay target: ' + item.replayTarget) : 'Replay target: missing'
-].join('\\n');
-return [{ json: { ...item, text } }];`,
-      },
-    },
-    {
-      id: "wf7-alert-park",
-      name: "Telegram: DLQ parked",
-      type: "n8n-nodes-base.telegram",
-      typeVersion: 1.2,
-      position: [660, -120],
-      continueOnFail: true,
-      alwaysOutputData: true,
-      parameters: {
-        operation: "sendMessage",
-        chatId: "={{ $env.TELEGRAM_CHAT_ID || 'YOUR_CHAT_ID' }}",
-        text: "={{ $json.text }}",
-        additionalFields: { parse_mode: "Markdown" },
-      },
-      credentials: { telegramApi: { name: "AIPipeline Telegram" } },
     },
     {
       id: "wf7-durable-park",
       name: "Durable DLQ park",
       type: "n8n-nodes-base.httpRequest",
       typeVersion: 4.2,
-      position: [660, -250],
+      position: [440, -180],
       continueOnFail: true,
       alwaysOutputData: true,
       parameters: {
@@ -154,9 +114,50 @@ return [{ json: { ...item, text } }];`,
         },
         sendBody: true,
         specifyBody: "json",
-        jsonBody: "={{ $('Persist parked event').first().json }}",
+        jsonBody: "={{ $('Normalize parking payload').first().json }}",
         options: {},
       },
+    },
+    {
+      id: "wf7-set-park-alert",
+      name: "Build park alert",
+      type: "n8n-nodes-base.code",
+      typeVersion: 2,
+      position: [660, -180],
+      parameters: {
+        jsCode: `const item = $('Normalize parking payload').first().json;
+const durableErr = $json.error || null;
+const lines = [
+  '⚠️ *DLQ parked event*',
+  'ID: ' + item.id,
+  'Workflow: ' + item.sourceWorkflow,
+  'Failure: ' + item.failureType,
+  'Reason: ' + String(item.reason).slice(0, 500),
+  item.rateLimited ? 'Rate-limit: yes' : 'Rate-limit: no',
+  item.replayTarget ? ('Replay target: ' + item.replayTarget) : 'Replay target: missing'
+];
+if (durableErr) {
+  const msg = String(durableErr.message || durableErr.description || JSON.stringify(durableErr)).slice(0, 280);
+  lines.push('Durable park: failed (' + msg + ')');
+}
+return [{ json: { ...item, text: lines.join('\\n') } }];`,
+      },
+    },
+    {
+      id: "wf7-alert-park",
+      name: "Telegram: DLQ parked",
+      type: "n8n-nodes-base.telegram",
+      typeVersion: 1.2,
+      position: [880, -180],
+      continueOnFail: true,
+      alwaysOutputData: true,
+      parameters: {
+        operation: "sendMessage",
+        chatId: "={{ $env.TELEGRAM_CHAT_ID || 'YOUR_CHAT_ID' }}",
+        text: "={{ $json.text }}",
+        additionalFields: { parse_mode: "Markdown" },
+      },
+      credentials: { telegramApi: { name: "AIPipeline Telegram" } },
     },
 
     {
@@ -174,63 +175,15 @@ return [{ json: { ...item, text } }];`,
       },
     },
     {
-      id: "wf7-select-replay-item",
-      name: "Select replay item",
+      id: "wf7-replay-request",
+      name: "Prepare replay request",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
       position: [220, 220],
       parameters: {
         jsCode: `const body = $json.body || $json || {};
-const db = $getWorkflowStaticData('global');
-const list = Array.isArray(db.dlq) ? db.dlq : [];
 const id = String(body.id || '').trim();
-let item = null;
-if (id) item = list.find((x) => x.id === id) || null;
-if (!item) item = list.find((x) => x.status === 'parked') || null;
-if (!item) {
-  return [{ json: { hasItem: false, text: 'ℹ️ DLQ replay: no parked items found.' } }];
-}
-item.attempts = Number(item.attempts || 0) + 1;
-item.lastReplayAttemptAt = new Date().toISOString();
-return [{ json: {
-  hasItem: true,
-  id: item.id,
-  replayTarget: item.replayTarget || '',
-  replayPayload: item.replayPayload || item.context || {},
-  sourceWorkflow: item.sourceWorkflow || 'unknown',
-  failureType: item.failureType || 'unknown',
-  text: '🔁 DLQ replay requested for ' + item.id + ' (' + (item.sourceWorkflow || 'unknown') + ')',
-} }];`,
-      },
-    },
-    {
-      id: "wf7-if-replay-item",
-      name: "If replay item exists",
-      type: "n8n-nodes-base.if",
-      typeVersion: 2.3,
-      position: [440, 220],
-      parameters: {
-        conditions: {
-          options: { caseSensitive: true },
-          conditions: [{ leftValue: "={{ $json.hasItem }}", rightValue: true, operator: { type: "boolean", operation: "true", singleValue: true } }],
-          combinator: "and",
-        },
-        options: {},
-      },
-    },
-    {
-      id: "wf7-if-replay-target",
-      name: "If replay target set",
-      type: "n8n-nodes-base.if",
-      typeVersion: 2.3,
-      position: [660, 140],
-      parameters: {
-        conditions: {
-          options: { caseSensitive: true },
-          conditions: [{ leftValue: "={{ $json.replayTarget || '' }}", rightValue: "", operator: { type: "string", operation: "notEmpty" } }],
-          combinator: "and",
-        },
-        options: {},
+return [{ json: { id } }];`,
       },
     },
     {
@@ -238,7 +191,7 @@ return [{ json: {
       name: "Replay dispatch",
       type: "n8n-nodes-base.httpRequest",
       typeVersion: 4.2,
-      position: [880, 60],
+      position: [440, 220],
       continueOnFail: true,
       alwaysOutputData: true,
       retryOnFail: true,
@@ -246,88 +199,40 @@ return [{ json: {
       waitBetweenTries: 1500,
       parameters: {
         method: "POST",
-        url: "={{ $('Select replay item').first().json.replayTarget }}",
-        sendBody: true,
-        specifyBody: "json",
-        jsonBody: "={{ $('Select replay item').first().json.replayPayload }}",
-        options: {},
-      },
-    },
-    {
-      id: "wf7-finalize-replay",
-      name: "Finalize replay",
-      type: "n8n-nodes-base.code",
-      typeVersion: 2,
-      position: [1100, 60],
-      parameters: {
-        jsCode: `const db = $getWorkflowStaticData('global');
-if (!Array.isArray(db.dlq)) db.dlq = [];
-const replayCtx = $('Select replay item').first().json;
-const item = db.dlq.find((x) => x.id === replayCtx.id);
-const err = $json.error || null;
-if (item) {
-  item.lastReplayResultAt = new Date().toISOString();
-  if (err) {
-    item.status = 'replay_failed';
-    item.lastReplayError = err.message || err.description || JSON.stringify(err).slice(0, 300);
-  } else {
-    item.status = 'replayed';
-    item.lastReplayError = '';
-  }
-}
-const isRateLimited = Boolean(err && /429|rate\s*limit|too many requests/i.test((err.message || '') + ' ' + (err.description || '')));
-const status = err ? 'replay_failed' : 'replayed';
-const text = err
-  ? ('❌ DLQ replay failed for ' + replayCtx.id + '\\n' + (item?.lastReplayError || 'unknown error') + (isRateLimited ? '\\n(rate-limited)' : ''))
-  : ('✅ DLQ replay succeeded for ' + replayCtx.id + '\\nsource=' + (replayCtx.sourceWorkflow || 'unknown'));
-return [{ json: {
-  id: replayCtx.id,
-  status,
-  lastReplayError: item?.lastReplayError || '',
-  lastReplayResultAt: new Date().toISOString(),
-  text,
-} }];`,
-      },
-    },
-    {
-      id: "wf7-set-replay-target-missing",
-      name: "Set replay target missing",
-      type: "n8n-nodes-base.set",
-      typeVersion: 3.4,
-      position: [880, 220],
-      parameters: {
-        mode: "manual",
-        assignments: {
-          assignments: [
-            { name: "id", type: "string", value: "={{ $json.id }}" },
-            { name: "status", type: "string", value: "replay_skipped_no_target" },
-            { name: "lastReplayError", type: "string", value: "replayTarget is empty" },
-            { name: "lastReplayResultAt", type: "string", value: "={{ new Date().toISOString() }}" },
-            { name: "text", type: "string", value: "=⚠️ DLQ replay skipped for {{ $json.id }}: replayTarget is empty." },
-          ],
-        },
-        options: {},
-      },
-    },
-    {
-      id: "wf7-durable-mark",
-      name: "Durable DLQ mark replay",
-      type: "n8n-nodes-base.httpRequest",
-      typeVersion: 4.2,
-      position: [1320, 40],
-      continueOnFail: true,
-      alwaysOutputData: true,
-      parameters: {
-        method: "POST",
-        url: DLQ_DURABLE_MARK_URL,
+        url: DLQ_DURABLE_REPLAY_URL,
         sendHeaders: true,
         headerParameters: {
-          parameters: [{ name: "Authorization", value: "={{ $env.DLQ_INGEST_TOKEN ? ('Bearer ' + $env.DLQ_INGEST_TOKEN) : '' }}" }],
+          parameters: [{ name: "Authorization", value: "={{ ($env.DLQ_REPLAY_TOKEN || $env.DLQ_INGEST_TOKEN) ? ('Bearer ' + ($env.DLQ_REPLAY_TOKEN || $env.DLQ_INGEST_TOKEN)) : '' }}" }],
         },
         sendBody: true,
         specifyBody: "json",
-        jsonBody: "={{ { id: $json.id, status: $json.status, lastReplayError: $json.lastReplayError, lastReplayResultAt: $json.lastReplayResultAt } }}",
+        jsonBody: "={{ { id: $('Prepare replay request').first().json.id || undefined } }}",
         options: {},
+      },
+    },
+    {
+      id: "wf7-format-replay",
+      name: "Format replay result",
+      type: "n8n-nodes-base.code",
+      typeVersion: 2,
+      position: [660, 220],
+      parameters: {
+        jsCode: `const req = $('Prepare replay request').first().json || {};
+const err = $json.error || null;
+if (err) {
+  const detail = String(err.message || err.description || JSON.stringify(err)).slice(0, 320);
+  const rateLimited = /429|rate\\s*limit|too many requests/i.test(detail);
+  return [{ json: { text: '❌ DLQ replay call failed' + (req.id ? (' for ' + req.id) : '') + '\\n' + detail + (rateLimited ? '\\n(rate-limited)' : '') } }];
+}
+const ok = $json.ok === true;
+const id = $json.id || req.id || 'oldest parked item';
+if (!ok) {
+  return [{ json: { text: '⚠️ DLQ replay not executed for ' + id + '\\n' + String($json.error || 'unknown error') } }];
+}
+const replayCode = Number($json.replayStatusCode || 0);
+const target = String($json.replayTarget || '');
+const statusLine = replayCode > 0 ? ('HTTP ' + replayCode) : 'no upstream status';
+return [{ json: { text: '✅ DLQ replay result for ' + id + '\\n' + statusLine + (target ? ('\\nTarget: ' + target) : '') } }];`,
       },
     },
     {
@@ -335,7 +240,7 @@ return [{ json: {
       name: "Telegram: replay result",
       type: "n8n-nodes-base.telegram",
       typeVersion: 1.2,
-      position: [1320, 120],
+      position: [880, 220],
       continueOnFail: true,
       alwaysOutputData: true,
       parameters: {
@@ -348,23 +253,14 @@ return [{ json: {
   ],
   connections: {
     "DLQ Park Webhook": { main: [[{ node: "Normalize parking payload", type: "main", index: 0 }]] },
-    "Normalize parking payload": { main: [[{ node: "Persist parked event", type: "main", index: 0 }]] },
-    "Persist parked event": { main: [[{ node: "Durable DLQ park", type: "main", index: 0 }]] },
-    "Durable DLQ park": { main: [[{ node: "Telegram: DLQ parked", type: "main", index: 0 }]] },
+    "Normalize parking payload": { main: [[{ node: "Durable DLQ park", type: "main", index: 0 }]] },
+    "Durable DLQ park": { main: [[{ node: "Build park alert", type: "main", index: 0 }]] },
+    "Build park alert": { main: [[{ node: "Telegram: DLQ parked", type: "main", index: 0 }]] },
 
-    "DLQ Replay Webhook": { main: [[{ node: "Select replay item", type: "main", index: 0 }]] },
-    "Select replay item": { main: [[{ node: "If replay item exists", type: "main", index: 0 }]] },
-    "If replay item exists": { main: [[{ node: "If replay target set", type: "main", index: 0 }], [{ node: "Telegram: replay result", type: "main", index: 0 }]] },
-    "If replay target set": {
-      main: [
-        [{ node: "Replay dispatch", type: "main", index: 0 }],
-        [{ node: "Set replay target missing", type: "main", index: 0 }],
-      ],
-    },
-    "Replay dispatch": { main: [[{ node: "Finalize replay", type: "main", index: 0 }]] },
-    "Finalize replay": { main: [[{ node: "Durable DLQ mark replay", type: "main", index: 0 }]] },
-    "Set replay target missing": { main: [[{ node: "Durable DLQ mark replay", type: "main", index: 0 }]] },
-    "Durable DLQ mark replay": { main: [[{ node: "Telegram: replay result", type: "main", index: 0 }]] },
+    "DLQ Replay Webhook": { main: [[{ node: "Prepare replay request", type: "main", index: 0 }]] },
+    "Prepare replay request": { main: [[{ node: "Replay dispatch", type: "main", index: 0 }]] },
+    "Replay dispatch": { main: [[{ node: "Format replay result", type: "main", index: 0 }]] },
+    "Format replay result": { main: [[{ node: "Telegram: replay result", type: "main", index: 0 }]] },
   },
   settings: {},
 };

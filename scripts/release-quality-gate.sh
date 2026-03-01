@@ -61,59 +61,59 @@ done
 
 cd "$REPO_ROOT"
 
-echo "[1/15] lint"
+echo "[1/20] lint"
 npm run lint
 
-echo "[2/15] build"
+echo "[2/20] build"
 npm run build
 
-echo "[3/15] unit/integration test"
+echo "[3/20] unit/integration test"
 npm test
 
-echo "[4/15] integration suite"
+echo "[4/20] integration suite"
 npm run test:integration
 
-echo "[5/15] e2e fixture suite"
+echo "[5/20] e2e fixture suite"
 npm run test:e2e
 
-echo "[6/15] alpha eval gate"
+echo "[6/20] alpha eval gate"
 npm run eval:alpha
 
-echo "[7/15] safety eval gate"
+echo "[7/20] safety eval gate"
 npm run eval:safety
 
-echo "[8/17] eval v2 (offline+online)"
+echo "[8/20] eval v2 (offline+online)"
 npm run eval:v2
 
-echo "[9/17] online telemetry volume"
+echo "[9/20] online telemetry volume"
 npm run telemetry:check-volume
 
-echo "[10/17] online telemetry report"
+echo "[10/20] online telemetry report"
 npm run telemetry:report
 
-echo "[11/17] data governance policy"
+echo "[11/20] data governance policy"
 npm run policy:data-governance
 
 if [[ "$skip_dr_cadence" == true ]]; then
-  echo "[12/17] DR cadence freshness (skipped)"
+  echo "[12/20] DR cadence freshness (skipped)"
 else
-  echo "[12/17] DR cadence freshness"
+  echo "[12/20] DR cadence freshness"
   npm run dr:check-cadence
 fi
 
-echo "[13/17] cost budget check"
+echo "[13/20] cost budget check"
 npm run cost:budget
 
-echo "[14/17] sbom generation"
+echo "[14/20] sbom generation"
 npm run sbom:generate
 
-echo "[15/17] provenance pilot generation"
+echo "[15/20] provenance pilot generation"
 npm run provenance:generate
 
-echo "[16/17] supply-chain evidence verify"
+echo "[16/20] supply-chain evidence verify"
 npm run supply-chain:verify
 
-echo "[17/18] env parity"
+echo "[17/20] env parity"
 if [[ "$strict_parity" == true ]]; then
   "$SCRIPT_DIR/check-env-parity.sh" --strict
 else
@@ -121,12 +121,15 @@ else
 fi
 
 if [[ "$skip_observability" == true ]]; then
-  echo "[18/19] otel trace coverage (skipped)"
-  echo "[19/19] observability alerts probe (skipped)"
+  echo "[18/20] otel trace coverage (skipped)"
+  echo "[19/20] otel managed exporter (skipped)"
+  echo "[20/20] observability alerts probe (skipped)"
 else
-  echo "[18/19] otel trace coverage"
+  echo "[18/20] otel trace coverage"
   npm run otel:check-coverage
-  echo "[19/19] observability alerts probe"
+  echo "[19/20] otel managed exporter"
+  npm run otel:check-managed
+  echo "[20/20] observability alerts probe"
   "$SCRIPT_DIR/check-observability-alerts.sh"
 fi
 

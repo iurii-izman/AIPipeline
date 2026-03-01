@@ -394,6 +394,8 @@ function requestHandler(req, res) {
         });
         return;
       }
+      const exporterEndpoint = String(process.env.OTEL_EXPORTER_OTLP_ENDPOINT || "");
+      const exporterIsLocal = /localhost|127\.0\.0\.1|host\.containers\.internal/.test(exporterEndpoint.toLowerCase());
       const env = {
         github: Boolean(process.env.GITHUB_PERSONAL_ACCESS_TOKEN),
         linear: Boolean(process.env.LINEAR_API_KEY),
@@ -401,7 +403,9 @@ function requestHandler(req, res) {
         telegram: Boolean(process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID),
         sentry: Boolean(process.env.SENTRY_DSN),
         n8nApiKey: Boolean(process.env.N8N_API_KEY),
-        otelPilot: String(process.env.OTEL_PILOT_ENABLED || "false").toLowerCase() === "true",
+        otelEnabled: String(process.env.OTEL_ENABLED || process.env.OTEL_PILOT_ENABLED || "false").toLowerCase() === "true",
+        otelManaged: String(process.env.OTEL_EXPORTER_MODE || "").toLowerCase() === "managed" || (Boolean(exporterEndpoint) && !exporterIsLocal),
+        otelExporterConfigured: Boolean(exporterEndpoint),
       };
       checkN8n(correlationId)
         .then((n8nStatus) => {

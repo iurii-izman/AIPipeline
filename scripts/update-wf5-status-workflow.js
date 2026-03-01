@@ -79,7 +79,7 @@ const workflow = {
       typeVersion: 2,
       position: [220, 0],
       parameters: {
-        jsCode: `const text = (($json.message && $json.message.text) || '').trim();\nconst [commandRaw, ...rest] = text.split(/\\s+/);\nconst command = (commandRaw || '').toLowerCase();\nconst args = rest.join(' ').trim();\nconst username = $json.message?.from?.username || '';\nconst chatId = $json.message?.chat?.id;\nconst messageId = $json.message?.message_id || '';\nconst updateId = $json.update_id || '';\nreturn [{ json: { command, args, username, chatId, messageId, updateId, raw: text } }];`,
+        jsCode: `const text = (($json.message && $json.message.text) || '').trim();\nconst [commandRaw, ...rest] = text.split(/\\s+/);\nconst command = (commandRaw || '').toLowerCase();\nconst args = rest.join(' ').trim();\nconst username = $json.message?.from?.username || '';\nconst userId = String($json.message?.from?.id || '');\nconst chatId = String($json.message?.chat?.id || '');\nconst chatType = String($json.message?.chat?.type || '');\nconst messageId = $json.message?.message_id || '';\nconst updateId = $json.update_id || '';\nreturn [{ json: { command, args, username, userId, chatId, chatType, messageId, updateId, raw: text } }];`,
       },
     },
     {
@@ -361,6 +361,56 @@ const workflow = {
     },
 
     {
+      id: "authorize-privileged-command",
+      name: "Authorize privileged command",
+      type: "n8n-nodes-base.code",
+      typeVersion: 2,
+      position: [2200, 440],
+      parameters: {
+        jsCode: `const current = $json || {};\nconst command = String(current.command || '').toLowerCase();\nconst toSet = (input) => new Set(String(input || '').split(',').map((x) => x.trim()).filter(Boolean));\nconst privileged = toSet($env.WF5_PRIVILEGED_COMMANDS || '/deploy,/create');\nif (!privileged.has(command)) {\n  return [{ json: { ...current, privilegedCommand: false, privilegedAuthorized: true, privilegedReason: 'not privileged' } }];\n}\nconst allowedChats = toSet($env.WF5_RBAC_ALLOWED_CHAT_IDS || $env.TELEGRAM_CHAT_ID || '');\nconst allowedUsers = toSet($env.WF5_RBAC_ALLOWED_USER_IDS || '');\nconst allowedNames = toSet(String($env.WF5_RBAC_ALLOWED_USERNAMES || '').toLowerCase());\nconst chatId = String(current.chatId || '');\nconst userId = String(current.userId || '');\nconst username = String(current.username || '').toLowerCase();\nconst authorized = (chatId && allowedChats.has(chatId))\n  || (userId && allowedUsers.has(userId))\n  || (username && allowedNames.has(username));\nif (authorized) {\n  return [{ json: { ...current, privilegedCommand: true, privilegedAuthorized: true, privilegedReason: 'allowlist matched' } }];\n}\nconst detail = [\n  '🚫 Command blocked by RBAC policy.',\n  'Command: ' + command,\n  chatId ? ('chatId: ' + chatId) : 'chatId: unknown',\n  userId ? ('userId: ' + userId) : 'userId: unknown',\n  username ? ('username: @' + username) : 'username: unknown',\n  'Configure allowlists: WF5_RBAC_ALLOWED_CHAT_IDS / WF5_RBAC_ALLOWED_USER_IDS / WF5_RBAC_ALLOWED_USERNAMES'\n].join('\\\\n');\nreturn [{ json: { ...current, privilegedCommand: true, privilegedAuthorized: false, privilegedReason: detail, text: detail } }];`,
+      },
+    },
+    {
+      id: "if-privileged-authorized",
+      name: "If privileged authorized",
+      type: "n8n-nodes-base.if",
+      typeVersion: 2.3,
+      position: [2420, 440],
+      parameters: {
+        conditions: {
+          options: { caseSensitive: true },
+          conditions: [{ leftValue: "={{ $json.privilegedAuthorized }}", rightValue: true, operator: { type: "boolean", operation: "true", singleValue: true } }],
+          combinator: "and",
+        },
+      },
+    },
+    {
+      id: "if-privileged-is-create",
+      name: "If privileged route is /create",
+      type: "n8n-nodes-base.if",
+      typeVersion: 2.3,
+      position: [2640, 440],
+      parameters: {
+        conditions: {
+          options: { caseSensitive: true },
+          conditions: [{ leftValue: "={{ $json.command }}", rightValue: "/create", operator: { type: "string", operation: "equals" } }],
+          combinator: "and",
+        },
+      },
+    },
+    {
+      id: "set-rbac-denied",
+      name: "Set RBAC denied",
+      type: "n8n-nodes-base.set",
+      typeVersion: 3.4,
+      position: [2860, 640],
+      parameters: {
+        mode: "manual",
+        assignments: { assignments: [{ name: "text", type: "string", value: "={{ $json.text || '🚫 Command blocked by RBAC policy.' }}" }] },
+        options: {},
+      },
+    },
+    {
       id: "if-create",
       name: "If /create",
       type: "n8n-nodes-base.if",
@@ -380,7 +430,7 @@ const workflow = {
       name: "If /create has title",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [2200, 320],
+      position: [3080, 320],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -395,7 +445,7 @@ const workflow = {
       name: "If LINEAR_TEAM_ID set",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [2420, 240],
+      position: [3300, 240],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -410,7 +460,7 @@ const workflow = {
       name: "Linear: Create issue",
       type: "n8n-nodes-base.linear",
       typeVersion: 1,
-      position: [2640, 160],
+      position: [3520, 160],
       parameters: {
         resource: "issue",
         operation: "create",
@@ -425,7 +475,7 @@ const workflow = {
       name: "Format /create",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
-      position: [2860, 160],
+      position: [3740, 160],
       parameters: {
         jsCode: `if ($json.error) {\n  const err = $json.error;\n  const status = Number(err.statusCode ?? err.status ?? err.httpCode ?? err.code ?? 0);\n  const body = err.responseBody ?? err.body ?? err.data ?? '';\n  const detail = (typeof err.message === 'string' && err.message)\n    || (typeof err.description === 'string' && err.description)\n    || (typeof body === 'string' ? body : JSON.stringify(body))\n    || JSON.stringify(err);\n  const msg = String(detail).slice(0, 260);\n  const rateLimited = status === 429 || /429|rate\\s*limit|too many requests/i.test(String(status) + ' ' + msg);\n  return [{ json: { text: '⚠️ /create failed' + (rateLimited ? ' (rate-limited)' : '') + ': ' + msg } }];\n}\nconst issue = $json;\nconst ident = issue.identifier || issue.id || 'N/A';\nconst url = issue.url || issue.permalink || '';\nreturn [{ json: { text: '✅ Created Linear issue: ' + ident + '\\n' + url } }];`,
       },
@@ -435,7 +485,7 @@ const workflow = {
       name: "Set /create config missing",
       type: "n8n-nodes-base.set",
       typeVersion: 3.4,
-      position: [2640, 320],
+      position: [3520, 320],
       parameters: {
         mode: "raw",
         jsonOutput: JSON.stringify({ text: "⚠️ /create requires LINEAR_TEAM_ID in n8n env." }),
@@ -447,7 +497,7 @@ const workflow = {
       name: "Set /create usage",
       type: "n8n-nodes-base.set",
       typeVersion: 3.4,
-      position: [2420, 400],
+      position: [3300, 400],
       parameters: { mode: "raw", jsonOutput: JSON.stringify({ text: "Usage: /create <title>" }), options: {} },
     },
 
@@ -471,7 +521,7 @@ const workflow = {
       name: "Prepare deploy payload",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
-      position: [2420, 560],
+      position: [3080, 560],
       parameters: {
         jsCode: `const envArg = (($('Extract command').first().json.args || '').trim().toLowerCase() || 'staging');\nif (!['staging', 'production'].includes(envArg)) {\n  return [{ json: { valid: false, text: 'Usage: /deploy <staging|production>' } }];\n}\nif (!$env.GITHUB_PERSONAL_ACCESS_TOKEN) {\n  return [{ json: { valid: false, text: '⚠️ /deploy requires GITHUB_PERSONAL_ACCESS_TOKEN in n8n env.' } }];\n}\nconst workflow = envArg === 'production'\n  ? ($env.GITHUB_WORKFLOW_PRODUCTION || 'deploy-production.yml')\n  : ($env.GITHUB_WORKFLOW_STAGING || 'deploy-staging.yml');\nconst ref = envArg === 'production'\n  ? ($env.GITHUB_REF_PRODUCTION || 'main')\n  : ($env.GITHUB_REF_STAGING || 'main');\nreturn [{ json: { valid: true, env: envArg, workflow, ref } }];`,
       },
@@ -481,7 +531,7 @@ const workflow = {
       name: "If deploy payload valid",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [2640, 560],
+      position: [3300, 560],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -496,7 +546,7 @@ const workflow = {
       name: "GitHub: dispatch workflow",
       type: "n8n-nodes-base.httpRequest",
       typeVersion: 4.2,
-      position: [2860, 480],
+      position: [3520, 480],
       continueOnFail: true,
       alwaysOutputData: true,
       parameters: {
@@ -521,7 +571,7 @@ const workflow = {
       name: "Set /deploy ok",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
-      position: [3080, 480],
+      position: [3740, 480],
       parameters: {
         jsCode: `const p = $('Prepare deploy payload').first().json;\nconst err = $json.error || null;\nif (!err) {\n  return [{ json: { text: '🚀 Deploy dispatched: *' + p.env + '*\\\\nWorkflow: ' + p.workflow + '\\\\nRef: ' + p.ref } }];\n}\nconst status = Number(err.statusCode ?? err.status ?? err.httpCode ?? err.code ?? 0);\nconst body = err.responseBody ?? err.body ?? err.data ?? '';\nconst detail = (typeof err.message === 'string' && err.message)\n  || (typeof err.description === 'string' && err.description)\n  || (typeof body === 'string' ? body : JSON.stringify(body))\n  || JSON.stringify(err);\nconst msg = String(detail).slice(0, 260);\nconst rateLimited = status === 429 || /429|rate\\s*limit|too many requests/i.test(String(status) + ' ' + msg);\nreturn [{ json: { text: '⚠️ Deploy failed for *' + p.env + '*\\\\nWorkflow: ' + p.workflow + '\\\\nRef: ' + p.ref + '\\\\n' + (rateLimited ? '(rate-limited) ' : '') + msg } }];`,
       },
@@ -531,7 +581,7 @@ const workflow = {
       name: "Set /deploy usage",
       type: "n8n-nodes-base.set",
       typeVersion: 3.4,
-      position: [2860, 640],
+      position: [3520, 640],
       parameters: {
         mode: "manual",
         assignments: { assignments: [{ name: "text", type: "string", value: "={{ $json.text || 'Usage: /deploy <staging|production>' }}" }] },
@@ -559,7 +609,7 @@ const workflow = {
       name: "Linear: Get issues for /standup",
       type: "n8n-nodes-base.linear",
       typeVersion: 1,
-      position: [2640, 760],
+      position: [2860, 760],
       parameters: { resource: "issue", operation: "getAll", returnAll: true },
       credentials: { linearApi: { name: "AIPipeline Linear" } },
     },
@@ -568,7 +618,7 @@ const workflow = {
       name: "Format /standup",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
-      position: [2860, 760],
+      position: [3080, 760],
       parameters: {
         jsCode: `const rows = $input.all().map(i => i.json || {});\nconst err = rows.find(r => r.error)?.error || null;\nif (err) {\n  const status = Number(err.statusCode ?? err.status ?? err.httpCode ?? err.code ?? 0);\n  const body = err.responseBody ?? err.body ?? err.data ?? '';\n  const detail = (typeof err.message === 'string' && err.message)\n    || (typeof err.description === 'string' && err.description)\n    || (typeof body === 'string' ? body : JSON.stringify(body))\n    || JSON.stringify(err);\n  const msg = String(detail).slice(0, 260);\n  const rateLimited = status === 429 || /429|rate\\s*limit|too many requests/i.test(String(status) + ' ' + msg);\n  return [{ json: { text: '⚠️ /standup failed' + (rateLimited ? ' (rate-limited)' : '') + ': ' + msg } }];\n}\nconst buckets = new Map();\nfor (const it of rows) {\n  const key = it.state?.name || 'Other';\n  buckets.set(key, (buckets.get(key) || 0) + 1);\n}\nconst lines = [...buckets.entries()].map(([k,v]) => '• ' + k + ': ' + v);\nconst text = '📝 *Standup digest*\\nDate: ' + new Date().toISOString().slice(0,10) + '\\n' + (lines.join('\\n') || 'No issues');\nreturn [{ json: { text } }];`,
       },
@@ -579,7 +629,7 @@ const workflow = {
       name: "Set unknown command",
       type: "n8n-nodes-base.set",
       typeVersion: 3.4,
-      position: [2640, 920],
+      position: [2860, 920],
       parameters: { mode: "raw", jsonOutput: JSON.stringify({ text: "Unknown command. Use /help." }), options: {} },
     },
 
@@ -682,15 +732,29 @@ return [{ json: { telegramFailed: true, rateLimited, reason: msg } }];`,
     "Format /search": { main: [[{ node: "Telegram Send", type: "main", index: 0 }]] },
     "Set /search usage": { main: [[{ node: "Telegram Send", type: "main", index: 0 }]] },
 
-    "If /create": { main: [[{ node: "If /create has title", type: "main", index: 0 }], [{ node: "If /deploy", type: "main", index: 0 }]] },
+    "If /create": { main: [[{ node: "Authorize privileged command", type: "main", index: 0 }], [{ node: "If /deploy", type: "main", index: 0 }]] },
+    "Authorize privileged command": { main: [[{ node: "If privileged authorized", type: "main", index: 0 }]] },
+    "If privileged authorized": {
+      main: [
+        [{ node: "If privileged route is /create", type: "main", index: 0 }],
+        [{ node: "Set RBAC denied", type: "main", index: 0 }],
+      ],
+    },
+    "If privileged route is /create": {
+      main: [
+        [{ node: "If /create has title", type: "main", index: 0 }],
+        [{ node: "Prepare deploy payload", type: "main", index: 0 }],
+      ],
+    },
     "If /create has title": { main: [[{ node: "If LINEAR_TEAM_ID set", type: "main", index: 0 }], [{ node: "Set /create usage", type: "main", index: 0 }]] },
     "If LINEAR_TEAM_ID set": { main: [[{ node: "Linear: Create issue", type: "main", index: 0 }], [{ node: "Set /create config missing", type: "main", index: 0 }]] },
     "Linear: Create issue": { main: [[{ node: "Format /create", type: "main", index: 0 }]] },
     "Format /create": { main: [[{ node: "Telegram Send", type: "main", index: 0 }]] },
     "Set /create config missing": { main: [[{ node: "Telegram Send", type: "main", index: 0 }]] },
     "Set /create usage": { main: [[{ node: "Telegram Send", type: "main", index: 0 }]] },
+    "Set RBAC denied": { main: [[{ node: "Telegram Send", type: "main", index: 0 }]] },
 
-    "If /deploy": { main: [[{ node: "Prepare deploy payload", type: "main", index: 0 }], [{ node: "If /standup", type: "main", index: 0 }]] },
+    "If /deploy": { main: [[{ node: "Authorize privileged command", type: "main", index: 0 }], [{ node: "If /standup", type: "main", index: 0 }]] },
     "Prepare deploy payload": { main: [[{ node: "If deploy payload valid", type: "main", index: 0 }]] },
     "If deploy payload valid": { main: [[{ node: "GitHub: dispatch workflow", type: "main", index: 0 }], [{ node: "Set /deploy usage", type: "main", index: 0 }]] },
     "GitHub: dispatch workflow": { main: [[{ node: "Set /deploy ok", type: "main", index: 0 }]] },

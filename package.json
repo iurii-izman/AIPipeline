@@ -25,6 +25,7 @@
     "cost:report": "node scripts/generate-cost-report.js --days 30",
     "cost:budget": "node scripts/generate-cost-report.js --days 30 --strict-budget",
     "otel:check-coverage": "./scripts/check-otel-trace-coverage.sh --strict",
+    "otel:check-managed": "./scripts/check-otel-managed-exporter.sh --strict --require-managed",
     "iac:validate": "./scripts/check-iac-baseline.sh",
     "dr:check-cadence": "./scripts/check-dr-cadence.sh --strict",
     "policy:data-governance": "./scripts/check-data-governance-policy.sh --strict",

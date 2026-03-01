@@ -85,6 +85,22 @@ else
   echo "audit_log: not found"
 fi
 
+echo ""
+echo "=== OTel trace/SLO alerts ==="
+if "$SCRIPT_DIR/check-otel-trace-coverage.sh" --strict >/dev/null 2>&1; then
+  echo "otel_trace_coverage: OK"
+else
+  echo "otel_trace_coverage: FAIL"
+  ok=false
+fi
+
+if "$SCRIPT_DIR/check-otel-managed-exporter.sh" --strict --require-managed >/dev/null 2>&1; then
+  echo "otel_managed_exporter: OK"
+else
+  echo "otel_managed_exporter: FAIL"
+  ok=false
+fi
+
 if [[ "$ok" == "true" ]]; then
   echo ""
   echo "observability alerts probe: OK"

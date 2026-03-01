@@ -47,6 +47,8 @@ describe("e2e/workflow fixtures baseline", () => {
     expect(names).toContain("If /status");
     expect(names).toContain("If /deploy");
     expect(names).toContain("If /standup");
+    expect(names).toContain("Authorize privileged command");
+    expect(names).toContain("Set RBAC denied");
   });
 
   it("WF-7 contains DLQ parking and replay webhooks", () => {
@@ -56,5 +58,13 @@ describe("e2e/workflow fixtures baseline", () => {
     expect(names).toContain("DLQ Park Webhook");
     expect(names).toContain("DLQ Replay Webhook");
     expect(names).toContain("Replay dispatch");
+  });
+
+  it("WF-7 replay does not depend on workflow static data", () => {
+    const wf7 = loadWorkflow("wf-7-dlq-parking.json");
+    const nodeScripts = (wf7.nodes || [])
+      .map((node) => String((node.parameters || {}).jsCode || ""))
+      .join("\n");
+    expect(nodeScripts).not.toContain("$getWorkflowStaticData");
   });
 });

@@ -35,7 +35,7 @@
         0
       ],
       "parameters": {
-        "jsCode": "const text = (($json.message && $json.message.text) || '').trim();\nconst [commandRaw, ...rest] = text.split(/\\s+/);\nconst command = (commandRaw || '').toLowerCase();\nconst args = rest.join(' ').trim();\nconst username = $json.message?.from?.username || '';\nconst chatId = $json.message?.chat?.id;\nconst messageId = $json.message?.message_id || '';\nconst updateId = $json.update_id || '';\nreturn [{ json: { command, args, username, chatId, messageId, updateId, raw: text } }];"
+        "jsCode": "const text = (($json.message && $json.message.text) || '').trim();\nconst [commandRaw, ...rest] = text.split(/\\s+/);\nconst command = (commandRaw || '').toLowerCase();\nconst args = rest.join(' ').trim();\nconst username = $json.message?.from?.username || '';\nconst userId = String($json.message?.from?.id || '');\nconst chatId = String($json.message?.chat?.id || '');\nconst chatType = String($json.message?.chat?.type || '');\nconst messageId = $json.message?.message_id || '';\nconst updateId = $json.update_id || '';\nreturn [{ json: { command, args, username, userId, chatId, chatType, messageId, updateId, raw: text } }];"
       }
     },
     {
@@ -526,6 +526,99 @@
       }
     },
     {
+      "id": "authorize-privileged-command",
+      "name": "Authorize privileged command",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2200,
+        440
+      ],
+      "parameters": {
+        "jsCode": "const current = $json || {};\nconst command = String(current.command || '').toLowerCase();\nconst toSet = (input) => new Set(String(input || '').split(',').map((x) => x.trim()).filter(Boolean));\nconst privileged = toSet($env.WF5_PRIVILEGED_COMMANDS || '/deploy,/create');\nif (!privileged.has(command)) {\n  return [{ json: { ...current, privilegedCommand: false, privilegedAuthorized: true, privilegedReason: 'not privileged' } }];\n}\nconst allowedChats = toSet($env.WF5_RBAC_ALLOWED_CHAT_IDS || $env.TELEGRAM_CHAT_ID || '');\nconst allowedUsers = toSet($env.WF5_RBAC_ALLOWED_USER_IDS || '');\nconst allowedNames = toSet(String($env.WF5_RBAC_ALLOWED_USERNAMES || '').toLowerCase());\nconst chatId = String(current.chatId || '');\nconst userId = String(current.userId || '');\nconst username = String(current.username || '').toLowerCase();\nconst authorized = (chatId && allowedChats.has(chatId))\n  || (userId && allowedUsers.has(userId))\n  || (username && allowedNames.has(username));\nif (authorized) {\n  return [{ json: { ...current, privilegedCommand: true, privilegedAuthorized: true, privilegedReason: 'allowlist matched' } }];\n}\nconst detail = [\n  '🚫 Command blocked by RBAC policy.',\n  'Command: ' + command,\n  chatId ? ('chatId: ' + chatId) : 'chatId: unknown',\n  userId ? ('userId: ' + userId) : 'userId: unknown',\n  username ? ('username: @' + username) : 'username: unknown',\n  'Configure allowlists: WF5_RBAC_ALLOWED_CHAT_IDS / WF5_RBAC_ALLOWED_USER_IDS / WF5_RBAC_ALLOWED_USERNAMES'\n].join('\\\\n');\nreturn [{ json: { ...current, privilegedCommand: true, privilegedAuthorized: false, privilegedReason: detail, text: detail } }];"
+      }
+    },
+    {
+      "id": "if-privileged-authorized",
+      "name": "If privileged authorized",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2420,
+        440
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.privilegedAuthorized }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "if-privileged-is-create",
+      "name": "If privileged route is /create",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2640,
+        440
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.command }}",
+              "rightValue": "/create",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "set-rbac-denied",
+      "name": "Set RBAC denied",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2860,
+        640
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "name": "text",
+              "type": "string",
+              "value": "={{ $json.text || '🚫 Command blocked by RBAC policy.' }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
       "id": "if-create",
       "name": "If /create",
       "type": "n8n-nodes-base.if",
@@ -560,7 +653,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        2200,
+        3080,
         320
       ],
       "parameters": {
@@ -589,7 +682,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        2420,
+        3300,
         240
       ],
       "parameters": {
@@ -618,7 +711,7 @@
       "type": "n8n-nodes-base.linear",
       "typeVersion": 1,
       "position": [
-        2640,
+        3520,
         160
       ],
       "parameters": {
@@ -646,7 +739,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2860,
+        3740,
         160
       ],
       "parameters": {
@@ -659,7 +752,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2640,
+        3520,
         320
       ],
       "parameters": {
@@ -674,7 +767,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2420,
+        3300,
         400
       ],
       "parameters": {
@@ -718,7 +811,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2420,
+        3080,
         560
       ],
       "parameters": {
@@ -731,7 +824,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        2640,
+        3300,
         560
       ],
       "parameters": {
@@ -761,7 +854,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2860,
+        3520,
         480
       ],
       "continueOnFail": true,
@@ -801,7 +894,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3080,
+        3740,
         480
       ],
       "parameters": {
@@ -814,7 +907,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2860,
+        3520,
         640
       ],
       "parameters": {
@@ -866,7 +959,7 @@
       "type": "n8n-nodes-base.linear",
       "typeVersion": 1,
       "position": [
-        2640,
+        2860,
         760
       ],
       "parameters": {
@@ -892,7 +985,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2860,
+        3080,
         760
       ],
       "parameters": {
@@ -905,7 +998,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2640,
+        2860,
         920
       ],
       "parameters": {
@@ -1316,7 +1409,7 @@
       "main": [
         [
           {
-            "node": "If /create has title",
+            "node": "Authorize privileged command",
             "type": "main",
             "index": 0
           }
@@ -1324,6 +1417,53 @@
         [
           {
             "node": "If /deploy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Authorize privileged command": {
+      "main": [
+        [
+          {
+            "node": "If privileged authorized",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If privileged authorized": {
+      "main": [
+        [
+          {
+            "node": "If privileged route is /create",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set RBAC denied",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If privileged route is /create": {
+      "main": [
+        [
+          {
+            "node": "If /create has title",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare deploy payload",
             "type": "main",
             "index": 0
           }
@@ -1410,11 +1550,22 @@
         ]
       ]
     },
+    "Set RBAC denied": {
+      "main": [
+        [
+          {
+            "node": "Telegram Send",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "If /deploy": {
       "main": [
         [
           {
-            "node": "Prepare deploy payload",
+            "node": "Authorize privileged command",
             "type": "main",
             "index": 0
           }
