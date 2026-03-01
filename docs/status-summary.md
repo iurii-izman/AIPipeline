@@ -31,7 +31,7 @@
 - Backup retention timer: `aipipeline-backup-retention.timer` installed/enabled (`systemctl --user status aipipeline-backup-retention.timer`)
 - DR cadence timer: `aipipeline-dr-cadence.timer` installed/enabled (`systemctl --user status aipipeline-dr-cadence.timer`)
 - DR cadence last successful run: `2026-03-01T20:24:59+02:00` (`/var/home/user/Projects/AIPipeline/.out/drills/dr-restore-drill-20260301-202456.json`)
-- Release Gate (remote): success with scorecard artifact upload (`https://github.com/iurii-izman/AIPipeline/actions/runs/22552089187`)
+- Release Gate (remote): success with scorecard artifact upload (`https://github.com/iurii-izman/AIPipeline/actions/runs/22552125084`)
 - Git sync state: local `main` and `origin/main` are synchronized for hardening scope commits (`a9829c9`)
 
 ## Hardening Completed

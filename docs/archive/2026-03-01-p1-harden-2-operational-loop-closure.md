@@ -6,9 +6,9 @@
 - Backup retention loop closure (timer active)
 
 ## Evidence
-- Remote Release Gate success: https://github.com/iurii-izman/AIPipeline/actions/runs/22552089187
+- Remote Release Gate success: https://github.com/iurii-izman/AIPipeline/actions/runs/22552125084
 - Scorecard artifact downloaded and verified locally:
-  - `.out/release-artifact-check.c25483/release-scorecard-v2-v0.1.0-alpha.2-staging-20260301-203629.md`
+  - `.out/release-artifact-check.79DISI/release-scorecard-v2-v0.1.0-alpha.2-staging-20260301-203824.md`
 - DR cadence timer status:
   - `systemctl --user is-active aipipeline-dr-cadence.timer` => `active`
   - `systemctl --user is-enabled aipipeline-dr-cadence.timer` => `enabled`
