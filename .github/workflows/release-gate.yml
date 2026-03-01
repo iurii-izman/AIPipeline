@@ -68,9 +68,9 @@ jobs:
           fi
 
           if [[ "${{ inputs.strict_parity }}" == "true" ]]; then
-            ./scripts/release-quality-gate.sh --strict-parity --skip-observability "${scorecard_args[@]}"
+            ./scripts/release-quality-gate.sh --strict-parity --skip-observability --skip-dr-cadence "${scorecard_args[@]}"
           else
-            ./scripts/release-quality-gate.sh --skip-observability "${scorecard_args[@]}"
+            ./scripts/release-quality-gate.sh --skip-observability --skip-dr-cadence "${scorecard_args[@]}"
           fi
       - name: Upload release scorecard artifact
         if: ${{ inputs.generate_scorecard == true }}

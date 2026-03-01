@@ -44,6 +44,7 @@
    - Перед запуском синхронизировать controls: `./scripts/sync-github-repo-controls.sh`.
    - Примечание: из-за reserved prefix в GitHub Actions используются alias secrets `AIP_GITHUB_PERSONAL_ACCESS_TOKEN` и `AIP_GITHUB_WEBHOOK_SECRET` (скрипт синхронизации создаёт их автоматически).
    - Для release evidence рекомендуется запускать с `generate_scorecard=true`, `target_env=staging|production`, `version=vX.Y.Z`.
+   - В GitHub-hosted runner Release Gate запускается с `--skip-dr-cadence`, так как локальные DR evidence (`.out/drills`) недоступны в CI.
    - После завершения скачать artifact `release-scorecard-v2` из run summary и приложить ссылку в Notion Sprint Log / release note.
    - Для локального стека перед релизом: `./scripts/release-quality-gate.sh --strict-parity`.
 
@@ -58,7 +59,8 @@
 
 9. **Data governance + DR cadence gates**
    - Data governance policy check обязателен: `npm run policy:data-governance`.
-   - DR cadence freshness обязателен: `npm run dr:check-cadence` (по умолчанию требует drill evidence не старше 30 дней).
+   - DR cadence freshness обязателен локально: `npm run dr:check-cadence` (по умолчанию требует drill evidence не старше 30 дней).
+   - В GitHub-hosted Release Gate DR cadence пропускается (`--skip-dr-cadence`) и валидируется отдельно в локальном ops цикле.
    - Перед релизом убедиться, что последний DR drill выполнен и evidence находится в `.out/drills/`.
 
 10. **Release scorecard v2**

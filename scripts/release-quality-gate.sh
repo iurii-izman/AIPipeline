@@ -6,6 +6,7 @@
 #   ./scripts/release-quality-gate.sh --include-backup
 #   ./scripts/release-quality-gate.sh --strict-parity
 #   ./scripts/release-quality-gate.sh --strict-parity --generate-scorecard --version v0.1.0-alpha.2 --env staging
+#   ./scripts/release-quality-gate.sh --strict-parity --skip-dr-cadence --skip-observability
 
 set -euo pipefail
 
@@ -15,6 +16,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 include_backup=false
 strict_parity=false
 skip_observability=false
+skip_dr_cadence=false
 generate_scorecard=false
 scorecard_version=""
 scorecard_env="staging"
@@ -33,6 +35,10 @@ while [[ $# -gt 0 ]]; do
       skip_observability=true
       shift 1
       ;;
+    --skip-dr-cadence)
+      skip_dr_cadence=true
+      shift 1
+      ;;
     --generate-scorecard)
       generate_scorecard=true
       shift 1
@@ -47,7 +53,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     *)
       echo "Unknown argument: $1" >&2
-      echo "Usage: $0 [--include-backup] [--strict-parity] [--skip-observability] [--generate-scorecard --version vX.Y.Z --env staging|production]" >&2
+      echo "Usage: $0 [--include-backup] [--strict-parity] [--skip-observability] [--skip-dr-cadence] [--generate-scorecard --version vX.Y.Z --env staging|production]" >&2
       exit 1
       ;;
   esac
@@ -79,8 +85,12 @@ npm run eval:safety
 echo "[8/11] data governance policy"
 npm run policy:data-governance
 
-echo "[9/11] DR cadence freshness"
-npm run dr:check-cadence
+if [[ "$skip_dr_cadence" == true ]]; then
+  echo "[9/11] DR cadence freshness (skipped)"
+else
+  echo "[9/11] DR cadence freshness"
+  npm run dr:check-cadence
+fi
 
 echo "[10/11] env parity"
 if [[ "$strict_parity" == true ]]; then

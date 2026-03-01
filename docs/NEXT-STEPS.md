@@ -93,10 +93,10 @@
 
 ## Что остаётся до полного closure
 
-0. Завершить remote sync после сетевого окна:
-   - `git push origin main` (локально `main` ahead на 3 коммита);
-   - повторно запустить GitHub workflow `Release Gate` с inputs `generate_scorecard=true`, `version=vX.Y.Z`, `target_env=staging|production`;
-   - проверить upload artifact `release-scorecard-v2` в run summary.
+0. Подтверждать remote release evidence после изменений в hardening:
+   - запускать GitHub workflow `Release Gate` с inputs `generate_scorecard=true`, `version=vX.Y.Z`, `target_env=staging|production`;
+   - проверять upload artifact `release-scorecard-v2` в run summary;
+   - учитывать, что в GitHub-hosted runner gate использует `--skip-dr-cadence` (локальный DR cadence остается обязательным в ops цикле).
 1. Поддерживать rotation/валидность hardening env в keyring и runtime (`STATUS_AUTH_TOKEN`, `GITHUB_WEBHOOK_SECRET`, `SENTRY_WEBHOOK_SECRET`, `MODEL_CLASSIFIER_MODE`, `MODEL_KILL_SWITCH`); bootstrap: `./scripts/bootstrap-hardening-env-keyring.sh`.
 2. Поддерживать актуальность repository ruleset/checks в GitHub (включая `build`, `integration`, `e2e-fixtures`, `eval-alpha`, `security-audit`, `CodeQL`, `SonarCloud`) при изменениях CI.
   - Добавлены новые required checks: `eval-safety`, `sbom`, `data-governance-policy`.
