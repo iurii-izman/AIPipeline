@@ -18,5 +18,7 @@
 | [AIP-3-connect-tools-done.md](AIP-3-connect-tools-done.md) | AIP-3: Connect your tools — PR #17 merged. |
 | [AIP-2-set-up-teams-done.md](AIP-2-set-up-teams-done.md) | AIP-2: Set up your teams (Linear) — PR #18 merged. |
 | [AIP-1-get-familiar-linear-done.md](AIP-1-get-familiar-linear-done.md) | AIP-1: Get familiar with Linear — PR #19 merged. |
+| [next-steps-step-by-step.md](next-steps-step-by-step.md) | Пошаговый чек-лист заменён единым SSoT `NEXT-STEPS.md`. |
+| [tz-remaining-work.md](tz-remaining-work.md) | Исторический backlog заменён актуальными `project-audit-and-roadmap.md` + `NEXT-STEPS.md`. |
 
-Новые задачи и следующий контекст для агента — в [../README.md](../README.md) (раздел «Следующие шаги») и [../AGENTS.md](../AGENTS.md).
+Новые задачи и следующий контекст для агента — в [../README.md](../README.md) (раздел «Следующие шаги») и [../../AGENTS.md](../../AGENTS.md).

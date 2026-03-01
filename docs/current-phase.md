@@ -16,4 +16,4 @@
 - **Операционные ручные шаги:** только UI/OAuth и periodic sync (NotebookLM upload, webhook hygiene) — [what-to-do-manually.md](what-to-do-manually.md).
 - **Проверка окружения:** `./scripts/health-check-env.sh` (keyring, приложение, n8n). Полная проверка среды (Node, Podman, Flatpak): `./scripts/system-check.sh`.
 
-Детали по фазам и скриптам — в [status-summary.md](status-summary.md); пошаговый чек-лист — в [next-steps-step-by-step.md](next-steps-step-by-step.md).
+Детали по фазам и скриптам — в [status-summary.md](status-summary.md); пошаговый контур — в [NEXT-STEPS.md](NEXT-STEPS.md) и [archive/next-steps-step-by-step.md](archive/next-steps-step-by-step.md).

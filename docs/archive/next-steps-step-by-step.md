@@ -47,8 +47,8 @@ source scripts/load-env-from-keyring.sh
 6. `/standup`
 
 Evidence обновлять в:
-- [live-uat-telegram.md](live-uat-telegram.md)
-- [uat-evidence-2026-02-28.md](uat-evidence-2026-02-28.md)
+- [../live-uat-telegram.md](../live-uat-telegram.md)
+- [../uat-evidence-2026-02-28.md](../uat-evidence-2026-02-28.md)
 
 ## Шаг 5. Closure в системах
 
@@ -59,7 +59,7 @@ Evidence обновлять в:
 
 - Parking: `POST /webhook/wf-dlq-park`
 - Replay: `POST /webhook/wf-dlq-replay`
-- Runbook: [dlq-replay-runbook.md](dlq-replay-runbook.md)
+- Runbook: [../dlq-replay-runbook.md](../dlq-replay-runbook.md)
 
 ## Краткий чек-лист
 
@@ -72,4 +72,4 @@ Evidence обновлять в:
 | 5 | Notion/Linear closure | ✅ готово |
 | 6 | DLQ runbook/replay process | ✅ готово |
 
-Единый список следующих шагов: [NEXT-STEPS.md](NEXT-STEPS.md).
+Единый список следующих шагов: [../NEXT-STEPS.md](../NEXT-STEPS.md).

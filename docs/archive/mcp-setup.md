@@ -4,7 +4,7 @@ MCP config: `.cursor/mcp.json`. Secrets читаются из **переменн
 
 ## Где хранить секреты (рекомендуется: keyring)
 
-- **Keyring (libsecret / Seahorse):** все ключи в одном wallet по шаблону из [keyring-credentials.md](keyring-credentials.md) (Label, Password, User, Server — заполняем по максимуму). Инвентарь что в keyring — в том же файле.
+- **Keyring (libsecret / Seahorse):** все ключи в одном wallet по шаблону из [../keyring-credentials.md](../keyring-credentials.md) (Label, Password, User, Server — заполняем по максимуму). Инвентарь что в keyring — в том же файле.
 - **Загрузка в env:** `source scripts/load-env-from-keyring.sh` или `./scripts/load-env-from-keyring.sh --cursor` (подставляет переменные из keyring и при `--cursor` запускает Cursor).
 - Альтернатива: `.env` (скопировать значения из keyring; не коммитить).
 

@@ -65,7 +65,7 @@ Control plane: scripts/* + docs/* + CI workflows
 ```
 
 ### B2. Проверяемые baseline-метрики
-- Документация: **65 файлов** в `docs/`.
+- Документация: **66 файлов** в `docs/`.
 - Тестовые файлы: **11** (`unit + integration + e2e fixtures + eval metrics`).
 - Тесты: **61/61 passed** (локальный прогон на 2026-03-01).
 - Coverage gate: branch **80.44%** (threshold 80%, pass).
