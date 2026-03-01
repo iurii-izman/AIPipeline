@@ -108,7 +108,7 @@
    - Rollout policy зафиксирована в `docs/adr-001-full-primary-rollout.md`.
 4. Поддерживать backup retention policy в рабочем режиме:
    - cleanup: `./scripts/cleanup-backups.sh --retention-days 7`;
-   - timer: `./scripts/install-backup-retention-timer.sh --retention-days 7` (текущий gap: не установлен);
+   - timer: `./scripts/install-backup-retention-timer.sh --retention-days 7` (установлен; мониторинг через `systemctl --user status aipipeline-backup-retention.timer`);
    - DR drill: `./scripts/dr-restore-drill.sh` (регулярно, с evidence в `.out/drills`).
    - DR cadence freshness check: `./scripts/check-dr-cadence.sh --strict`.
    - DR cadence timer: `./scripts/install-dr-cadence-timer.sh --calendar monthly --max-age-days 30` (установлен; контролировать `systemctl --user status aipipeline-dr-cadence.timer` + `systemctl --user status aipipeline-dr-cadence.service`).

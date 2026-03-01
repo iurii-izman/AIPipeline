@@ -13,9 +13,12 @@
   - `docs/archive/2026-03-01-p1-harden-2-closure.md`
   - индекс архива обновлён в `docs/archive/README.md`.
 - Обновлены SSoT-поля под фактическое состояние:
-  - `docs/status-summary.md` (docs inventory, git sync state, backup retention gap)
-  - `docs/NEXT-STEPS.md` (remote sync step + backup retention timer gap)
+  - `docs/status-summary.md` (docs inventory, git sync state, timers status)
+  - `docs/NEXT-STEPS.md` (remote sync step + backup retention timer monitoring)
   - `docs/next-chat-prompt.md` (handoff после closure-аудита).
+- Backup retention timer установлен:
+  - `./scripts/install-backup-retention-timer.sh --retention-days 7`
+  - `aipipeline-backup-retention.timer` в состоянии `active (waiting)`.
 
 ### P1 Harden #2: DR cadence + release scorecard v2 + governance checks
 - Added DR cadence automation baseline:

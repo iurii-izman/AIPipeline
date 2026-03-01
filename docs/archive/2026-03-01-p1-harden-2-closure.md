@@ -39,4 +39,4 @@
 
 1. Push локальных коммитов в `origin/main` (сейчас локальная ветка ahead на 3 коммита).
 2. Повторный remote запуск `Release Gate` уже с новой версией workflow и проверкой artifact upload.
-3. Backup retention timer ещё не установлен (`stack-health-report: backup retention timer: not installed`).
+3. Backup retention timer установлен и активен (`aipipeline-backup-retention.timer`, daily schedule).
