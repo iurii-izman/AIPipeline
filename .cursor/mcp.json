@@ -2,35 +2,50 @@
   "mcpServers": {
     "notion": {
       "command": "npx",
-      "args": ["-y", "@notionhq/notion-mcp-server"],
+      "args": [
+        "-y",
+        "@notionhq/notion-mcp-server"
+      ],
       "env": {
         "OPENAPI_MCP_HEADERS": "{\"Authorization\": \"Bearer ${env:NOTION_TOKEN}\", \"Notion-Version\": \"2025-09-03\"}"
       }
     },
     "github": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
       "env": {
         "GITHUB_PERSONAL_ACCESS_TOKEN": "${env:GITHUB_PERSONAL_ACCESS_TOKEN}"
       }
     },
     "linear": {
       "command": "npx",
-      "args": ["-y", "mcp-linear"],
+      "args": [
+        "-y",
+        "mcp-linear"
+      ],
       "env": {
         "LINEAR_API_KEY": "${env:LINEAR_API_KEY}"
       }
     },
     "telegram": {
       "command": "npx",
-      "args": ["-y", "mcp-telegram-bot-server"],
+      "args": [
+        "-y",
+        "mcp-telegram-bot-server"
+      ],
       "env": {
         "TELEGRAM_BOT_API_TOKEN": "${env:TELEGRAM_BOT_TOKEN}"
       }
     },
     "n8n-mcp": {
       "command": "npx",
-      "args": ["-y", "n8n-mcp"],
+      "args": [
+        "-y",
+        "n8n-mcp"
+      ],
       "env": {
         "MCP_MODE": "stdio",
         "LOG_LEVEL": "error",
@@ -41,7 +56,17 @@
     },
     "filesystem": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "./"]
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "./"
+      ]
+    },
+    "wallaby": {
+      "command": "node",
+      "args": [
+        "~/.wallaby/mcp/"
+      ]
     }
   }
 }
