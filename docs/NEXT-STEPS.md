@@ -6,6 +6,11 @@
 
 ## Сейчас в фокусе
 
+- Приоритетная очередь на 90 дней (из `docs/strategic-vision-and-tooling.md`):
+  - `P0` Stabilize: deploy strict mode (без silent dry-run), Sonar hard gate, eval dataset >=80, backup timer probe.
+  - `P1` Harden: DR cadence automation, release scorecard v2, data governance policy checks, safety eval CI job, SBOM generation, SLO-lite policy.
+  - `P1/P2` Scale baseline: OTel pilot, cost reporting/alerts, durable DLQ design+pilot.
+  - Анти-фокус: не запускать queue-mode n8n и альтернативные оркестраторы до закрытия P0/P1 baseline.
 - Reliability hardening выполнен:
   - retry/backoff + rate-limit handling внедрены в WF-2/WF-3/WF-4/WF-5;
   - partial-failure policy формализована в workflow logic;
@@ -89,12 +94,31 @@
 ## Что остаётся до полного closure
 
 1. Поддерживать rotation/валидность hardening env в keyring и runtime (`STATUS_AUTH_TOKEN`, `GITHUB_WEBHOOK_SECRET`, `SENTRY_WEBHOOK_SECRET`, `MODEL_CLASSIFIER_MODE`, `MODEL_KILL_SWITCH`); bootstrap: `./scripts/bootstrap-hardening-env-keyring.sh`.
-2. Поддерживать актуальность repository ruleset/checks в GitHub (включая `build`, `integration`, `e2e-fixtures`, `eval-alpha`, `security-audit`, `CodeQL`) при изменениях CI.
-3. Расширить eval dataset (>=50 кейсов) для реалистичного quality gate перед rollout `MODEL_CLASSIFIER_MODE=full_primary`.
-4. Запустить backup retention policy (например, cron/systemd timer + cleanup старше N дней) вокруг `scripts/backup-n8n.sh`.
-5. Поддерживать регулярный цикл evidence-sync в Notion Sprint Log/Runbook.
-6. Поддерживать closure audit (`audit-linear-github-closure.js`) в регулярном цикле.
-7. NotebookLM: weekly UI upload source-bundle (manual-only), подготовка через `./scripts/notebooklm-weekly-refresh.sh`.
+2. Поддерживать актуальность repository ruleset/checks в GitHub (включая `build`, `integration`, `e2e-fixtures`, `eval-alpha`, `security-audit`, `CodeQL`, `SonarCloud`) при изменениях CI.
+  - Добавлены новые required checks: `eval-safety`, `sbom`, `data-governance-policy`.
+   - SonarCloud workflow в репо: `.github/workflows/sonarcloud.yml`; repo vars: `SONAR_PROJECT_KEY`, `SONAR_ORGANIZATION`.
+   - Для прохождения обязательного SonarCloud scan должен быть задан repo secret `SONAR_TOKEN` (иначе workflow fail-fast).
+   - Быстрая синхронизация vars/secrets из keyring: `./scripts/sync-github-repo-controls.sh`.
+   - Автоподготовка deploy webhook secrets (из `CLOUDFLARE_PUBLIC_BASE_URL`): `./scripts/bootstrap-deploy-webhooks.sh`.
+3. Поддерживать и расширять eval dataset (текущая база: 54 кейса) перед rollout-изменениями `MODEL_CLASSIFIER_MODE=full_primary`.
+   - Rollout policy зафиксирована в `docs/adr-001-full-primary-rollout.md`.
+4. Поддерживать backup retention policy в рабочем режиме:
+   - cleanup: `./scripts/cleanup-backups.sh --retention-days 7`;
+   - timer: `./scripts/install-backup-retention-timer.sh --retention-days 7`;
+   - DR drill: `./scripts/dr-restore-drill.sh` (регулярно, с evidence в `.out/drills`).
+   - DR cadence freshness check: `./scripts/check-dr-cadence.sh --strict`.
+   - DR cadence timer: `./scripts/install-dr-cadence-timer.sh --calendar monthly --max-age-days 30` (установлен; контролировать `systemctl --user status aipipeline-dr-cadence.timer` + `systemctl --user status aipipeline-dr-cadence.service`).
+   - Health report должен показывать `backup retention timer` статус: `./scripts/stack-health-report.sh --markdown`.
+5. Поддерживать release scorecard v2 в релизном цикле:
+   - `./scripts/release-quality-gate.sh --strict-parity --generate-scorecard --version vX.Y.Z --env staging`.
+   - Через `.github/workflows/release-gate.yml` запускать `workflow_dispatch` с `generate_scorecard=true` и сохранять artifact `release-scorecard-v2` как release evidence.
+   - Шаблон: `docs/templates/release-scorecard-v2.md`.
+6. Поддерживать data governance policy gate в CI/release:
+   - `./scripts/check-data-governance-policy.sh --strict`;
+   - policy doc: `docs/data-governance-policy.md`.
+7. Поддерживать регулярный цикл evidence-sync в Notion Sprint Log/Runbook.
+8. Поддерживать closure audit (`audit-linear-github-closure.js`) в регулярном цикле.
+9. NotebookLM: weekly UI upload source-bundle (manual-only), подготовка через `./scripts/notebooklm-weekly-refresh.sh`.
 
 ## Рабочий цикл дальше
 

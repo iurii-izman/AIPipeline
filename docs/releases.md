@@ -41,7 +41,34 @@
 
 6. **Manual Release Gate (GitHub Actions)**
    - Запустить workflow **Release Gate** (`.github/workflows/release-gate.yml`) через `workflow_dispatch`.
+   - Перед запуском синхронизировать controls: `./scripts/sync-github-repo-controls.sh`.
+   - Примечание: из-за reserved prefix в GitHub Actions используются alias secrets `AIP_GITHUB_PERSONAL_ACCESS_TOKEN` и `AIP_GITHUB_WEBHOOK_SECRET` (скрипт синхронизации создаёт их автоматически).
+   - Для release evidence рекомендуется запускать с `generate_scorecard=true`, `target_env=staging|production`, `version=vX.Y.Z`.
+   - После завершения скачать artifact `release-scorecard-v2` из run summary и приложить ссылку в Notion Sprint Log / release note.
    - Для локального стека перед релизом: `./scripts/release-quality-gate.sh --strict-parity`.
+
+7. **Deploy strict mode (staging/production)**
+   - `DEPLOY_WEBHOOK_STAGING` и `DEPLOY_WEBHOOK_PRODUCTION` считаются обязательными для реального деплоя в соответствующих workflow.
+   - Silent dry-run отключён: если webhook не задан, job завершится `failed`.
+   - Допускается только явный dry-run через `workflow_dispatch` input `allow_dry_run=true` (для ручной проверки пайплайна).
+
+8. **SonarCloud hard gate**
+   - SonarCloud workflow (`.github/workflows/sonarcloud.yml`) fail-fast при отсутствии `SONAR_TOKEN`, `SONAR_PROJECT_KEY`, `SONAR_ORGANIZATION`.
+   - Перед релизом убедиться, что эти настройки заданы и check `SonarCloud` в required checks зелёный.
+
+9. **Data governance + DR cadence gates**
+   - Data governance policy check обязателен: `npm run policy:data-governance`.
+   - DR cadence freshness обязателен: `npm run dr:check-cadence` (по умолчанию требует drill evidence не старше 30 дней).
+   - Перед релизом убедиться, что последний DR drill выполнен и evidence находится в `.out/drills/`.
+
+10. **Release scorecard v2**
+   - Сгенерировать scorecard:  
+     `./scripts/generate-release-scorecard-v2.sh --version vX.Y.Z --env staging`
+   - Или автоматически в составе gate:  
+     `./scripts/release-quality-gate.sh --strict-parity --generate-scorecard --version vX.Y.Z --env production`
+   - Локальный output: `.out/releases/release-scorecard-v2-<version>-<env>-<timestamp>.md`.
+   - При запуске через GitHub Actions scorecard должен быть загружен как artifact `release-scorecard-v2` и сохранён как release evidence.
+   - Шаблон scorecard: `docs/templates/release-scorecard-v2.md`.
 
 ---
 
