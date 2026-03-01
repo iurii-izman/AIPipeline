@@ -22,6 +22,12 @@ function mkDecision(severity: "critical" | "non_critical"): ClassificationDecisi
 }
 
 describe("eval metrics", () => {
+  it("throws on cases/decisions length mismatch", () => {
+    const cases: EvalCase[] = [mkCase("1", "critical", "db timeout")];
+    const decisions: ClassificationDecision[] = [];
+    expect(() => calculateMetrics(cases, decisions)).toThrow("cases and decisions length mismatch");
+  });
+
   it("calculates precision/recall/fnr", () => {
     const cases: EvalCase[] = [
       mkCase("1", "critical", "db timeout cascade"),
@@ -76,5 +82,21 @@ describe("eval metrics", () => {
   it("provides heuristic baseline", () => {
     expect(heuristicSeverity({ title: "db timeout cascade detected", level: "error" })).toBe("critical");
     expect(heuristicSeverity({ title: "layout warning", level: "warning" })).toBe("non_critical");
+    expect(heuristicSeverity({ title: "minor warning", level: "fatal" })).toBe("critical");
+    expect(heuristicSeverity({ title: "payment outage in checkout flow", level: "error" })).toBe("critical");
+  });
+
+  it("returns zero metrics when no positive classes are present", () => {
+    const cases: EvalCase[] = [
+      mkCase("1", "non_critical", "ui warning"),
+      mkCase("2", "non_critical", "minor warning"),
+    ];
+    const decisions: ClassificationDecision[] = [mkDecision("non_critical"), mkDecision("non_critical")];
+
+    const metrics = calculateMetrics(cases, decisions);
+    expect(metrics.precisionCritical).toBe(0);
+    expect(metrics.recallCritical).toBe(0);
+    expect(metrics.fnrCritical).toBe(0);
+    expect(metrics.macroF1).toBeGreaterThanOrEqual(0);
   });
 });

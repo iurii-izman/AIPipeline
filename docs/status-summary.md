@@ -107,7 +107,7 @@
   - добавлен runtime eval CLI `scripts/run-ai-eval.js` + runtime helper `src/evals/runtime.js`;
   - добавлен dataset `evals/datasets/sentry-severity-alpha.json` и npm scripts `test:e2e`, `eval:alpha`;
   - CI (`.github/workflows/ci.yml`) расширен job-ами `e2e-fixtures` и `eval-alpha`;
-  - новый baseline: `59/59` tests passed (включая e2e/eval unit) + `eval:alpha` gate pass.
+  - baseline повышен: `61/61` tests passed (включая e2e/eval unit + доп. coverage tests), `npm run coverage` проходит; branch coverage `80.44%` (threshold 80%).
 - **Operational hardening block (2026-03-01):**
   - добавлены `scripts/backup-n8n.sh` и `scripts/restore-n8n.sh` для backup/restore Podman volume `n8n_data` (+ workflow API dump при наличии `N8N_API_KEY`);
   - добавлен `scripts/check-env-parity.sh` (parity-check критичных env app/n8n/deploy/model, `--strict`);

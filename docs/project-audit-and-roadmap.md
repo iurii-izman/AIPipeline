@@ -28,7 +28,7 @@ AIPipeline — AI-native delivery/control plane для solo-разработки
 - Productize: ~45%
 
 ### Что уже сильное
-1. Quality gates и тестовый контур расширены до `59/59`.
+1. Quality gates и тестовый контур расширены до `61/61`.
 2. CI покрывает lint/typecheck/test/coverage/integration/e2e-fixtures/eval-alpha/security-audit + CodeQL.
 3. `/status` и perimeter заметно усилены (auth + rate-limit + size-guard).
 4. В WF-2/WF-3 добавлена подпись webhook и model feature flags.
@@ -67,7 +67,8 @@ Control plane: scripts/* + docs/* + CI workflows
 ### B2. Проверяемые baseline-метрики
 - Документация: **65 файлов** в `docs/`.
 - Тестовые файлы: **11** (`unit + integration + e2e fixtures + eval metrics`).
-- Тесты: **59/59 passed** (локальный прогон на 2026-03-01).
+- Тесты: **61/61 passed** (локальный прогон на 2026-03-01).
+- Coverage gate: branch **80.44%** (threshold 80%, pass).
 - CI workflows: `ci.yml`, `codeql.yml`, `deploy-staging.yml`, `deploy-production.yml`, `release-gate.yml`.
 
 ### B3. Ключевые компоненты (актуально)
