@@ -28,9 +28,11 @@
 - Unified release gate: `npm run release:gate -- --strict-parity` => pass
 - Observability alerts probe: pass after stack warm-up
 - GitHub controls sync: `./scripts/sync-github-repo-controls.sh` (deploy webhooks/tokens + parity secrets/vars + required checks)
+- Backup retention timer: `aipipeline-backup-retention.timer` installed/enabled (`systemctl --user status aipipeline-backup-retention.timer`)
 - DR cadence timer: `aipipeline-dr-cadence.timer` installed/enabled (`systemctl --user status aipipeline-dr-cadence.timer`)
 - DR cadence last successful run: `2026-03-01T20:24:59+02:00` (`/var/home/user/Projects/AIPipeline/.out/drills/dr-restore-drill-20260301-202456.json`)
-- Git sync state: local `main` is ahead of `origin/main` (push pending due intermittent GitHub connectivity timeout on 2026-03-01)
+- Release Gate (remote): success with scorecard artifact upload (`https://github.com/iurii-izman/AIPipeline/actions/runs/22552089187`)
+- Git sync state: local `main` and `origin/main` are synchronized for hardening scope commits (`a9829c9`)
 
 ## Hardening Completed
 - `/status` protected with bearer auth + rate-limit + request-size guard

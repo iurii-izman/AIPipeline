@@ -19,6 +19,7 @@
 | [AIP-2-set-up-teams-done.md](AIP-2-set-up-teams-done.md) | AIP-2: Set up your teams (Linear) — PR #18 merged. |
 | [AIP-1-get-familiar-linear-done.md](AIP-1-get-familiar-linear-done.md) | AIP-1: Get familiar with Linear — PR #19 merged. |
 | [2026-03-01-p1-harden-2-closure.md](2026-03-01-p1-harden-2-closure.md) | Closure snapshot: DR cadence + release scorecard loop + controls sync + strategy/docs consistency. |
+| [2026-03-01-p1-harden-2-operational-loop-closure.md](2026-03-01-p1-harden-2-operational-loop-closure.md) | Operational closure snapshot: remote Release Gate artifact evidence + DR/backup timers active. |
 | [next-steps-step-by-step.md](next-steps-step-by-step.md) | Пошаговый чек-лист заменён единым SSoT `NEXT-STEPS.md`. |
 | [tz-remaining-work.md](tz-remaining-work.md) | Исторический backlog заменён актуальными `project-audit-and-roadmap.md` + `NEXT-STEPS.md`. |
 
