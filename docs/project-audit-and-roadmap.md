@@ -19,7 +19,7 @@ AIPipeline — AI-native delivery/control plane для solo-разработки
 - AI eval skeleton + gate для раннего alpha.
 
 ### Быстрый процент выполнения
-Оценка прогресса по целевому roadmap: **~74% / 100%**.
+Оценка прогресса по целевому roadmap: **~80% / 100%**.
 
 Разбивка по фазам:
 - Stabilize: ~95%
@@ -254,7 +254,7 @@ npm run test:e2e
 
 ### G3. Известные ручные шаги
 1. В GitHub UI включить новые checks в branch protection (`integration`, `e2e-fixtures`, `eval-alpha`, `security-audit`, `CodeQL`).
-2. Задать/ротировать секреты: `STATUS_AUTH_TOKEN`, `GITHUB_WEBHOOK_SECRET`, `SENTRY_WEBHOOK_SECRET`.
+2. Поддерживать ротацию секретов: `STATUS_AUTH_TOKEN`, `GITHUB_WEBHOOK_SECRET`, `SENTRY_WEBHOOK_SECRET`.
 3. Для Full Primary rollout — утвердить пороги и политику rollback в ADR.
 
 ---
