@@ -23,6 +23,7 @@
 | [keyring-credentials.md](keyring-credentials.md) | Keyring: список записей, атрибуты (User/Server), CLI, как обновить пароль |
 | [mcp-enable-howto.md](mcp-enable-howto.md) | Как включить MCP в Cursor (env из keyring, aipipeline-cursor), типичные ошибки |
 | [runbook.md](runbook.md) | Операции: code review, MCP, n8n, setup guides, релизы |
+| [post-reboot-runbook.md](post-reboot-runbook.md) | **После перезагрузки ПК:** команды для запуска cloudflared, n8n, приложения |
 | [operations-profiles.md](operations-profiles.md) | Единые профили запуска сервисов (`core/extended/full`) и stack health report |
 | [operations-access-matrix.md](operations-access-matrix.md) | Ownership/rotation/audit trail для service accounts и bot-профилей |
 | [releases.md](releases.md) | Версионирование, теги, чек-лист перед релизом (alpha/beta/stable) |

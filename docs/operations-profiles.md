@@ -84,6 +84,47 @@ Dry-run (без записи в Notion/Linear):
 
 ```bash
 ./scripts/evidence-sync-cycle.sh --profile full --dry-run
+./scripts/evidence-sync-cycle.sh --profile full --dry-run --skip-synthetic
+```
+
+С созданием n8n backup в рамках цикла:
+
+```bash
+./scripts/evidence-sync-cycle.sh --profile full --with-backup
+```
+
+## Backup / Restore (n8n)
+
+Backup Podman volume `n8n_data` + runtime workflow dump:
+
+```bash
+./scripts/backup-n8n.sh --label weekly
+```
+
+Restore из архива (требует остановить контейнер `n8n`):
+
+```bash
+./scripts/restore-n8n.sh --archive .backups/n8n-backup-YYYYmmdd-HHMMSS-weekly/n8n_data.tar.gz --confirm
+```
+
+## Env parity check
+
+Проверка паритета критичных env (app/n8n/deploy/model):
+
+```bash
+./scripts/check-env-parity.sh
+./scripts/check-env-parity.sh --strict
+```
+
+## Unified release quality gate
+
+Единый gate перед релизом:
+
+```bash
+./scripts/release-quality-gate.sh
+./scripts/release-quality-gate.sh --strict-parity
+./scripts/release-quality-gate.sh --strict-parity --include-backup
+./scripts/release-quality-gate.sh --skip-observability
 ```
 
 ## Рекомендованный режим

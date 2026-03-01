@@ -23,6 +23,7 @@
 2. **Рабочая копия**
    - Нет незакоммиченных изменений: `git status` — чисто.
    - Все тесты проходят: `npm test`; CI зелёный.
+   - Выполнен unified gate: `./scripts/release-quality-gate.sh --strict-parity`.
 
 3. **Версия**
    - Обновить `version` в `package.json` (например `0.1.0-alpha.2` или `0.2.0`).
@@ -35,6 +36,11 @@
 
 5. **Документация**
    - Обновить [status-summary.md](status-summary.md) и этот файл (таблица «Текущий релиз»), если нужно.
+   - Если релиз включает ops/data-plane изменения: приложить backup evidence (`./scripts/backup-n8n.sh --label release`).
+
+6. **Manual Release Gate (GitHub Actions)**
+   - Запустить workflow **Release Gate** (`.github/workflows/release-gate.yml`) через `workflow_dispatch`.
+   - Для локального стека перед релизом: `./scripts/release-quality-gate.sh --strict-parity`.
 
 ---
 
