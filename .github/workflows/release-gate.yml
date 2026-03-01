@@ -8,6 +8,23 @@ on:
         required: false
         default: true
         type: boolean
+      generate_scorecard:
+        description: "Generate and upload release scorecard v2 artifact"
+        required: false
+        default: true
+        type: boolean
+      version:
+        description: "Release version for scorecard (e.g. v0.1.0-alpha.2)"
+        required: false
+        type: string
+      target_env:
+        description: "Target environment for scorecard"
+        required: false
+        default: staging
+        type: choice
+        options:
+          - staging
+          - production
 
 jobs:
   gate:
@@ -22,9 +39,43 @@ jobs:
       - name: Install
         run: npm ci
       - name: Run release quality gate
+        env:
+          GITHUB_PERSONAL_ACCESS_TOKEN: ${{ secrets.AIP_GITHUB_PERSONAL_ACCESS_TOKEN }}
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          LINEAR_TEAM_ID: ${{ secrets.LINEAR_TEAM_ID }}
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          STATUS_AUTH_TOKEN: ${{ secrets.STATUS_AUTH_TOKEN }}
+          GITHUB_WEBHOOK_SECRET: ${{ secrets.AIP_GITHUB_WEBHOOK_SECRET }}
+          SENTRY_WEBHOOK_SECRET: ${{ secrets.SENTRY_WEBHOOK_SECRET }}
+          GITHUB_OWNER: ${{ vars.AIP_GITHUB_OWNER }}
+          GITHUB_REPO: ${{ vars.AIP_GITHUB_REPO }}
+          GITHUB_WORKFLOW_STAGING: ${{ vars.AIP_GITHUB_WORKFLOW_STAGING }}
+          GITHUB_WORKFLOW_PRODUCTION: ${{ vars.AIP_GITHUB_WORKFLOW_PRODUCTION }}
+          MODEL_CLASSIFIER_MODE: ${{ vars.MODEL_CLASSIFIER_MODE }}
+          MODEL_KILL_SWITCH: ${{ vars.MODEL_KILL_SWITCH }}
         run: |
-          if [[ "${{ inputs.strict_parity }}" == "true" ]]; then
-            ./scripts/release-quality-gate.sh --strict-parity --skip-observability
-          else
-            ./scripts/release-quality-gate.sh --skip-observability
+          scorecard_args=()
+          if [[ "${{ inputs.generate_scorecard }}" == "true" ]]; then
+            scorecard_args+=(--generate-scorecard --env "${{ inputs.target_env }}")
+            if [[ -n "${{ inputs.version }}" ]]; then
+              scorecard_args+=(--version "${{ inputs.version }}")
+            fi
           fi
+
+          if [[ "${{ inputs.strict_parity }}" == "true" ]]; then
+            ./scripts/release-quality-gate.sh --strict-parity --skip-observability "${scorecard_args[@]}"
+          else
+            ./scripts/release-quality-gate.sh --skip-observability "${scorecard_args[@]}"
+          fi
+      - name: Upload release scorecard artifact
+        if: ${{ inputs.generate_scorecard == true }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-scorecard-v2
+          path: .out/releases/release-scorecard-v2-*.md
+          if-no-files-found: error
