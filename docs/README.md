@@ -13,6 +13,7 @@
 |----------|------------|
 | [status-summary.md](status-summary.md) | Что сделано / не сделано, таблица статусов (SSoT) |
 | [current-phase.md](current-phase.md) | Текущий фокус и ссылки на status-summary, NEXT-STEPS |
+| [project-audit-and-roadmap.md](project-audit-and-roadmap.md) | Комплексный Principal Engineer аудит и roadmap (A-G, Top-20 рисков, 20 шагов) |
 | [next-steps-step-by-step.md](next-steps-step-by-step.md) | **Пошагово дальше:** чек-лист apply/sync для WF-1…WF-7 и Linear |
 | [what-to-do-manually.md](what-to-do-manually.md) | Что обязательно сделать в n8n UI и внешних сервисах после скриптов WF-2…WF-7 |
 

@@ -82,6 +82,11 @@
   - добавлен `scripts/audit-linear-github-closure.js` (проверка merged PR с `Closes AIP-XX` против state в Linear);
   - сгенерирован отчёт `.out/linear-github-closure-audit.md`;
   - текущий результат: `referenced_not_done = 0`.
+- **Comprehensive project audit (2026-03-01):**
+  - добавлен единый документ `docs/project-audit-and-roadmap.md` (секции A-G);
+  - зафиксированы Top-20 weak spots с evidence/impact/priority/remediation/acceptance criteria;
+  - добавлен phased roadmap 20 шагов + setup hardening checklist + Cursor-ready implementation plan;
+  - formalized alpha-test track для WF-3 model classification в режиме `Full Primary` с guardrails, rollback и kill switch.
 - **Доки:** runbooks (в т.ч. [linear-phase3-runbook.md](linear-phase3-runbook.md), [n8n-workflows/README.md](n8n-workflows/README.md), [live-uat-telegram.md](live-uat-telegram.md)), гайды по Notion/Sentry/n8n (step-by-step), keyring, Linear, MCP, audit, и consolidated backlog [tz-remaining-work.md](tz-remaining-work.md).
 
 ---
