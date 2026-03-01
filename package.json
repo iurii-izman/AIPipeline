@@ -15,7 +15,12 @@
     "test:e2e": "vitest run tests/e2e",
     "eval:alpha": "node scripts/run-ai-eval.js --dataset evals/datasets/sentry-severity-alpha.json --model-tag alpha-heuristic-v1 --fail-on-gate",
     "eval:safety": "node scripts/run-ai-safety-eval.js --dataset evals/datasets/sentry-safety-alpha.json --model-tag safety-heuristic-v1 --fail-on-gate",
+    "eval:v2": "node scripts/run-ai-eval-v2.js --dataset evals/datasets/sentry-severity-alpha.json --model-tag alpha-heuristic-v2 --fail-on-gate",
     "sbom:generate": "mkdir -p .out/sbom && cyclonedx-npm --output-file .out/sbom/cyclonedx-npm.json --output-format json",
+    "provenance:generate": "./scripts/generate-provenance-pilot.sh",
+    "cost:report": "node scripts/generate-cost-report.js --days 30",
+    "cost:budget": "node scripts/generate-cost-report.js --days 30 --strict-budget",
+    "iac:validate": "./scripts/check-iac-baseline.sh",
     "dr:check-cadence": "./scripts/check-dr-cadence.sh --strict",
     "policy:data-governance": "./scripts/check-data-governance-policy.sh --strict",
     "release:scorecard:v2": "./scripts/generate-release-scorecard-v2.sh",
@@ -29,6 +34,10 @@
     "node": ">=22"
   },
   "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.57.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.57.0",
+    "@opentelemetry/sdk-node": "^0.57.0",
     "@sentry/node": "^10.40.0",
     "zod": "^4.1.11"
   },

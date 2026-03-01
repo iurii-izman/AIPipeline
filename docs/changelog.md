@@ -4,6 +4,34 @@
 
 ## 2026-03-01 (Autopilot Blocks 1-8)
 
+### Scale baseline and maturity pack (IaC/OTel/Cost/DLQ/Eval-v2/Provenance)
+- Added IaC baseline:
+  - `infra/terraform/*` (staging/production contract baseline)
+  - `scripts/check-iac-baseline.sh`
+  - CI job `iac-validate`.
+- Added OTel pilot + trace correlation:
+  - runtime instrumentation in `src/instrument.js` behind `OTEL_PILOT_ENABLED=true`;
+  - trace/span fields propagated into `src/logger.js`;
+  - trace context injection in outbound HTTP via `src/lib/http/fetchWithTimeout.ts`.
+- Added online telemetry + eval v2:
+  - app endpoints: `POST /telemetry/ai-event`, `GET /telemetry/ai-summary`;
+  - store: `.runtime-logs/ai-online-telemetry.jsonl`;
+  - `scripts/run-ai-eval-v2.js`, npm script `eval:v2`, CI job `eval-v2`.
+- Added cost governance baseline:
+  - `scripts/generate-cost-report.js`;
+  - npm scripts `cost:report`, `cost:budget`;
+  - CI job `cost-governance` with artifact upload.
+- Added durable DLQ mirror:
+  - app endpoints `POST /dlq/park`, `POST /dlq/mark` + store `.runtime-logs/dlq-events.jsonl`;
+  - `scripts/update-wf7-dlq-parking.js` updated to mirror park/replay status into durable endpoint;
+  - WF-7 re-applied and exported to `docs/n8n-workflows/wf-7-dlq-parking.json`.
+- Added supply-chain maturity pilot:
+  - `scripts/generate-provenance-pilot.sh` + npm script `provenance:generate`;
+  - CI SBOM job now includes attestation step (`actions/attest-build-provenance@v2`);
+  - Release Gate uploads `release-supply-chain` and `release-ai-ops` artifacts.
+- Release gate expanded:
+  - now includes `eval:v2`, cost budget check, SBOM generation, provenance generation.
+
 ### Closure audit + archive snapshot
 - Проведён полный локальный сверочный прогон:
   - `./scripts/health-check-env.sh`

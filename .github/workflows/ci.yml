@@ -145,8 +145,32 @@ jobs:
           path: .out/evals/*.json
           if-no-files-found: error
 
+  eval-v2:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - name: Install
+        run: npm ci
+      - name: Run eval v2 gate
+        run: npm run eval:v2
+      - name: Upload eval v2 report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-v2-report
+          path: .out/evals/eval-v2-*.json
+          if-no-files-found: error
+
   sbom:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node
@@ -163,6 +187,43 @@ jobs:
         with:
           name: sbom-cyclonedx
           path: .out/sbom/cyclonedx-npm.json
+          if-no-files-found: error
+      - name: Attest SBOM provenance (SLSA pilot)
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: .out/sbom/cyclonedx-npm.json
+
+  iac-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.5
+      - name: Validate IaC baseline
+        run: npm run iac:validate
+
+  cost-governance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - name: Install
+        run: npm ci
+      - name: Cost report
+        run: npm run cost:report
+      - name: Cost budget check
+        run: npm run cost:budget
+      - name: Upload cost report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cost-report
+          path: .out/cost/*
           if-no-files-found: error
 
   data-governance-policy:

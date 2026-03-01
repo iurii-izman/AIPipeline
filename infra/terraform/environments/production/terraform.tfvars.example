@@ -1,0 +1,6 @@
+environment           = "production"
+deploy_webhook_url    = "https://deploy.example.internal/production"
+deploy_webhook_token  = "replace-with-keyring-secret"
+status_auth_token     = "replace-with-keyring-secret"
+model_classifier_mode = "full_primary"
+model_kill_switch     = false

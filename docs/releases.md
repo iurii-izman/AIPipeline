@@ -70,7 +70,16 @@
      `./scripts/release-quality-gate.sh --strict-parity --generate-scorecard --version vX.Y.Z --env production`
    - Локальный output: `.out/releases/release-scorecard-v2-<version>-<env>-<timestamp>.md`.
    - При запуске через GitHub Actions scorecard должен быть загружен как artifact `release-scorecard-v2` и сохранён как release evidence.
+   - Дополнительные artifacts release workflow:
+     - `release-supply-chain` (`SBOM + provenance pilot`)
+     - `release-ai-ops` (`eval-v2 + cost report`, при наличии данных)
    - Шаблон scorecard: `docs/templates/release-scorecard-v2.md`.
+
+11. **IaC + provenance baseline checks**
+   - IaC validation: `npm run iac:validate` (или CI job `iac-validate`).
+   - SBOM + provenance:
+     - `npm run sbom:generate`
+     - `npm run provenance:generate`
 
 ---
 

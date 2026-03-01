@@ -20,7 +20,7 @@
 - Coverage: branch `80.44%` (threshold `80%`) pass
 - CI required checks: green
 - Security checks: `npm audit` gate + CodeQL + SonarCloud workflow active (`.github/workflows/sonarcloud.yml`)
-- GitHub ruleset required checks include: `lint`, `build`, `typecheck`, `test`, `coverage`, `integration`, `e2e-fixtures`, `eval-alpha`, `eval-safety`, `sbom`, `data-governance-policy`, `security-audit`, `analyze (javascript-typescript)`, `SonarCloud`
+- GitHub ruleset required checks include: `lint`, `build`, `typecheck`, `test`, `coverage`, `integration`, `e2e-fixtures`, `eval-alpha`, `eval-safety`, `eval-v2`, `sbom`, `iac-validate`, `cost-governance`, `data-governance-policy`, `security-audit`, `analyze (javascript-typescript)`, `SonarCloud`
 
 ## Operational Baseline
 - Environment check: `./scripts/health-check-env.sh`
@@ -32,7 +32,11 @@
 - DR cadence timer: `aipipeline-dr-cadence.timer` installed/enabled (`systemctl --user status aipipeline-dr-cadence.timer`)
 - DR cadence last successful run: `2026-03-01T20:24:59+02:00` (`/var/home/user/Projects/AIPipeline/.out/drills/dr-restore-drill-20260301-202456.json`)
 - Release Gate (remote): success with scorecard artifact upload (`https://github.com/iurii-izman/AIPipeline/actions/runs/22552125084`)
-- Git sync state: local `main` and `origin/main` are synchronized for hardening scope commits (`a9829c9`)
+- Git sync state: local `main` and `origin/main` are synchronized
+- IaC baseline: `infra/terraform` + `scripts/check-iac-baseline.sh` + CI job `iac-validate`
+- OTel pilot baseline: `OTEL_PILOT_ENABLED=true` + trace/span correlation in runtime logs
+- AI online telemetry endpoints: `/telemetry/ai-event`, `/telemetry/ai-summary` with JSONL store in `.runtime-logs/ai-online-telemetry.jsonl`
+- Durable DLQ mirror: app endpoints `/dlq/park`, `/dlq/mark` + JSONL store `.runtime-logs/dlq-events.jsonl`; WF-7 updated to mirror park/replay statuses
 
 ## Hardening Completed
 - `/status` protected with bearer auth + rate-limit + request-size guard
@@ -42,20 +46,23 @@
 - WF-3 OWASP hardening: sanitized classifier input + strict LLM schema validation + heuristic fallback on mismatch
 - Timeout/abort transport added to typed API clients
 - Eval dataset expanded to `150` labeled cases with CI artifact publishing for eval reports
+- Eval harness v2 added (`scripts/run-ai-eval-v2.js`) with offline+online gate model
 - Release governance v2 baseline added: scorecard template + scorecard generator script
 - Data governance baseline added: policy doc + CI/release policy checks
 - DR cadence baseline added: evidence freshness check + systemd automation script
 - Backup/restore and parity toolchain implemented (plus retention cleanup + timer installer + DR drill evidence script)
 - ADR template and full-primary rollout ADR added to repository docs
+- Cost governance baseline added (`scripts/generate-cost-report.js`, `cost:report`, `cost:budget`, CI artifact)
+- Supply-chain baseline extended with provenance pilot (`scripts/generate-provenance-pilot.sh`) and SBOM attestation step in CI
 
 ## Open Focus (high-level)
-1. Close P0 production-baseline gaps from strategy v2: no silent dry-run deploy path + stronger AI eval coverage.
+1. Close remaining P0 production-baseline gaps from strategy v2: IaC rollout maturity + online AI telemetry sample growth.
 2. Keep backup retention and DR cadence healthy (`cleanup-backups`, timers, periodic DR drill evidence).
-3. Enforce CI/ruleset consistency and quality/security gates (including `SonarCloud` hard-gate readiness).
+3. Enforce CI/ruleset consistency and quality/security gates (including `SonarCloud` + provenance attestations).
 4. Keep periodic closure audits and evidence sync cycles running.
 5. Start 90-day execution slice tracking (strategy v2) in `NEXT-STEPS.md`.
-6. Keep SBOM + safety eval gates green after CI/ruleset evolution.
-7. Keep DR cadence evidence fresh (<=30 days) and include scorecard in release cycle.
+6. Keep SBOM/provenance + safety/eval-v2 gates green after CI/ruleset evolution.
+7. Keep DR cadence evidence fresh (<=30 days), include scorecard + supply-chain artifacts in release cycle.
 
 ## Where to Look
 - Next actionable queue: [NEXT-STEPS.md](NEXT-STEPS.md)

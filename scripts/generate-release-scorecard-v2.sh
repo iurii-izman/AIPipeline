@@ -65,8 +65,11 @@ fi
 
 latest_eval_alpha="$(ls -1 .out/evals/*alpha*.json 2>/dev/null | tail -n 1 || true)"
 latest_eval_safety="$(ls -1 .out/evals/*safety*.json 2>/dev/null | tail -n 1 || true)"
+latest_eval_v2="$(ls -1 .out/evals/eval-v2-*.json 2>/dev/null | tail -n 1 || true)"
 latest_sbom="$(ls -1 .out/sbom/*.json 2>/dev/null | tail -n 1 || true)"
+latest_provenance="$(ls -1 .out/provenance/*.json 2>/dev/null | tail -n 1 || true)"
 latest_dr="$(ls -1 .out/drills/dr-restore-drill-*.md 2>/dev/null | tail -n 1 || true)"
+latest_cost_report="$(ls -1 .out/cost/cost-report-*.md 2>/dev/null | tail -n 1 || true)"
 
 cat >"$output" <<EOF
 # Release Scorecard v2
@@ -96,12 +99,13 @@ Owner: ${owner}
 - CodeQL: TODO
 - SonarCloud: TODO
 - SBOM (CycloneDX): ${latest_sbom:-TODO}
-- Provenance (SLSA pilot): TODO
+- Provenance (SLSA pilot): ${latest_provenance:-TODO}
 
 ## 4) AI Quality and Safety
 
 - Eval alpha: ${latest_eval_alpha:-TODO}
 - Eval safety: ${latest_eval_safety:-TODO}
+- Eval v2 (offline+online): ${latest_eval_v2:-TODO}
 - Model mode change in scope: TODO
 - If yes, safety gate evidence attached: TODO
 
@@ -111,6 +115,7 @@ Owner: ${owner}
 - Observability alerts probe: TODO
 - Backup retention timer healthy: TODO
 - DR cadence within 30 days: ${latest_dr:-TODO}
+- Cost report (30d): ${latest_cost_report:-TODO}
 
 ## 6) Data Governance and Access
 
@@ -130,8 +135,11 @@ Owner: ${owner}
 - CI run: TODO
 - Release gate output: TODO
 - Eval reports: ${latest_eval_alpha:-TODO}; ${latest_eval_safety:-TODO}
+- Eval v2 report: ${latest_eval_v2:-TODO}
 - SBOM artifact: ${latest_sbom:-TODO}
+- Provenance artifact: ${latest_provenance:-TODO}
 - DR evidence report: ${latest_dr:-TODO}
+- Cost report: ${latest_cost_report:-TODO}
 - Change log / PR list: TODO
 
 ## 9) Sign-off
@@ -142,4 +150,3 @@ Owner: ${owner}
 EOF
 
 echo "Release scorecard generated: $output"
-

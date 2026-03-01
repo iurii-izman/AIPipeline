@@ -106,7 +106,19 @@ ensure_required_checks() {
                     integration_id: (([$checks[]?.integration_id] | map(select(. != null)) | .[0]) // null)
                   },
                   {
+                    context: "eval-v2",
+                    integration_id: (([$checks[]?.integration_id] | map(select(. != null)) | .[0]) // null)
+                  },
+                  {
                     context: "sbom",
+                    integration_id: (([$checks[]?.integration_id] | map(select(. != null)) | .[0]) // null)
+                  },
+                  {
+                    context: "iac-validate",
+                    integration_id: (([$checks[]?.integration_id] | map(select(. != null)) | .[0]) // null)
+                  },
+                  {
+                    context: "cost-governance",
                     integration_id: (([$checks[]?.integration_id] | map(select(. != null)) | .[0]) // null)
                   },
                   {
@@ -127,7 +139,7 @@ ensure_required_checks() {
     --input "$update_file" >/dev/null
 
   rm -f "$payload_file" "$update_file"
-  echo "ruleset required checks: ensured (eval-safety, sbom, data-governance-policy)"
+  echo "ruleset required checks: ensured (eval-safety, eval-v2, sbom, iac-validate, cost-governance, data-governance-policy)"
 }
 
 ruleset_has_context() {
@@ -190,10 +202,25 @@ if ruleset_has_context "eval-safety"; then
 else
   echo "  ruleset required check eval-safety: missing"
 fi
+if ruleset_has_context "eval-v2"; then
+  echo "  ruleset required check eval-v2: present"
+else
+  echo "  ruleset required check eval-v2: missing"
+fi
 if ruleset_has_context "sbom"; then
   echo "  ruleset required check sbom: present"
 else
   echo "  ruleset required check sbom: missing"
+fi
+if ruleset_has_context "iac-validate"; then
+  echo "  ruleset required check iac-validate: present"
+else
+  echo "  ruleset required check iac-validate: missing"
+fi
+if ruleset_has_context "cost-governance"; then
+  echo "  ruleset required check cost-governance: present"
+else
+  echo "  ruleset required check cost-governance: missing"
 fi
 if ruleset_has_context "data-governance-policy"; then
   echo "  ruleset required check data-governance-policy: present"

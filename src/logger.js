@@ -1,4 +1,5 @@
 const { randomUUID } = require("crypto");
+const { context: otelContext, trace } = require("@opentelemetry/api");
 
 const REDACT_KEYS = new Set([
   "authorization",
@@ -22,12 +23,23 @@ function redact(value) {
   return out;
 }
 
-function log(level, message, context = {}) {
+function log(level, message, ctx = {}) {
+  const activeSpan = trace.getSpan(otelContext.active());
+  const spanCtx = activeSpan ? activeSpan.spanContext() : null;
   const payload = {
     level,
     timestamp: new Date().toISOString(),
     message,
-    context: redact(context),
+    context: redact({
+      ...ctx,
+      ...(spanCtx
+        ? {
+            traceId: spanCtx.traceId,
+            spanId: spanCtx.spanId,
+            traceFlags: spanCtx.traceFlags,
+          }
+        : {}),
+    }),
   };
   const line = JSON.stringify(payload);
   if (level === "error") {

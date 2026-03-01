@@ -79,3 +79,20 @@ jobs:
           name: release-scorecard-v2
           path: .out/releases/release-scorecard-v2-*.md
           if-no-files-found: error
+      - name: Upload release supply-chain artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-supply-chain
+          path: |
+            .out/sbom/*.json
+            .out/provenance/*.json
+          if-no-files-found: error
+      - name: Upload release eval/cost artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-ai-ops
+          path: |
+            .out/evals/eval-v2-*.json
+            .out/cost/*.md
+            .out/cost/*.json
+          if-no-files-found: warn

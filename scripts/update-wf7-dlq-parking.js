@@ -12,6 +12,8 @@ const http = require("http");
 const N8N_URL = process.env.N8N_URL || "http://localhost:5678";
 const N8N_API_KEY = process.env.N8N_API_KEY;
 const WORKFLOW_NAME = "WF-7: DLQ Parking + Replay (AIPipeline)";
+const DLQ_DURABLE_PARK_URL = process.env.DLQ_DURABLE_PARK_URL || "http://localhost:3000/dlq/park";
+const DLQ_DURABLE_MARK_URL = process.env.DLQ_DURABLE_MARK_URL || "http://localhost:3000/dlq/mark";
 
 if (!N8N_API_KEY) {
   console.error("N8N_API_KEY not set.");
@@ -135,6 +137,23 @@ return [{ json: { ...item, text } }];`,
       },
       credentials: { telegramApi: { name: "AIPipeline Telegram" } },
     },
+    {
+      id: "wf7-durable-park",
+      name: "Durable DLQ park",
+      type: "n8n-nodes-base.httpRequest",
+      typeVersion: 4.2,
+      position: [660, -250],
+      continueOnFail: true,
+      alwaysOutputData: true,
+      parameters: {
+        method: "POST",
+        url: DLQ_DURABLE_PARK_URL,
+        sendBody: true,
+        specifyBody: "json",
+        jsonBody: "={{ $('Persist parked event').first().json }}",
+        options: {},
+      },
+    },
 
     {
       id: "wf7-replay-webhook",
@@ -253,10 +272,17 @@ if (item) {
   }
 }
 const isRateLimited = Boolean(err && /429|rate\s*limit|too many requests/i.test((err.message || '') + ' ' + (err.description || '')));
+const status = err ? 'replay_failed' : 'replayed';
 const text = err
   ? ('❌ DLQ replay failed for ' + replayCtx.id + '\\n' + (item?.lastReplayError || 'unknown error') + (isRateLimited ? '\\n(rate-limited)' : ''))
   : ('✅ DLQ replay succeeded for ' + replayCtx.id + '\\nsource=' + (replayCtx.sourceWorkflow || 'unknown'));
-return [{ json: { text } }];`,
+return [{ json: {
+  id: replayCtx.id,
+  status,
+  lastReplayError: item?.lastReplayError || '',
+  lastReplayResultAt: new Date().toISOString(),
+  text,
+} }];`,
       },
     },
     {
@@ -268,8 +294,31 @@ return [{ json: { text } }];`,
       parameters: {
         mode: "manual",
         assignments: {
-          assignments: [{ name: "text", type: "string", value: "=⚠️ DLQ replay skipped for {{ $json.id }}: replayTarget is empty." }],
+          assignments: [
+            { name: "id", type: "string", value: "={{ $json.id }}" },
+            { name: "status", type: "string", value: "replay_skipped_no_target" },
+            { name: "lastReplayError", type: "string", value: "replayTarget is empty" },
+            { name: "lastReplayResultAt", type: "string", value: "={{ new Date().toISOString() }}" },
+            { name: "text", type: "string", value: "=⚠️ DLQ replay skipped for {{ $json.id }}: replayTarget is empty." },
+          ],
         },
+        options: {},
+      },
+    },
+    {
+      id: "wf7-durable-mark",
+      name: "Durable DLQ mark replay",
+      type: "n8n-nodes-base.httpRequest",
+      typeVersion: 4.2,
+      position: [1320, 40],
+      continueOnFail: true,
+      alwaysOutputData: true,
+      parameters: {
+        method: "POST",
+        url: DLQ_DURABLE_MARK_URL,
+        sendBody: true,
+        specifyBody: "json",
+        jsonBody: "={{ { id: $json.id, status: $json.status, lastReplayError: $json.lastReplayError, lastReplayResultAt: $json.lastReplayResultAt } }}",
         options: {},
       },
     },
@@ -292,7 +341,8 @@ return [{ json: { text } }];`,
   connections: {
     "DLQ Park Webhook": { main: [[{ node: "Normalize parking payload", type: "main", index: 0 }]] },
     "Normalize parking payload": { main: [[{ node: "Persist parked event", type: "main", index: 0 }]] },
-    "Persist parked event": { main: [[{ node: "Telegram: DLQ parked", type: "main", index: 0 }]] },
+    "Persist parked event": { main: [[{ node: "Durable DLQ park", type: "main", index: 0 }]] },
+    "Durable DLQ park": { main: [[{ node: "Telegram: DLQ parked", type: "main", index: 0 }]] },
 
     "DLQ Replay Webhook": { main: [[{ node: "Select replay item", type: "main", index: 0 }]] },
     "Select replay item": { main: [[{ node: "If replay item exists", type: "main", index: 0 }]] },
@@ -304,8 +354,9 @@ return [{ json: { text } }];`,
       ],
     },
     "Replay dispatch": { main: [[{ node: "Finalize replay", type: "main", index: 0 }]] },
-    "Finalize replay": { main: [[{ node: "Telegram: replay result", type: "main", index: 0 }]] },
-    "Set replay target missing": { main: [[{ node: "Telegram: replay result", type: "main", index: 0 }]] },
+    "Finalize replay": { main: [[{ node: "Durable DLQ mark replay", type: "main", index: 0 }]] },
+    "Set replay target missing": { main: [[{ node: "Durable DLQ mark replay", type: "main", index: 0 }]] },
+    "Durable DLQ mark replay": { main: [[{ node: "Telegram: replay result", type: "main", index: 0 }]] },
   },
   settings: {},
 };

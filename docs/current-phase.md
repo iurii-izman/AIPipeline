@@ -13,8 +13,8 @@
 
 - **90-дневный execution-срез (Strategy v2):**
   - `P0 Stabilize`: deploy strict mode, Sonar hard gate, eval dataset >=150, backup timer probe.
-  - `P1 Harden`: DR cadence automation, safety eval CI job, SBOM generation, SLO-lite policy.
-  - `P1/P2 Scale baseline`: OTel pilot, cost reporting/alerts, durable DLQ design+pilot.
+  - `P1 Harden`: DR cadence automation, safety eval CI job, SBOM generation, SLO-lite policy, release scorecard v2.
+  - `P1/P2 Scale baseline`: OTel pilot, cost reporting/alerts, durable DLQ mirror, online eval v2 telemetry, IaC baseline, provenance pilot.
 - **Анти-фокус:** не включать queue-mode n8n и не добавлять альтернативные оркестраторы до закрытия `P0/P1`.
 
 - **Ведение задач:** [linear-phase3-runbook.md](linear-phase3-runbook.md) — workflow, labels, ветка `AIP-XX-short-desc`, в PR — `Closes AIP-XX`.

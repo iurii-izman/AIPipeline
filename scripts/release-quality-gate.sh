@@ -61,38 +61,50 @@ done
 
 cd "$REPO_ROOT"
 
-echo "[1/11] lint"
+echo "[1/15] lint"
 npm run lint
 
-echo "[2/11] build"
+echo "[2/15] build"
 npm run build
 
-echo "[3/11] unit/integration test"
+echo "[3/15] unit/integration test"
 npm test
 
-echo "[4/11] integration suite"
+echo "[4/15] integration suite"
 npm run test:integration
 
-echo "[5/11] e2e fixture suite"
+echo "[5/15] e2e fixture suite"
 npm run test:e2e
 
-echo "[6/11] alpha eval gate"
+echo "[6/15] alpha eval gate"
 npm run eval:alpha
 
-echo "[7/11] safety eval gate"
+echo "[7/15] safety eval gate"
 npm run eval:safety
 
-echo "[8/11] data governance policy"
+echo "[8/15] eval v2 (offline+online)"
+npm run eval:v2
+
+echo "[9/15] data governance policy"
 npm run policy:data-governance
 
 if [[ "$skip_dr_cadence" == true ]]; then
-  echo "[9/11] DR cadence freshness (skipped)"
+  echo "[10/15] DR cadence freshness (skipped)"
 else
-  echo "[9/11] DR cadence freshness"
+  echo "[10/15] DR cadence freshness"
   npm run dr:check-cadence
 fi
 
-echo "[10/11] env parity"
+echo "[11/15] cost budget check"
+npm run cost:budget
+
+echo "[12/15] sbom generation"
+npm run sbom:generate
+
+echo "[13/15] provenance pilot generation"
+npm run provenance:generate
+
+echo "[14/15] env parity"
 if [[ "$strict_parity" == true ]]; then
   "$SCRIPT_DIR/check-env-parity.sh" --strict
 else
@@ -100,9 +112,9 @@ else
 fi
 
 if [[ "$skip_observability" == true ]]; then
-  echo "[11/11] observability alerts probe (skipped)"
+  echo "[15/15] observability alerts probe (skipped)"
 else
-  echo "[11/11] observability alerts probe"
+  echo "[15/15] observability alerts probe"
   "$SCRIPT_DIR/check-observability-alerts.sh"
 fi
 

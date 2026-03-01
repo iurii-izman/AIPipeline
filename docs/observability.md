@@ -38,12 +38,24 @@
 - источники: `stack-control.sh`, `configure-github-webhook-wf2.js`, `register-sentry-webhook.js`
 - назначение: trace операций `/deploy`-related control plane и webhook reconfiguration
 
+7. OTel pilot + correlation baseline:
+- runtime OTel pilot включается флагом `OTEL_PILOT_ENABLED=true`
+- trace/span fields автоматически добавляются в structured logs (`traceId`, `spanId`)
+- outbound HTTP clients инжектят trace context (`traceparent`) через `fetchWithTimeout`
+
+8. AI online telemetry endpoints:
+- `POST /telemetry/ai-event` — ingest online classification events (fallback/mismatch/cost signals)
+- `GET /telemetry/ai-summary?days=30` — online summary (`fallbackRate`, `mismatchRate`, `criticalMissRate`, `costUsdTotal`)
+- storage: `.runtime-logs/ai-online-telemetry.jsonl`
+
 ## Где смотреть
 
 - App logs: stdout процесса (`npm start` / `start-app-with-keyring.sh`)
 - Sentry project: org `aipipeline`, project `node`
 - n8n execution history: UI или `/api/v1/executions`
 - DLQ events: WF-7 execution history + webhook replay runs
+- AI online telemetry store: `.runtime-logs/ai-online-telemetry.jsonl`
+- Durable DLQ store: `.runtime-logs/dlq-events.jsonl`
 - Telegram alerts: рабочий чат бота
 - audit stream: `.runtime-logs/audit.log` + Grafana panel `Audit Trail`
 
@@ -73,6 +85,7 @@ Workflow failure alerting policy:
 - `/health` success rate >= 99% (manual checks на текущей фазе)
 - `/status` отвечает <= 3s в нормальном local setup
 - WF-2…WF-7 failures видны в execution history и/или DLQ alerts
+- Политика и cadence: [slo-lite-policy.md](slo-lite-policy.md)
 
 ## Runbooks
 
@@ -93,4 +106,5 @@ node scripts/update-wf7-dlq-parking.js
 ./scripts/check-observability-alerts.sh
 curl -i http://localhost:3000/health
 curl -i http://localhost:3000/status
+curl -i -H "Authorization: Bearer $STATUS_AUTH_TOKEN" "http://localhost:3000/telemetry/ai-summary?days=30"
 ```

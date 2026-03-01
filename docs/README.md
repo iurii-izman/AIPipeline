@@ -39,6 +39,7 @@
 - [observability.md](observability.md)
 - [slo-lite-policy.md](slo-lite-policy.md)
 - [data-governance-policy.md](data-governance-policy.md)
+- [../infra/terraform/README.md](../infra/terraform/README.md)
 - [delivery-pipeline-compliance.md](delivery-pipeline-compliance.md)
 - [charter.md](charter.md)
 - [audit-and-history.md](audit-and-history.md)

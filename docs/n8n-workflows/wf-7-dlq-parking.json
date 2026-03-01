@@ -72,6 +72,26 @@
       }
     },
     {
+      "id": "wf7-durable-park",
+      "name": "Durable DLQ park",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        -250
+      ],
+      "continueOnFail": true,
+      "alwaysOutputData": true,
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3000/dlq/park",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $('Persist parked event').first().json }}",
+        "options": {}
+      }
+    },
+    {
       "id": "wf7-replay-webhook",
       "name": "DLQ Replay Webhook",
       "type": "n8n-nodes-base.webhook",
@@ -193,7 +213,7 @@
         60
       ],
       "parameters": {
-        "jsCode": "const db = $getWorkflowStaticData('global');\nif (!Array.isArray(db.dlq)) db.dlq = [];\nconst replayCtx = $('Select replay item').first().json;\nconst item = db.dlq.find((x) => x.id === replayCtx.id);\nconst err = $json.error || null;\nif (item) {\n  item.lastReplayResultAt = new Date().toISOString();\n  if (err) {\n    item.status = 'replay_failed';\n    item.lastReplayError = err.message || err.description || JSON.stringify(err).slice(0, 300);\n  } else {\n    item.status = 'replayed';\n    item.lastReplayError = '';\n  }\n}\nconst isRateLimited = Boolean(err && /429|rates*limit|too many requests/i.test((err.message || '') + ' ' + (err.description || '')));\nconst text = err\n  ? ('❌ DLQ replay failed for ' + replayCtx.id + '\\n' + (item?.lastReplayError || 'unknown error') + (isRateLimited ? '\\n(rate-limited)' : ''))\n  : ('✅ DLQ replay succeeded for ' + replayCtx.id + '\\nsource=' + (replayCtx.sourceWorkflow || 'unknown'));\nreturn [{ json: { text } }];"
+        "jsCode": "const db = $getWorkflowStaticData('global');\nif (!Array.isArray(db.dlq)) db.dlq = [];\nconst replayCtx = $('Select replay item').first().json;\nconst item = db.dlq.find((x) => x.id === replayCtx.id);\nconst err = $json.error || null;\nif (item) {\n  item.lastReplayResultAt = new Date().toISOString();\n  if (err) {\n    item.status = 'replay_failed';\n    item.lastReplayError = err.message || err.description || JSON.stringify(err).slice(0, 300);\n  } else {\n    item.status = 'replayed';\n    item.lastReplayError = '';\n  }\n}\nconst isRateLimited = Boolean(err && /429|rates*limit|too many requests/i.test((err.message || '') + ' ' + (err.description || '')));\nconst status = err ? 'replay_failed' : 'replayed';\nconst text = err\n  ? ('❌ DLQ replay failed for ' + replayCtx.id + '\\n' + (item?.lastReplayError || 'unknown error') + (isRateLimited ? '\\n(rate-limited)' : ''))\n  : ('✅ DLQ replay succeeded for ' + replayCtx.id + '\\nsource=' + (replayCtx.sourceWorkflow || 'unknown'));\nreturn [{ json: {\n  id: replayCtx.id,\n  status,\n  lastReplayError: item?.lastReplayError || '',\n  lastReplayResultAt: new Date().toISOString(),\n  text,\n} }];"
       }
     },
     {
@@ -210,12 +230,52 @@
         "assignments": {
           "assignments": [
             {
+              "name": "id",
+              "type": "string",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "name": "status",
+              "type": "string",
+              "value": "replay_skipped_no_target"
+            },
+            {
+              "name": "lastReplayError",
+              "type": "string",
+              "value": "replayTarget is empty"
+            },
+            {
+              "name": "lastReplayResultAt",
+              "type": "string",
+              "value": "={{ new Date().toISOString() }}"
+            },
+            {
               "name": "text",
               "type": "string",
               "value": "=⚠️ DLQ replay skipped for {{ $json.id }}: replayTarget is empty."
             }
           ]
         },
+        "options": {}
+      }
+    },
+    {
+      "id": "wf7-durable-mark",
+      "name": "Durable DLQ mark replay",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        40
+      ],
+      "continueOnFail": true,
+      "alwaysOutputData": true,
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3000/dlq/mark",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { id: $json.id, status: $json.status, lastReplayError: $json.lastReplayError, lastReplayResultAt: $json.lastReplayResultAt } }}",
         "options": {}
       }
     },
@@ -267,6 +327,17 @@
       ]
     },
     "Persist parked event": {
+      "main": [
+        [
+          {
+            "node": "Durable DLQ park",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Durable DLQ park": {
       "main": [
         [
           {
@@ -350,7 +421,7 @@
       "main": [
         [
           {
-            "node": "Telegram: replay result",
+            "node": "Durable DLQ mark replay",
             "type": "main",
             "index": 0
           }
@@ -358,6 +429,17 @@
       ]
     },
     "Set replay target missing": {
+      "main": [
+        [
+          {
+            "node": "Durable DLQ mark replay",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Durable DLQ mark replay": {
       "main": [
         [
           {

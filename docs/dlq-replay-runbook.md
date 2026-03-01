@@ -6,6 +6,9 @@ WF-7 централизует парковку ошибок из WF-2/WF-3/WF-4/
 
 - Parking endpoint: `POST /webhook/wf-dlq-park`
 - Replay endpoint: `POST /webhook/wf-dlq-replay`
+- Durable storage mirror endpoints (app):
+  - `POST /dlq/park`
+  - `POST /dlq/mark`
 
 ## Preconditions
 
@@ -14,6 +17,10 @@ WF-7 централизует парковку ошибок из WF-2/WF-3/WF-4/
 ```bash
 source scripts/load-env-from-keyring.sh
 node scripts/update-wf7-dlq-parking.js
+```
+3. (Рекомендуется) App server запущен, чтобы durable DLQ mirror принимал события:
+```bash
+./scripts/start-app-with-keyring.sh
 ```
 
 ## Parking payload contract
@@ -56,6 +63,7 @@ curl -sS -X POST https://n8n.aipipeline.cc/webhook/wf-dlq-replay \
 2. Если `replayTarget` пустой, replay невозможен — событие требует ручного разбора.
 3. После успешного replay статус item в WF-7 меняется на `replayed`.
 4. При ошибке replay статус меняется на `replay_failed`.
+5. Durable mirror в `.runtime-logs/dlq-events.jsonl` должен обновляться через `/dlq/park` и `/dlq/mark`.
 
 ## Troubleshooting
 

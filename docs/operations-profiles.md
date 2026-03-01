@@ -179,10 +179,38 @@ Bootstrap недостающих hardening env в keyring:
 ./scripts/release-quality-gate.sh --strict-parity --generate-scorecard --version vX.Y.Z --env staging
 ```
 
+IaC baseline validation:
+
+```bash
+./scripts/check-iac-baseline.sh
+```
+
 Data governance policy gate:
 
 ```bash
 ./scripts/check-data-governance-policy.sh --strict
+```
+
+AI online telemetry + cost governance:
+
+```bash
+curl -X POST http://localhost:3000/telemetry/ai-event \
+  -H 'Content-Type: application/json' \
+  -d '{"source":"wf-3","model":"gpt-4o-mini","fallbackUsed":false,"promptTokens":1200,"completionTokens":180,"expectedSeverity":"critical","predictedSeverity":"critical"}'
+
+curl -H "Authorization: Bearer $STATUS_AUTH_TOKEN" \
+  "http://localhost:3000/telemetry/ai-summary?days=30"
+
+npm run eval:v2
+npm run cost:report
+npm run cost:budget
+```
+
+Supply-chain provenance pilot:
+
+```bash
+npm run sbom:generate
+npm run provenance:generate
 ```
 
 ## Рекомендованный режим

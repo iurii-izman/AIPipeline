@@ -9,7 +9,7 @@
 - Приоритетная очередь на 90 дней (из `docs/strategic-vision-and-tooling.md`):
   - `P0` Stabilize: deploy strict mode (без silent dry-run), Sonar hard gate, eval dataset >=150, backup timer probe.
   - `P1` Harden: DR cadence automation, release scorecard v2, data governance policy checks, safety eval CI job, SBOM generation, SLO-lite policy.
-  - `P1/P2` Scale baseline: OTel pilot, cost reporting/alerts, durable DLQ design+pilot.
+  - `P1/P2` Scale baseline: OTel pilot, cost reporting/alerts, durable DLQ mirror, online eval-v2 telemetry.
   - Анти-фокус: не запускать queue-mode n8n и альтернативные оркестраторы до закрытия P0/P1 baseline.
 - Reliability hardening выполнен:
   - retry/backoff + rate-limit handling внедрены в WF-2/WF-3/WF-4/WF-5;
@@ -93,19 +93,19 @@
 
 ## Что остаётся до полного closure
 
-0. Подтверждать remote release evidence после изменений в hardening:
+0. Подтверждать remote release evidence после изменений в hardening/scale baseline:
    - запускать GitHub workflow `Release Gate` с inputs `generate_scorecard=true`, `version=vX.Y.Z`, `target_env=staging|production`;
    - проверять upload artifact `release-scorecard-v2` в run summary;
    - учитывать, что в GitHub-hosted runner gate использует `--skip-dr-cadence` (локальный DR cadence остается обязательным в ops цикле).
 1. Поддерживать rotation/валидность hardening env в keyring и runtime (`STATUS_AUTH_TOKEN`, `GITHUB_WEBHOOK_SECRET`, `SENTRY_WEBHOOK_SECRET`, `MODEL_CLASSIFIER_MODE`, `MODEL_KILL_SWITCH`); bootstrap: `./scripts/bootstrap-hardening-env-keyring.sh`.
-2. Поддерживать актуальность repository ruleset/checks в GitHub (включая `build`, `integration`, `e2e-fixtures`, `eval-alpha`, `security-audit`, `CodeQL`, `SonarCloud`) при изменениях CI.
-  - Добавлены новые required checks: `eval-safety`, `sbom`, `data-governance-policy`.
+2. Поддерживать актуальность repository ruleset/checks в GitHub (включая `build`, `integration`, `e2e-fixtures`, `eval-alpha`, `eval-safety`, `eval-v2`, `sbom`, `iac-validate`, `cost-governance`, `security-audit`, `CodeQL`, `SonarCloud`) при изменениях CI.
    - SonarCloud workflow в репо: `.github/workflows/sonarcloud.yml`; repo vars: `SONAR_PROJECT_KEY`, `SONAR_ORGANIZATION`.
    - Для прохождения обязательного SonarCloud scan должен быть задан repo secret `SONAR_TOKEN` (иначе workflow fail-fast).
    - Быстрая синхронизация vars/secrets из keyring: `./scripts/sync-github-repo-controls.sh`.
    - Автоподготовка deploy webhook secrets (из `CLOUDFLARE_PUBLIC_BASE_URL`): `./scripts/bootstrap-deploy-webhooks.sh`.
-3. Поддерживать и расширять eval dataset (текущая база: 150 кейсов) перед rollout-изменениями `MODEL_CLASSIFIER_MODE=full_primary`.
+3. Поддерживать и расширять eval dataset (текущая база: 150 кейсов) + online telemetry sample перед rollout-изменениями `MODEL_CLASSIFIER_MODE=full_primary`.
    - Rollout policy зафиксирована в `docs/adr-001-full-primary-rollout.md`.
+   - Eval v2 gate: `npm run eval:v2`.
 4. Поддерживать backup retention policy в рабочем режиме:
    - cleanup: `./scripts/cleanup-backups.sh --retention-days 7`;
    - timer: `./scripts/install-backup-retention-timer.sh --retention-days 7` (установлен; мониторинг через `systemctl --user status aipipeline-backup-retention.timer`);
@@ -116,13 +116,15 @@
 5. Поддерживать release scorecard v2 в релизном цикле:
    - `./scripts/release-quality-gate.sh --strict-parity --generate-scorecard --version vX.Y.Z --env staging`.
    - Через `.github/workflows/release-gate.yml` запускать `workflow_dispatch` с `generate_scorecard=true` и сохранять artifact `release-scorecard-v2` как release evidence.
+   - Проверять `release-supply-chain` (SBOM + provenance) и `release-ai-ops` (eval-v2 + cost report) artifacts.
    - Шаблон: `docs/templates/release-scorecard-v2.md`.
 6. Поддерживать data governance policy gate в CI/release:
    - `./scripts/check-data-governance-policy.sh --strict`;
    - policy doc: `docs/data-governance-policy.md`.
 7. Поддерживать регулярный цикл evidence-sync в Notion Sprint Log/Runbook.
 8. Поддерживать closure audit (`audit-linear-github-closure.js`) в регулярном цикле.
-9. NotebookLM: weekly UI upload source-bundle (manual-only), подготовка через `./scripts/notebooklm-weekly-refresh.sh`.
+9. Поддерживать IaC baseline (`infra/terraform`) и проверку `npm run iac:validate`.
+10. NotebookLM: weekly UI upload source-bundle (manual-only), подготовка через `./scripts/notebooklm-weekly-refresh.sh`.
 
 ## Рабочий цикл дальше
 

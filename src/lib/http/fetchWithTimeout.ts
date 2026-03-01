@@ -1,3 +1,5 @@
+import { context, propagation } from "@opentelemetry/api";
+
 export class RequestTimeoutError extends Error {
   constructor(timeoutMs: number) {
     super(`Request timed out after ${timeoutMs}ms`);
@@ -62,9 +64,17 @@ export async function fetchWithTimeout(
 ): Promise<Response> {
   const { signal, cleanup } = createTimeoutSignal(options);
   const timeoutMs = options?.timeoutMs;
+  const headers = new Headers(init?.headers ?? {});
+  propagation.inject(context.active(), headers, {
+    set(carrier, key, value) {
+      carrier.set(key, String(value));
+    },
+  });
+
   try {
     return await fetcher(input, {
       ...init,
+      headers,
       ...(signal ? { signal } : {}),
     });
   } catch (error) {
