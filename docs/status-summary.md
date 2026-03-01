@@ -30,7 +30,7 @@
 - GitHub controls sync: `./scripts/sync-github-repo-controls.sh` (deploy webhooks/tokens + parity secrets/vars + required checks)
 - DR cadence timer: `aipipeline-dr-cadence.timer` installed/enabled (`systemctl --user status aipipeline-dr-cadence.timer`)
 - DR cadence last successful run: `2026-03-01T20:24:59+02:00` (`/var/home/user/Projects/AIPipeline/.out/drills/dr-restore-drill-20260301-202456.json`)
-- Git sync state: local `main` is ahead of `origin/main` by 4 commits (push pending due intermittent GitHub connectivity timeout on 2026-03-01)
+- Git sync state: local `main` is ahead of `origin/main` (push pending due intermittent GitHub connectivity timeout on 2026-03-01)
 
 ## Hardening Completed
 - `/status` protected with bearer auth + rate-limit + request-size guard
@@ -39,7 +39,7 @@
 - Model controls in WF-3: `MODEL_CLASSIFIER_MODE`, `MODEL_KILL_SWITCH`
 - WF-3 OWASP hardening: sanitized classifier input + strict LLM schema validation + heuristic fallback on mismatch
 - Timeout/abort transport added to typed API clients
-- Eval dataset expanded to `54` labeled cases with CI artifact publishing for eval reports
+- Eval dataset expanded to `80` labeled cases with CI artifact publishing for eval reports
 - Release governance v2 baseline added: scorecard template + scorecard generator script
 - Data governance baseline added: policy doc + CI/release policy checks
 - DR cadence baseline added: evidence freshness check + systemd automation script

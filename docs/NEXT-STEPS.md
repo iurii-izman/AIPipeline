@@ -104,7 +104,7 @@
    - Для прохождения обязательного SonarCloud scan должен быть задан repo secret `SONAR_TOKEN` (иначе workflow fail-fast).
    - Быстрая синхронизация vars/secrets из keyring: `./scripts/sync-github-repo-controls.sh`.
    - Автоподготовка deploy webhook secrets (из `CLOUDFLARE_PUBLIC_BASE_URL`): `./scripts/bootstrap-deploy-webhooks.sh`.
-3. Поддерживать и расширять eval dataset (текущая база: 54 кейса) перед rollout-изменениями `MODEL_CLASSIFIER_MODE=full_primary`.
+3. Поддерживать и расширять eval dataset (текущая база: 80 кейсов) перед rollout-изменениями `MODEL_CLASSIFIER_MODE=full_primary`.
    - Rollout policy зафиксирована в `docs/adr-001-full-primary-rollout.md`.
 4. Поддерживать backup retention policy в рабочем режиме:
    - cleanup: `./scripts/cleanup-backups.sh --retention-days 7`;

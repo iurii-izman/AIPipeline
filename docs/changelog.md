@@ -19,6 +19,9 @@
 - Backup retention timer установлен:
   - `./scripts/install-backup-retention-timer.sh --retention-days 7`
   - `aipipeline-backup-retention.timer` в состоянии `active (waiting)`.
+- Eval dataset v1.1 расширен до `80` кейсов (40 critical / 40 non_critical):
+  - `evals/datasets/sentry-severity-alpha.json`
+  - `npm run eval:alpha` -> `sampleSize: 80`, gate pass.
 
 ### P1 Harden #2: DR cadence + release scorecard v2 + governance checks
 - Added DR cadence automation baseline:

@@ -15,17 +15,498 @@
     "meta": {
       "labeledBy": "maintainer",
       "labeledAt": "2026-03-01T00:00:00.000Z",
-      "notes": "P0 candidate"
+      "notes": "db timeout cascade"
     }
   },
   {
     "caseId": "alpha-002",
     "source": "sentry",
     "input": {
+      "title": "DB connection pool exhausted during billing",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "db timeout cascade"
+    }
+  },
+  {
+    "caseId": "alpha-003",
+    "source": "sentry",
+    "input": {
+      "title": "Database timeout storm in order service",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "db timeout cascade"
+    }
+  },
+  {
+    "caseId": "alpha-004",
+    "source": "sentry",
+    "input": {
+      "title": "Too many connections in postgres cluster",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "db timeout cascade"
+    }
+  },
+  {
+    "caseId": "alpha-005",
+    "source": "sentry",
+    "input": {
+      "title": "Checkout db timeout and retry storm",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "db timeout cascade"
+    }
+  },
+  {
+    "caseId": "alpha-006",
+    "source": "sentry",
+    "input": {
+      "title": "Inventory database connection pool exhausted",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "db timeout cascade"
+    }
+  },
+  {
+    "caseId": "alpha-007",
+    "source": "sentry",
+    "input": {
+      "title": "DB timeout in payment capture worker",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "db timeout cascade"
+    }
+  },
+  {
+    "caseId": "alpha-008",
+    "source": "sentry",
+    "input": {
+      "title": "Auth database timeout cascade",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "db timeout cascade"
+    }
+  },
+  {
+    "caseId": "alpha-009",
+    "source": "sentry",
+    "input": {
+      "title": "Reporting db too many connections alert",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "db timeout cascade"
+    }
+  },
+  {
+    "caseId": "alpha-010",
+    "source": "sentry",
+    "input": {
+      "title": "Database timeout in webhook processor",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "db timeout cascade"
+    }
+  },
+  {
+    "caseId": "alpha-011",
+    "source": "sentry",
+    "input": {
+      "title": "Queue consumer db connection pool exhausted",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "db timeout cascade"
+    }
+  },
+  {
+    "caseId": "alpha-012",
+    "source": "sentry",
+    "input": {
+      "title": "DB timeout on transaction commit path",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "db timeout cascade"
+    }
+  },
+  {
+    "caseId": "alpha-013",
+    "source": "sentry",
+    "input": {
+      "title": "Orders db timeout cascade after deploy",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "db timeout cascade"
+    }
+  },
+  {
+    "caseId": "alpha-014",
+    "source": "sentry",
+    "input": {
+      "title": "Database too many connections in API node",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "db timeout cascade"
+    }
+  },
+  {
+    "caseId": "alpha-015",
+    "source": "sentry",
+    "input": {
+      "title": "Fatal OOM in worker process",
+      "level": "fatal",
+      "project": "node",
+      "payloadSnippet": "outofmemory crash loop in worker"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "critical_generic"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-016",
+    "source": "sentry",
+    "input": {
+      "title": "Panic in webhook handler",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "panic after nil pointer in parser"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "critical_generic"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-017",
+    "source": "sentry",
+    "input": {
+      "title": "Crash loop in scheduler",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "crash loop detected in scheduler pod"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "critical_generic"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-018",
+    "source": "sentry",
+    "input": {
+      "title": "Payment outage in checkout flow",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "payment outage causing failed charges"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "critical_generic"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-019",
+    "source": "sentry",
+    "input": {
+      "title": "Auth outage in login API",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "auth outage across region"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "critical_generic"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-020",
+    "source": "sentry",
+    "input": {
+      "title": "OOM killer terminated node process",
+      "level": "fatal",
+      "project": "node",
+      "payloadSnippet": "oom and restart loop"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "critical_generic"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-021",
+    "source": "sentry",
+    "input": {
+      "title": "Worker panic during image processing",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "panic trace from image worker"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "critical_generic"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-022",
+    "source": "sentry",
+    "input": {
+      "title": "Crash loop in notification service",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "service entered crash loop after restart"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "critical_generic"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-023",
+    "source": "sentry",
+    "input": {
+      "title": "Checkout payment outage escalated",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "payment outage P0 incident"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "critical_generic"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-024",
+    "source": "sentry",
+    "input": {
+      "title": "Fatal memory exhaustion in cron worker",
+      "level": "fatal",
+      "project": "node",
+      "payloadSnippet": "outofmemory repeatedly observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "critical_generic"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-025",
+    "source": "sentry",
+    "input": {
+      "title": "Authentication outage for enterprise tenant",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "auth outage reported by monitors"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "critical_generic"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-026",
+    "source": "sentry",
+    "input": {
+      "title": "Kernel OOM impacted background worker",
+      "level": "fatal",
+      "project": "node",
+      "payloadSnippet": "oom event in background job runtime"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "critical_generic"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-027",
+    "source": "sentry",
+    "input": {
+      "title": "Panic and crash loop in API gateway",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "panic followed by crash loop"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "critical_generic"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-028",
+    "source": "sentry",
+    "input": {
       "title": "UI warning in settings page",
       "level": "warning",
       "project": "node",
-      "payloadSnippet": "component render warning"
+      "payloadSnippet": "non-blocking warning and normal recovery"
     },
     "expected": {
       "severity": "non_critical",
@@ -37,21 +518,965 @@
     }
   },
   {
-    "caseId": "alpha-003",
+    "caseId": "alpha-029",
     "source": "sentry",
     "input": {
-      "title": "Fatal OOM in worker",
-      "level": "fatal",
+      "title": "Minor warning for deprecated endpoint",
+      "level": "warning",
       "project": "node",
-      "payloadSnippet": "outofmemory crash loop"
+      "payloadSnippet": "non-blocking warning and normal recovery"
     },
     "expected": {
-      "severity": "critical",
-      "incidentType": "critical_generic"
+      "severity": "non_critical",
+      "incidentType": "non_critical"
     },
     "meta": {
       "labeledBy": "maintainer",
       "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-030",
+    "source": "sentry",
+    "input": {
+      "title": "Component render warning in dashboard",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-031",
+    "source": "sentry",
+    "input": {
+      "title": "Info event from telemetry adapter",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-032",
+    "source": "sentry",
+    "input": {
+      "title": "Low priority warning in notifications",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-033",
+    "source": "sentry",
+    "input": {
+      "title": "Validation warning on optional field",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-034",
+    "source": "sentry",
+    "input": {
+      "title": "UI typo report from admin panel",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-035",
+    "source": "sentry",
+    "input": {
+      "title": "Slow query warning below threshold",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-036",
+    "source": "sentry",
+    "input": {
+      "title": "Minor layout warning in mobile view",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-037",
+    "source": "sentry",
+    "input": {
+      "title": "Cache miss warning in analytics widget",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-038",
+    "source": "sentry",
+    "input": {
+      "title": "Debug event from cron heartbeat",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-039",
+    "source": "sentry",
+    "input": {
+      "title": "Retry warning resolved automatically",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-040",
+    "source": "sentry",
+    "input": {
+      "title": "Harmless warning from feature flag check",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-041",
+    "source": "sentry",
+    "input": {
+      "title": "Informational event: settings saved",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-042",
+    "source": "sentry",
+    "input": {
+      "title": "User avatar upload warning recovered",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-043",
+    "source": "sentry",
+    "input": {
+      "title": "Non-blocking warning in email template",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-044",
+    "source": "sentry",
+    "input": {
+      "title": "Analytics event schema warning",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-045",
+    "source": "sentry",
+    "input": {
+      "title": "Minor CSS warning in profile page",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-046",
+    "source": "sentry",
+    "input": {
+      "title": "Webhook delivered with warning header",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-047",
+    "source": "sentry",
+    "input": {
+      "title": "Background sync warning but completed",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-048",
+    "source": "sentry",
+    "input": {
+      "title": "UI warning: missing translation key",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-049",
+    "source": "sentry",
+    "input": {
+      "title": "Report generation warning for optional chart",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-050",
+    "source": "sentry",
+    "input": {
+      "title": "Transient network warning recovered",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-051",
+    "source": "sentry",
+    "input": {
+      "title": "Info event: scheduled cleanup completed",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-052",
+    "source": "sentry",
+    "input": {
+      "title": "Warning: stale cache key skipped",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-053",
+    "source": "sentry",
+    "input": {
+      "title": "UI warning in onboarding wizard",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-054",
+    "source": "sentry",
+    "input": {
+      "title": "Minor warning in markdown renderer",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  {
+    "caseId": "alpha-055",
+    "source": "sentry",
+    "input": {
+      "title": "Database timeout cascade in checkout shard B",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.1 expansion: db timeout cascade"
+    }
+  },
+  {
+    "caseId": "alpha-056",
+    "source": "sentry",
+    "input": {
+      "title": "Payment service db pool exhausted under retry storm",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.1 expansion: db timeout cascade"
+    }
+  },
+  {
+    "caseId": "alpha-057",
+    "source": "sentry",
+    "input": {
+      "title": "Primary postgres connections exhausted in auth cluster",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.1 expansion: db timeout cascade"
+    }
+  },
+  {
+    "caseId": "alpha-058",
+    "source": "sentry",
+    "input": {
+      "title": "Order writer blocked by database timeout avalanche",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.1 expansion: db timeout cascade"
+    }
+  },
+  {
+    "caseId": "alpha-059",
+    "source": "sentry",
+    "input": {
+      "title": "Inventory sync failed due to db timeout cascade",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.1 expansion: db timeout cascade"
+    }
+  },
+  {
+    "caseId": "alpha-060",
+    "source": "sentry",
+    "input": {
+      "title": "Billing worker hit critical db timeout storm",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.1 expansion: db timeout cascade"
+    }
+  },
+  {
+    "caseId": "alpha-061",
+    "source": "sentry",
+    "input": {
+      "title": "Webhook processor stalled by connection pool exhaustion",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.1 expansion: db timeout cascade"
+    }
+  },
+  {
+    "caseId": "alpha-062",
+    "source": "sentry",
+    "input": {
+      "title": "Read replica saturation triggered db timeout cascade",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.1 expansion: db timeout cascade"
+    }
+  },
+  {
+    "caseId": "alpha-063",
+    "source": "sentry",
+    "input": {
+      "title": "Session store unavailable due to db timeout surge",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.1 expansion: db timeout cascade"
+    }
+  },
+  {
+    "caseId": "alpha-064",
+    "source": "sentry",
+    "input": {
+      "title": "Queue consumer critical outage from db pool exhaustion",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.1 expansion: db timeout cascade"
+    }
+  },
+  {
+    "caseId": "alpha-065",
+    "source": "sentry",
+    "input": {
+      "title": "Checkout pipeline critical: too many postgres connections",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.1 expansion: db timeout cascade"
+    }
+  },
+  {
+    "caseId": "alpha-066",
+    "source": "sentry",
+    "input": {
+      "title": "DB timeout cascade detected in transaction commit path",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.1 expansion: db timeout cascade"
+    }
+  },
+  {
+    "caseId": "alpha-067",
+    "source": "sentry",
+    "input": {
+      "title": "Core API degraded by database timeout cascade",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.1 expansion: db timeout cascade"
+    }
+  },
+  {
+    "caseId": "alpha-068",
+    "source": "sentry",
+    "input": {
+      "title": "UI warning: optional tooltip failed to render",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.1 expansion: non-critical warning"
+    }
+  },
+  {
+    "caseId": "alpha-069",
+    "source": "sentry",
+    "input": {
+      "title": "Warning: stale analytics payload skipped safely",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.1 expansion: non-critical warning"
+    }
+  },
+  {
+    "caseId": "alpha-070",
+    "source": "sentry",
+    "input": {
+      "title": "Background job warning with successful retry",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.1 expansion: non-critical warning"
+    }
+  },
+  {
+    "caseId": "alpha-071",
+    "source": "sentry",
+    "input": {
+      "title": "Minor warning in dashboard widget hydration",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.1 expansion: non-critical warning"
+    }
+  },
+  {
+    "caseId": "alpha-072",
+    "source": "sentry",
+    "input": {
+      "title": "Non-blocking warning in export formatter",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.1 expansion: non-critical warning"
+    }
+  },
+  {
+    "caseId": "alpha-073",
+    "source": "sentry",
+    "input": {
+      "title": "Cache miss warning with normal recovery path",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.1 expansion: non-critical warning"
+    }
+  },
+  {
+    "caseId": "alpha-074",
+    "source": "sentry",
+    "input": {
+      "title": "Warning in email preview parser recovered",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.1 expansion: non-critical warning"
+    }
+  },
+  {
+    "caseId": "alpha-075",
+    "source": "sentry",
+    "input": {
+      "title": "Optional telemetry event dropped with warning",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.1 expansion: non-critical warning"
+    }
+  },
+  {
+    "caseId": "alpha-076",
+    "source": "sentry",
+    "input": {
+      "title": "Transient warning in markdown sanitizer",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.1 expansion: non-critical warning"
+    }
+  },
+  {
+    "caseId": "alpha-077",
+    "source": "sentry",
+    "input": {
+      "title": "Warning: feature-flag metadata not found",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.1 expansion: non-critical warning"
+    }
+  },
+  {
+    "caseId": "alpha-078",
+    "source": "sentry",
+    "input": {
+      "title": "Minor warning in audit log serializer",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.1 expansion: non-critical warning"
+    }
+  },
+  {
+    "caseId": "alpha-079",
+    "source": "sentry",
+    "input": {
+      "title": "Warning in low-priority cron task recovered",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.1 expansion: non-critical warning"
+    }
+  },
+  {
+    "caseId": "alpha-080",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning in report footer renderer",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.1 expansion: non-critical warning"
     }
   }
 ]
