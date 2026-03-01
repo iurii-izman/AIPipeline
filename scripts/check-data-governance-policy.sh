@@ -17,6 +17,11 @@ markdown=false
 failures=0
 warnings=0
 checks=()
+search_tool="grep"
+
+if command -v rg >/dev/null 2>&1; then
+  search_tool="rg"
+fi
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -51,10 +56,28 @@ add_result() {
 check_contains() {
   local pattern="$1"
   local name="$2"
-  if rg -q "$pattern" "$POLICY_FILE"; then
+  if search_in_file "$pattern"; then
     add_result "OK" "$name"
   else
     add_result "FAIL" "$name (missing)"
+  fi
+}
+
+search_in_file() {
+  local pattern="$1"
+  if [[ "$search_tool" == "rg" ]]; then
+    rg -q "$pattern" "$POLICY_FILE"
+  else
+    grep -Eq "$pattern" "$POLICY_FILE"
+  fi
+}
+
+search_in_file_with_line() {
+  local pattern="$1"
+  if [[ "$search_tool" == "rg" ]]; then
+    rg -n "$pattern" "$POLICY_FILE" >/dev/null 2>&1
+  else
+    grep -En "$pattern" "$POLICY_FILE" >/dev/null 2>&1
   fi
 }
 
@@ -71,14 +94,14 @@ else
   check_contains "^## Policy Checks and Cadence" "section Policy Checks and Cadence"
 
   for system in GitHub Linear Notion Sentry Telegram n8n; do
-    if rg -q "$system" "$POLICY_FILE"; then
+    if search_in_file "$system"; then
       add_result "OK" "inventory includes $system"
     else
       add_result "FAIL" "inventory missing $system"
     fi
   done
 
-  if rg -q "(days|day|Retention)" "$POLICY_FILE"; then
+  if search_in_file "(days|day|Retention)"; then
     add_result "OK" "retention window declared"
   else
     add_result "FAIL" "retention window not declared"
@@ -86,7 +109,7 @@ else
 fi
 
 # Lightweight secret-pattern check for policy docs.
-if rg -n "(TOKEN|API_KEY|SECRET|PASSWORD|DSN)\\s*[:=]\\s*[A-Za-z0-9]{8,}" "$POLICY_FILE" >/dev/null 2>&1; then
+if search_in_file_with_line "(TOKEN|API_KEY|SECRET|PASSWORD|DSN)\\s*[:=]\\s*[A-Za-z0-9]{8,}"; then
   add_result "FAIL" "possible secret-like value in policy doc"
 else
   add_result "OK" "no obvious secret-like values in policy doc"
@@ -117,4 +140,3 @@ fi
 if [[ "$strict" == "true" && "$failures" -gt 0 ]]; then
   exit 1
 fi
-
