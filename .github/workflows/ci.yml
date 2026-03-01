@@ -253,6 +253,20 @@ jobs:
       - name: Verify workflow governance invariants
         run: npm run workflow:governance
 
+  docs-links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - name: Install
+        run: npm ci
+      - name: Validate documentation links
+        run: npm run docs:check-links
+
   data-governance-policy:
     runs-on: ubuntu-latest
     steps:

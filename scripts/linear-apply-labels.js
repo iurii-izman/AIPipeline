@@ -2,7 +2,7 @@
 /**
  * Set labels on Linear issues (type or domain). Uses GraphQL API.
  * Run: source scripts/load-env-from-keyring.sh && node scripts/linear-apply-labels.js
- * Labels from docs/linear-setup.md: Infra, Documentation, Feature, etc.
+ * Labels baseline from docs/linear-phase3-runbook.md (legacy snapshot: docs/archive/linear-setup.md).
  */
 
 const https = require("https");
