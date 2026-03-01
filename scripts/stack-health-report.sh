@@ -36,6 +36,39 @@ check_proc() {
   fi
 }
 
+check_backup_retention_timer() {
+  local timer_name="aipipeline-backup-retention.timer"
+  local service_name="aipipeline-backup-retention.service"
+
+  if ! command -v systemctl >/dev/null 2>&1; then
+    echo "backup retention timer: unknown (systemctl unavailable)"
+    return
+  fi
+
+  local enabled active next_trigger
+  if ! enabled="$(systemctl --user is-enabled "$timer_name" 2>/dev/null)"; then
+    echo "backup retention timer: not installed"
+    return
+  fi
+
+  active="$(systemctl --user is-active "$timer_name" 2>/dev/null || true)"
+  next_trigger="$(systemctl --user list-timers --all "$timer_name" --no-legend 2>/dev/null | awk '{$1=$1; print}' || true)"
+
+  echo "backup retention timer enabled: $enabled"
+  echo "backup retention timer active: ${active:-unknown}"
+  if [[ -n "$next_trigger" ]]; then
+    echo "backup retention timer next: $next_trigger"
+  else
+    echo "backup retention timer next: unavailable"
+  fi
+
+  if systemctl --user is-active --quiet "$service_name" 2>/dev/null; then
+    echo "backup retention service: running"
+  else
+    echo "backup retention service: inactive"
+  fi
+}
+
 core_report() {
   echo "timestamp: $(date -Iseconds)"
   echo "repo: $REPO_ROOT"
@@ -51,6 +84,9 @@ core_report() {
   else
     echo "alerts probe: FAIL"
   fi
+
+  check_backup_retention_timer
+  ./scripts/check-dr-cadence.sh --max-age-days 30 || true
 
   check_proc "cloudflared.*tunnel.*--token" "cloudflared"
 

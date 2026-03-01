@@ -5,6 +5,7 @@
 #   ./scripts/release-quality-gate.sh
 #   ./scripts/release-quality-gate.sh --include-backup
 #   ./scripts/release-quality-gate.sh --strict-parity
+#   ./scripts/release-quality-gate.sh --strict-parity --generate-scorecard --version v0.1.0-alpha.2 --env staging
 
 set -euo pipefail
 
@@ -14,6 +15,9 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 include_backup=false
 strict_parity=false
 skip_observability=false
+generate_scorecard=false
+scorecard_version=""
+scorecard_env="staging"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -29,9 +33,21 @@ while [[ $# -gt 0 ]]; do
       skip_observability=true
       shift 1
       ;;
+    --generate-scorecard)
+      generate_scorecard=true
+      shift 1
+      ;;
+    --version)
+      scorecard_version="${2:-}"
+      shift 2
+      ;;
+    --env)
+      scorecard_env="${2:-}"
+      shift 2
+      ;;
     *)
       echo "Unknown argument: $1" >&2
-      echo "Usage: $0 [--include-backup] [--strict-parity] [--skip-observability]" >&2
+      echo "Usage: $0 [--include-backup] [--strict-parity] [--skip-observability] [--generate-scorecard --version vX.Y.Z --env staging|production]" >&2
       exit 1
       ;;
   esac
@@ -39,25 +55,34 @@ done
 
 cd "$REPO_ROOT"
 
-echo "[1/8] lint"
+echo "[1/11] lint"
 npm run lint
 
-echo "[2/8] build"
+echo "[2/11] build"
 npm run build
 
-echo "[3/8] unit/integration test"
+echo "[3/11] unit/integration test"
 npm test
 
-echo "[4/8] integration suite"
+echo "[4/11] integration suite"
 npm run test:integration
 
-echo "[5/8] e2e fixture suite"
+echo "[5/11] e2e fixture suite"
 npm run test:e2e
 
-echo "[6/8] alpha eval gate"
+echo "[6/11] alpha eval gate"
 npm run eval:alpha
 
-echo "[7/8] env parity"
+echo "[7/11] safety eval gate"
+npm run eval:safety
+
+echo "[8/11] data governance policy"
+npm run policy:data-governance
+
+echo "[9/11] DR cadence freshness"
+npm run dr:check-cadence
+
+echo "[10/11] env parity"
 if [[ "$strict_parity" == true ]]; then
   "$SCRIPT_DIR/check-env-parity.sh" --strict
 else
@@ -65,15 +90,23 @@ else
 fi
 
 if [[ "$skip_observability" == true ]]; then
-  echo "[8/8] observability alerts probe (skipped)"
+  echo "[11/11] observability alerts probe (skipped)"
 else
-  echo "[8/8] observability alerts probe"
+  echo "[11/11] observability alerts probe"
   "$SCRIPT_DIR/check-observability-alerts.sh"
 fi
 
 if [[ "$include_backup" == true ]]; then
   echo "[optional] n8n backup"
   "$SCRIPT_DIR/backup-n8n.sh" --label release-gate
+fi
+
+if [[ "$generate_scorecard" == true ]]; then
+  if [[ -z "$scorecard_version" ]]; then
+    scorecard_version="v$(node -p "require('./package.json').version")"
+  fi
+  echo "[optional] release scorecard v2 generation"
+  "$SCRIPT_DIR/generate-release-scorecard-v2.sh" --version "$scorecard_version" --env "$scorecard_env"
 fi
 
 echo "Release quality gate passed."

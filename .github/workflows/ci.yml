@@ -118,6 +118,66 @@ jobs:
         run: npm ci
       - name: Run offline alpha eval gate
         run: npm run eval:alpha
+      - name: Upload eval report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-alpha-report
+          path: .out/evals/*.json
+          if-no-files-found: error
+
+  eval-safety:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - name: Install
+        run: npm ci
+      - name: Run offline safety eval gate
+        run: npm run eval:safety
+      - name: Upload safety eval report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-safety-report
+          path: .out/evals/*.json
+          if-no-files-found: error
+
+  sbom:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - name: Install
+        run: npm ci
+      - name: Generate CycloneDX SBOM
+        run: npm run sbom:generate
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-cyclonedx
+          path: .out/sbom/cyclonedx-npm.json
+          if-no-files-found: error
+
+  data-governance-policy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - name: Install
+        run: npm ci
+      - name: Validate data governance policy
+        run: npm run policy:data-governance
 
   security-audit:
     runs-on: ubuntu-latest
