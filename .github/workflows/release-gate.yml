@@ -59,6 +59,8 @@ jobs:
           MODEL_CLASSIFIER_MODE: ${{ vars.MODEL_CLASSIFIER_MODE }}
           MODEL_KILL_SWITCH: ${{ vars.MODEL_KILL_SWITCH }}
         run: |
+          npm run telemetry:seed
+
           scorecard_args=()
           if [[ "${{ inputs.generate_scorecard }}" == "true" ]]; then
             scorecard_args+=(--generate-scorecard --env "${{ inputs.target_env }}")

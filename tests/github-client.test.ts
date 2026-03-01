@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { GitHubClient, GitHubError } from "../src/modules/github-client";
 
 function makeResponse(status: number, payload: unknown): Response {
@@ -9,6 +9,20 @@ function makeResponse(status: number, payload: unknown): Response {
 }
 
 describe("GitHubClient", () => {
+  const originalStoreFile = process.env.IDEMPOTENCY_STORE_FILE;
+
+  function resetStoreEnv(pathValue?: string): void {
+    if (pathValue === undefined) {
+      delete process.env.IDEMPOTENCY_STORE_FILE;
+      return;
+    }
+    process.env.IDEMPOTENCY_STORE_FILE = pathValue;
+  }
+
+  afterEach(() => {
+    resetStoreEnv(originalStoreFile);
+  });
+
   it("getRepository returns mapped repository on happy path", async () => {
     process.env.GITHUB_PERSONAL_ACCESS_TOKEN = "ghp_test";
     process.env.GITHUB_OWNER = "iurii-izman";
@@ -56,6 +70,7 @@ describe("GitHubClient", () => {
     process.env.GITHUB_PERSONAL_ACCESS_TOKEN = "ghp_test";
     process.env.GITHUB_OWNER = "iurii-izman";
     process.env.GITHUB_REPO = "AIPipeline";
+    process.env.IDEMPOTENCY_STORE_FILE = `.out/tests/idempotency-basic-${Date.now()}.json`;
 
     let calls = 0;
     const client = new GitHubClient({
@@ -86,6 +101,27 @@ describe("GitHubClient", () => {
       workflow: "deploy-staging.yml",
       ref: "main",
     });
+    expect(calls).toBe(1);
+  });
+
+  it("dispatchWorkflow idempotency survives client re-instantiation via file store", async () => {
+    process.env.GITHUB_PERSONAL_ACCESS_TOKEN = "ghp_test";
+    process.env.GITHUB_OWNER = "iurii-izman";
+    process.env.GITHUB_REPO = "AIPipeline";
+    process.env.IDEMPOTENCY_STORE_FILE = `.out/tests/idempotency-${Date.now()}.json`;
+
+    let calls = 0;
+    const fetcher = async () => {
+      calls += 1;
+      return makeResponse(200, {});
+    };
+
+    const clientA = new GitHubClient({ fetcher });
+    await clientA.dispatchWorkflow({ workflow: "deploy-staging.yml", ref: "main" }, "idem-persist-1");
+
+    const clientB = new GitHubClient({ fetcher });
+    const second = await clientB.dispatchWorkflow({ workflow: "deploy-staging.yml", ref: "main" }, "idem-persist-1");
+    expect(second.deduplicated).toBe(true);
     expect(calls).toBe(1);
   });
 

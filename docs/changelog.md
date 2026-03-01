@@ -4,6 +4,25 @@
 
 ## 2026-03-01 (Autopilot Blocks 1-8)
 
+### Autopilot Block 9: Durable primary DLQ + persistent idempotency + governance cadence
+- Switched durable DLQ routing defaults in workflow update scripts:
+  - WF-2/WF-3/WF-4/WF-5 now default DLQ parking target to `http://host.containers.internal:3000/dlq/park`;
+  - added optional bearer auth header from `DLQ_INGEST_TOKEN`.
+- Added persistent idempotency store for GitHub workflow dispatch:
+  - `src/lib/resilience/idempotencyStore.ts`;
+  - `src/modules/github-client/index.ts` now deduplicates across client restarts.
+- Added stricter supply-chain verification:
+  - `scripts/verify-supply-chain-evidence.sh`;
+  - CI `sbom` job now also generates provenance pilot and verifies SBOM+provenance structure.
+- Added online telemetry governance cadence:
+  - `scripts/check-online-telemetry-volume.sh`;
+  - `scripts/generate-online-telemetry-report.js`;
+  - timers: `install-online-telemetry-report-timer.sh`, `install-cost-governance-timer.sh`.
+- Release gate strengthened:
+  - telemetry volume/report checks;
+  - supply-chain evidence verification;
+  - OTel coverage check (auto-skip when pilot is disabled).
+
 ### Scale baseline and maturity pack (IaC/OTel/Cost/DLQ/Eval-v2/Provenance)
 - Added IaC baseline:
   - `infra/terraform/*` (staging/production contract baseline)

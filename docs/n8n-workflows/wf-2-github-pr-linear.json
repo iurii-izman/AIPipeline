@@ -16,7 +16,51 @@
         "path": "wf2-github-pr",
         "httpMethod": "POST",
         "responseMode": "onReceived",
-        "options": {}
+        "options": {
+          "rawBody": true
+        }
+      }
+    },
+    {
+      "id": "verify-github-signature",
+      "name": "Verify GitHub signature",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        -220
+      ],
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\nconst headers = $json.headers || {};\nconst secret = String($env.GITHUB_WEBHOOK_SECRET || '');\nif (!secret) {\n  return [{ json: { ...$json, signatureValid: true, signatureReason: 'secret-not-configured' } }];\n}\nconst signature = headers['x-hub-signature-256'] || headers['X-Hub-Signature-256'] || '';\nif (!signature || typeof signature !== 'string' || !signature.startsWith('sha256=')) {\n  return [{ json: { ...$json, signatureValid: false, signatureReason: 'missing-signature' } }];\n}\nconst rawBody = typeof $json.rawBody === 'string'\n  ? $json.rawBody\n  : JSON.stringify($json.body || {});\nconst digest = 'sha256=' + crypto.createHmac('sha256', secret).update(rawBody).digest('hex');\nconst valid = signature.length === digest.length && crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(digest));\nreturn [{ json: { ...$json, signatureValid: valid, signatureReason: valid ? 'ok' : 'signature-mismatch' } }];"
+      }
+    },
+    {
+      "id": "if-signature-valid",
+      "name": "If GitHub signature valid",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        440,
+        -220
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.signatureValid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
       }
     },
     {
@@ -25,7 +69,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        220,
+        660,
         0
       ],
       "parameters": {
@@ -38,7 +82,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        440,
+        880,
         -120
       ],
       "parameters": {
@@ -51,7 +95,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        660,
+        1100,
         -120
       ],
       "parameters": {
@@ -80,7 +124,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        880,
+        1320,
         0
       ],
       "parameters": {
@@ -116,7 +160,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1100,
+        1540,
         0
       ],
       "parameters": {
@@ -145,7 +189,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1320,
+        1760,
         -120
       ],
       "parameters": {
@@ -173,7 +217,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1540,
+        1980,
         -120
       ],
       "parameters": {
@@ -201,7 +245,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1760,
+        2200,
         -220
       ],
       "parameters": {
@@ -237,7 +281,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1980,
+        2420,
         -220
       ],
       "parameters": {
@@ -250,7 +294,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        2200,
+        2640,
         -220
       ],
       "parameters": {
@@ -278,7 +322,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2420,
+        2860,
         -320
       ],
       "parameters": {
@@ -314,7 +358,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2640,
+        3080,
         -320
       ],
       "parameters": {
@@ -327,7 +371,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        2860,
+        3300,
         -320
       ],
       "parameters": {
@@ -355,7 +399,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        3080,
+        3520,
         -400
       ],
       "parameters": {
@@ -391,7 +435,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3300,
+        3740,
         -400
       ],
       "parameters": {
@@ -404,7 +448,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        3520,
+        3960,
         -400
       ],
       "parameters": {
@@ -434,7 +478,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        3740,
+        4180,
         -500
       ],
       "parameters": {
@@ -457,7 +501,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        3740,
+        4180,
         -300
       ],
       "parameters": {
@@ -480,12 +524,21 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        3960,
+        4400,
         -300
       ],
       "parameters": {
         "method": "POST",
-        "url": "http://localhost:5678/webhook/wf-dlq-park",
+        "url": "http://host.containers.internal:3000/dlq/park",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $env.DLQ_INGEST_TOKEN ? ('Bearer ' + $env.DLQ_INGEST_TOKEN) : '' }}"
+            }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ { sourceWorkflow: 'WF-2', failureType: 'linear_update_failed', reason: $('Assess Linear update result').first().json.reason || 'unknown error', rateLimited: $('Assess Linear update result').first().json.rateLimited || false, replayTarget: (($env.WEBHOOK_URL || '').replace(/\\/$/, '') + '/webhook/wf2-github-pr'), replayPayload: { action: $('Extract PR payload').first().json.action, pull_request: { number: $('Extract PR payload').first().json.number, title: $('Extract PR payload').first().json.title, html_url: $('Extract PR payload').first().json.url, merged: $('Extract PR payload').first().json.merged, head: { ref: $('Extract PR payload').first().json.branch } } }, context: $('Extract PR payload').first().json } }}",
@@ -503,7 +556,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        3080,
+        3520,
         -120
       ],
       "parameters": {
@@ -526,7 +579,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1540,
+        1980,
         220
       ],
       "parameters": {
@@ -549,7 +602,7 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        4180,
+        4620,
         -100
       ],
       "parameters": {
@@ -575,7 +628,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4400,
+        4840,
         -100
       ],
       "parameters": {
@@ -588,7 +641,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        4620,
+        5060,
         -100
       ],
       "parameters": {
@@ -618,12 +671,21 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        4840,
+        5280,
         -180
       ],
       "parameters": {
         "method": "POST",
-        "url": "http://localhost:5678/webhook/wf-dlq-park",
+        "url": "http://host.containers.internal:3000/dlq/park",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $env.DLQ_INGEST_TOKEN ? ('Bearer ' + $env.DLQ_INGEST_TOKEN) : '' }}"
+            }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ { sourceWorkflow: 'WF-2', failureType: 'telegram_send_failed', reason: $('Assess Telegram delivery').first().json.reason || 'unknown error', rateLimited: $('Assess Telegram delivery').first().json.rateLimited || false, context: $('Extract PR payload').first().json } }}",
@@ -641,11 +703,34 @@
       "main": [
         [
           {
-            "node": "Extract PR payload",
+            "node": "Verify GitHub signature",
             "type": "main",
             "index": 0
           }
         ]
+      ]
+    },
+    "Verify GitHub signature": {
+      "main": [
+        [
+          {
+            "node": "If GitHub signature valid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If GitHub signature valid": {
+      "main": [
+        [
+          {
+            "node": "Extract PR payload",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
       ]
     },
     "Extract PR payload": {

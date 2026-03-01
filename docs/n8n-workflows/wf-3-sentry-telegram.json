@@ -16,6 +16,51 @@
         "path": "wf3-sentry",
         "httpMethod": "POST",
         "responseMode": "onReceived",
+        "options": {
+          "rawBody": true
+        }
+      }
+    },
+    {
+      "id": "verify-sentry-signature",
+      "name": "Verify Sentry signature",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        -200
+      ],
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\nconst headers = $json.headers || {};\nconst secret = String($env.SENTRY_WEBHOOK_SECRET || '');\nif (!secret) {\n  return [{ json: { ...$json, signatureValid: true, signatureReason: 'secret-not-configured' } }];\n}\nconst signature = headers['sentry-hook-signature'] || headers['Sentry-Hook-Signature'] || '';\nif (!signature || typeof signature !== 'string') {\n  return [{ json: { ...$json, signatureValid: false, signatureReason: 'missing-signature' } }];\n}\nconst rawBody = typeof $json.rawBody === 'string'\n  ? $json.rawBody\n  : JSON.stringify($json.body || {});\nconst digest = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');\nconst valid = signature.length === digest.length && crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(digest));\nreturn [{ json: { ...$json, signatureValid: valid, signatureReason: valid ? 'ok' : 'signature-mismatch' } }];"
+      }
+    },
+    {
+      "id": "if-sentry-signature-valid",
+      "name": "If Sentry signature valid",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        440,
+        -200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.signatureValid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
         "options": {}
       }
     },
@@ -25,11 +70,11 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        220,
+        660,
         0
       ],
       "parameters": {
-        "jsCode": "const root = $json.body || $json;\nconst event = root.event || root.data?.event || root;\nconst issue = root.issue || root.data?.issue || {};\nconst title = event.title || issue.title || root.message || 'Sentry alert';\nconst level = (event.level || issue.level || root.level || 'error').toLowerCase();\nconst culprit = event.culprit || issue.culprit || '';\nconst project = root.project?.slug || root.project_slug || issue.project?.slug || 'node';\nconst url = issue.web_url || issue.permalink || event.web_url || root.url || '';\nconst fingerprint = (event.fingerprint && event.fingerprint.join(',')) || issue.shortId || issue.id || '';\nconst eventId = event.event_id || root.event_id || issue.id || root.id || '';\nconst payloadSnippet = JSON.stringify(root).slice(0, 3500);\nreturn [{ json: { title, level, culprit, project, url, fingerprint, eventId, payloadSnippet } }];"
+        "jsCode": "const root = $json.body || $json;\nconst sanitize = (value, maxLen) =>\n  String(value ?? '')\n    .replace(/[\\u0000-\\u001f\\u007f]/g, ' ')\n    .replace(/`/g, \"'\")\n    .replace(/\\s+/g, ' ')\n    .trim()\n    .slice(0, maxLen);\nconst event = root.event || root.data?.event || root;\nconst issue = root.issue || root.data?.issue || {};\nconst title = sanitize(event.title || issue.title || root.message || 'Sentry alert', 240);\nconst level = sanitize((event.level || issue.level || root.level || 'error').toLowerCase(), 24);\nconst culprit = sanitize(event.culprit || issue.culprit || '', 240);\nconst project = sanitize(root.project?.slug || root.project_slug || issue.project?.slug || 'node', 96);\nconst url = sanitize(issue.web_url || issue.permalink || event.web_url || root.url || '', 500);\nconst fingerprint = sanitize((event.fingerprint && event.fingerprint.join(',')) || issue.shortId || issue.id || '', 240);\nconst eventId = sanitize(event.event_id || root.event_id || issue.id || root.id || '', 240);\nconst payloadSnippet = sanitize(JSON.stringify(root), 2000);\nconst classificationInput = { title, level, culprit, project, url, fingerprint, payloadSnippet };\nconst promptPayload = 'BEGIN_SENTRY_EVENT\\n' + JSON.stringify(classificationInput) + '\\nEND_SENTRY_EVENT';\nreturn [{ json: { ...classificationInput, eventId, promptPayload } }];"
       }
     },
     {
@@ -38,7 +83,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        440,
+        880,
         -120
       ],
       "parameters": {
@@ -51,7 +96,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        660,
+        1100,
         -120
       ],
       "parameters": {
@@ -76,12 +121,25 @@
       }
     },
     {
+      "id": "decide-classifier-mode",
+      "name": "Decide classifier mode",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const rawMode = String($env.MODEL_CLASSIFIER_MODE || 'full_primary').toLowerCase();\nconst classifierMode = ['full_primary', 'shadow', 'heuristic_only'].includes(rawMode) ? rawMode : 'full_primary';\nconst killSwitch = String($env.MODEL_KILL_SWITCH || 'false').toLowerCase() === 'true';\nconst hasOpenAiKey = String($env.OPENAI_API_KEY || '').length > 0;\nconst useHeuristic = killSwitch || classifierMode === 'heuristic_only' || !hasOpenAiKey;\nconst useOpenAI = !useHeuristic;\nreturn [{ json: { ...$json, classifierMode, killSwitch, hasOpenAiKey, useHeuristic, useOpenAI } }];"
+      }
+    },
+    {
       "id": "if-openai-key",
-      "name": "If OPENAI_API_KEY set",
+      "name": "If OpenAI enabled",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        880,
+        1540,
         0
       ],
       "parameters": {
@@ -91,11 +149,12 @@
           },
           "conditions": [
             {
-              "leftValue": "={{ $env.OPENAI_API_KEY || '' }}",
-              "rightValue": "",
+              "leftValue": "={{ $json.useOpenAI }}",
+              "rightValue": true,
               "operator": {
-                "type": "string",
-                "operation": "notEmpty"
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
               }
             }
           ],
@@ -110,7 +169,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1100,
+        1760,
         -120
       ],
       "parameters": {
@@ -131,7 +190,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { model: ($env.OPENAI_MODEL || 'gpt-4o-mini'), temperature: 0, messages: [ { role: 'system', content: 'You classify Sentry incidents. Return only compact JSON with fields: severity (critical|non_critical), confidence (0..1), reason (string <= 140 chars).' }, { role: 'user', content: JSON.stringify({ title: $('Normalize Sentry event').first().json.title, level: $('Normalize Sentry event').first().json.level, culprit: $('Normalize Sentry event').first().json.culprit, project: $('Normalize Sentry event').first().json.project, url: $('Normalize Sentry event').first().json.url, fingerprint: $('Normalize Sentry event').first().json.fingerprint }) } ] } }}",
+        "jsonBody": "={{ { model: ($env.OPENAI_MODEL || 'gpt-4o-mini'), temperature: 0, messages: [ { role: 'system', content: 'You classify Sentry incidents. Read only text between BEGIN_SENTRY_EVENT and END_SENTRY_EVENT. Return strict compact JSON only with fields: severity (critical|non_critical), confidence (0..1), reason (1..180 chars).' }, { role: 'user', content: $('Normalize Sentry event').first().json.promptPayload } ] } }}",
         "options": {}
       },
       "retryOnFail": true,
@@ -146,7 +205,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1320,
+        1980,
         -220
       ],
       "parameters": {
@@ -176,11 +235,41 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1320,
+        1980,
         -120
       ],
       "parameters": {
-        "jsCode": "const base = $('Normalize Sentry event').first().json;\nconst text = $json.choices?.[0]?.message?.content || '';\nlet obj = null;\ntry { obj = JSON.parse(text); } catch {\n  const m = text.match(/{[sS]*}/);\n  if (m) {\n    try { obj = JSON.parse(m[0]); } catch {}\n  }\n}\nconst sev = String(obj?.severity || '').toLowerCase();\nconst severity = sev === 'critical' ? 'critical' : 'non_critical';\nconst confidence = Number.isFinite(Number(obj?.confidence)) ? Number(obj.confidence) : 0.6;\nconst reason = (obj?.reason || 'LLM classification fallback').toString().slice(0, 180);\nreturn [{ json: { ...base, severity, confidence, reason, classifiedBy: 'llm' } }];"
+        "jsCode": "const base = $('Decide classifier mode').first().json;\nconst text = $json.choices?.[0]?.message?.content || '';\nlet obj = null;\ntry { obj = JSON.parse(text); } catch {\n  const m = text.match(/\\{[\\s\\S]*\\}/);\n  if (m) {\n    try { obj = JSON.parse(m[0]); } catch {}\n  }\n}\nconst sev = String(obj?.severity || '').toLowerCase();\nconst confidenceRaw = Number(obj?.confidence);\nconst reasonRaw = String(obj?.reason || '').replace(/[\\u0000-\\u001f\\u007f]/g, ' ').replace(/`/g, \"'\").trim();\nconst schemaValid = (sev === 'critical' || sev === 'non_critical')\n  && Number.isFinite(confidenceRaw) && confidenceRaw >= 0 && confidenceRaw <= 1\n  && reasonRaw.length > 0 && reasonRaw.length <= 180;\nif (!schemaValid) {\n  return [{ json: { ...base, llmOutputValid: false, llmValidationError: 'schema_mismatch' } }];\n}\nconst severity = sev;\nconst confidence = confidenceRaw;\nconst reason = reasonRaw.slice(0, 180);\nconst mergedText = ((base.title || '') + ' ' + (base.payloadSnippet || '') + ' ' + reason).toLowerCase();\nconst isDbCascade = /(database|db).{0,40}(timeout|timed out|connection pool|too many connections|exhausted)/i.test(mergedText) && /(cascade|spike|retry storm|saturation|overload)/i.test(mergedText);\nconst incidentType = isDbCascade ? 'db_timeout_cascade' : (severity === 'critical' ? 'critical_generic' : 'non_critical');\nreturn [{ json: { ...base, severity, confidence, reason, classifiedBy: 'llm', incidentType, llmOutputValid: true } }];"
+      }
+    },
+    {
+      "id": "if-llm-output-valid",
+      "name": "If LLM output valid",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2200,
+        -120
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.llmOutputValid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
       }
     },
     {
@@ -189,11 +278,11 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1100,
+        1760,
         120
       ],
       "parameters": {
-        "jsCode": "const base = $input.first().json;\nconst t = (base.title || '').toLowerCase();\nconst l = (base.level || '').toLowerCase();\nconst criticalSignals = ['fatal', 'outofmemory', 'oom', 'db down', 'payment', 'auth', 'timeout cascade', 'panic', 'crash loop'];\nconst hit = criticalSignals.find(s => t.includes(s));\nconst severity = (l === 'fatal' || hit) ? 'critical' : 'non_critical';\nconst reason = hit ? ('keyword: ' + hit) : ('level=' + l);\nconst confidence = severity === 'critical' ? 0.74 : 0.64;\nreturn [{ json: { ...base, severity, confidence, reason, classifiedBy: 'heuristic' } }];"
+        "jsCode": "const base = $('Decide classifier mode').first().json || $input.first().json;\nconst t = (base.title || '').toLowerCase();\nconst p = (base.payloadSnippet || '').toLowerCase();\nconst combined = (t + ' ' + p).trim();\nconst l = (base.level || '').toLowerCase();\nconst criticalSignals = ['fatal', 'outofmemory', 'oom', 'db down', 'payment', 'auth', 'timeout cascade', 'panic', 'crash loop'];\nconst dbCascadeRegex = /(database|db).{0,40}(timeout|timed out|connection pool|too many connections|exhausted)/i;\nconst cascadeRegex = /(cascade|spike|retry storm|saturation|overload)/i;\nconst dbCascadeHit = dbCascadeRegex.test(combined) && cascadeRegex.test(combined);\nconst hit = dbCascadeHit ? 'db_timeout_cascade' : criticalSignals.find(s => combined.includes(s));\nconst severity = (l === 'fatal' || Boolean(hit)) ? 'critical' : 'non_critical';\nconst incidentType = dbCascadeHit ? 'db_timeout_cascade' : (severity === 'critical' ? 'critical_generic' : 'non_critical');\nconst reason = (hit ? ('signal: ' + hit) : ('level=' + l)).slice(0, 180);\nconst confidence = severity === 'critical' ? 0.74 : 0.64;\nreturn [{ json: { ...base, severity, confidence, reason, classifiedBy: 'heuristic', incidentType } }];"
       }
     },
     {
@@ -202,7 +291,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1540,
+        2420,
         0
       ],
       "parameters": {
@@ -231,7 +320,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1760,
+        2640,
         -120
       ],
       "parameters": {
@@ -260,15 +349,15 @@
       "type": "n8n-nodes-base.linear",
       "typeVersion": 1,
       "position": [
-        1980,
+        2860,
         -220
       ],
       "parameters": {
         "resource": "issue",
         "operation": "create",
         "teamId": "={{ $env.LINEAR_TEAM_ID }}",
-        "title": "=CRITICAL Sentry: {{ $json.title }}",
-        "description": "=Severity: {{ $json.severity }} ({{ $json.classifiedBy }}, conf={{ $json.confidence }})\\nReason: {{ $json.reason }}\\nLevel: {{ $json.level }}\\nProject: {{ $json.project }}\\nURL: {{ $json.url }}\\nFingerprint: {{ $json.fingerprint }}\\n\\nPayload:\\n{{ $json.payloadSnippet }}",
+        "title": "={{ $json.incidentType === 'db_timeout_cascade' ? ('P0 DB timeout cascade: ' + $json.title) : ('CRITICAL Sentry: ' + $json.title) }}",
+        "description": "=Severity: {{ $json.severity }} ({{ $json.classifiedBy }}, conf={{ $json.confidence }})\\nIncident type: {{ $json.incidentType || 'n/a' }}\\nReason: {{ $json.reason }}\\nLevel: {{ $json.level }}\\nProject: {{ $json.project }}\\nURL: {{ $json.url }}\\nFingerprint: {{ $json.fingerprint }}\\n\\nImmediate actions:\\n1) Check DB saturation (pool/connections/latency).\\n2) Verify error-rate trend in Sentry and n8n alerts.\\n3) Trigger rollback or traffic reduction if cascade persists.\\n\\nPayload:\\n{{ $json.payloadSnippet }}",
         "additionalFields": {
           "priority": 1
         }
@@ -291,7 +380,7 @@
       "type": "n8n-nodes-base.linear",
       "typeVersion": 1,
       "position": [
-        1980,
+        2860,
         -20
       ],
       "parameters": {
@@ -319,11 +408,11 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2200,
+        3080,
         -220
       ],
       "parameters": {
-        "jsCode": "const src = $('If critical').first().json;\nconst err = $json.error || null;\nif (!err) {\n  return [{ json: { text: '🚨 *CRITICAL* Sentry\\n' + src.title + '\\nLevel: ' + src.level + '\\nClassifier: ' + src.classifiedBy + ' (' + src.confidence + ')\\nReason: ' + src.reason + '\\nLinear: ' + ($json.identifier || $json.id || 'created') + '\\n' + (src.url || '') } }];\n}\nconst status = Number(err.statusCode ?? err.status ?? err.httpCode ?? err.code ?? 0);\nconst body = err.responseBody ?? err.body ?? err.data ?? '';\nconst detail = (typeof err.message === 'string' && err.message)\n  || (typeof err.description === 'string' && err.description)\n  || (typeof body === 'string' ? body : JSON.stringify(body))\n  || JSON.stringify(err);\nconst msg = String(detail).slice(0, 300);\nconst rateLimited = status === 429 || /429|rate\\s*limit|too many requests/i.test(String(status) + ' ' + msg);\nreturn [{ json: { text: '🚨 *CRITICAL* Sentry\\n' + src.title + '\\nLevel: ' + src.level + '\\nClassifier: ' + src.classifiedBy + ' (' + src.confidence + ')\\nReason: ' + src.reason + '\\n⚠️ Linear create failed' + (rateLimited ? ' (rate-limited)' : '') + ': ' + msg + '\\n' + (src.url || ''), linearFailed: true, rateLimited, linearReason: msg } }];"
+        "jsCode": "const src = $('If critical').first().json;\nconst err = $json.error || null;\nif (!err) {\n  const preface = src.incidentType === 'db_timeout_cascade' ? '🚨 *P0 DB timeout cascade*' : '🚨 *CRITICAL* Sentry';\n  const actions = src.incidentType === 'db_timeout_cascade' ? '\\nActions: check DB pool saturation, rollback/throttle if trend grows.' : '';\n  return [{ json: { text: preface + '\\n' + src.title + '\\nLevel: ' + src.level + '\\nClassifier: ' + src.classifiedBy + ' (' + src.confidence + ')\\nReason: ' + src.reason + '\\nLinear: ' + ($json.identifier || $json.id || 'created') + actions + '\\n' + (src.url || '') } }];\n}\nconst status = Number(err.statusCode ?? err.status ?? err.httpCode ?? err.code ?? 0);\nconst body = err.responseBody ?? err.body ?? err.data ?? '';\nconst detail = (typeof err.message === 'string' && err.message)\n  || (typeof err.description === 'string' && err.description)\n  || (typeof body === 'string' ? body : JSON.stringify(body))\n  || JSON.stringify(err);\nconst msg = String(detail).slice(0, 300);\nconst rateLimited = status === 429 || /429|rate\\s*limit|too many requests/i.test(String(status) + ' ' + msg);\nconst preface = src.incidentType === 'db_timeout_cascade' ? '🚨 *P0 DB timeout cascade*' : '🚨 *CRITICAL* Sentry';\nreturn [{ json: { text: preface + '\\n' + src.title + '\\nLevel: ' + src.level + '\\nClassifier: ' + src.classifiedBy + ' (' + src.confidence + ')\\nReason: ' + src.reason + '\\n⚠️ Linear create failed' + (rateLimited ? ' (rate-limited)' : '') + ': ' + msg + '\\n' + (src.url || ''), linearFailed: true, rateLimited, linearReason: msg } }];"
       }
     },
     {
@@ -332,7 +421,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2200,
+        3080,
         -20
       ],
       "parameters": {
@@ -345,7 +434,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1760,
+        2640,
         180
       ],
       "parameters": {
@@ -368,7 +457,7 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        2420,
+        3300,
         -20
       ],
       "parameters": {
@@ -397,7 +486,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        2420,
+        3300,
         120
       ],
       "parameters": {
@@ -427,12 +516,21 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2640,
+        3520,
         120
       ],
       "parameters": {
         "method": "POST",
-        "url": "http://localhost:5678/webhook/wf-dlq-park",
+        "url": "http://host.containers.internal:3000/dlq/park",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $env.DLQ_INGEST_TOKEN ? ('Bearer ' + $env.DLQ_INGEST_TOKEN) : '' }}"
+            }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ { sourceWorkflow: 'WF-3', failureType: 'linear_create_failed', reason: $json.linearReason || 'unknown error', rateLimited: $json.rateLimited || false, replayTarget: (($env.WEBHOOK_URL || '').replace(/\\/$/, '') + '/webhook/wf3-sentry'), replayPayload: { title: $('If critical').first().json.title, level: $('If critical').first().json.level, culprit: $('If critical').first().json.culprit, project: $('If critical').first().json.project, url: $('If critical').first().json.url, fingerprint: $('If critical').first().json.fingerprint, event_id: $('If critical').first().json.eventId }, context: $('If critical').first().json } }}",
@@ -450,7 +548,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2640,
+        3520,
         -20
       ],
       "parameters": {
@@ -463,7 +561,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        2860,
+        3740,
         -20
       ],
       "parameters": {
@@ -493,12 +591,21 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        3080,
+        3960,
         -100
       ],
       "parameters": {
         "method": "POST",
-        "url": "http://localhost:5678/webhook/wf-dlq-park",
+        "url": "http://host.containers.internal:3000/dlq/park",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $env.DLQ_INGEST_TOKEN ? ('Bearer ' + $env.DLQ_INGEST_TOKEN) : '' }}"
+            }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ { sourceWorkflow: 'WF-3', failureType: 'telegram_send_failed', reason: $('Assess Telegram notify delivery').first().json.reason || 'unknown error', rateLimited: $('Assess Telegram notify delivery').first().json.rateLimited || false, context: $('If critical').first().json } }}",
@@ -540,11 +647,34 @@
       "main": [
         [
           {
-            "node": "Normalize Sentry event",
+            "node": "Verify Sentry signature",
             "type": "main",
             "index": 0
           }
         ]
+      ]
+    },
+    "Verify Sentry signature": {
+      "main": [
+        [
+          {
+            "node": "If Sentry signature valid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Sentry signature valid": {
+      "main": [
+        [
+          {
+            "node": "Normalize Sentry event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
       ]
     },
     "Normalize Sentry event": {
@@ -574,14 +704,25 @@
         [],
         [
           {
-            "node": "If OPENAI_API_KEY set",
+            "node": "Decide classifier mode",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "If OPENAI_API_KEY set": {
+    "Decide classifier mode": {
+      "main": [
+        [
+          {
+            "node": "If OpenAI enabled",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If OpenAI enabled": {
       "main": [
         [
           {
@@ -632,7 +773,25 @@
       "main": [
         [
           {
+            "node": "If LLM output valid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If LLM output valid": {
+      "main": [
+        [
+          {
             "node": "If LINEAR_TEAM_ID set",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Heuristic classify severity",
             "type": "main",
             "index": 0
           }

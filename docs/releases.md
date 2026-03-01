@@ -76,11 +76,20 @@
      - `release-ai-ops` (`eval-v2 + cost report`, при наличии данных)
    - Шаблон scorecard: `docs/templates/release-scorecard-v2.md`.
 
-11. **IaC + provenance baseline checks**
+11. **Online telemetry + OTel coverage checks**
+   - Проверка online telemetry объема:
+     - `npm run telemetry:check-volume`
+     - `npm run telemetry:report`
+   - OTel coverage check (если `OTEL_PILOT_ENABLED=true`):
+     - `npm run otel:check-coverage`
+
+12. **IaC + provenance baseline checks**
    - IaC validation: `npm run iac:validate` (или CI job `iac-validate`).
    - SBOM + provenance:
      - `npm run sbom:generate`
      - `npm run provenance:generate`
+   - strict verify:
+     - `npm run supply-chain:verify`
 
 ---
 

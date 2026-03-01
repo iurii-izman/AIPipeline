@@ -156,8 +156,12 @@ jobs:
           cache: "npm"
       - name: Install
         run: npm ci
+      - name: Seed telemetry sample (CI baseline)
+        run: npm run telemetry:seed
       - name: Run eval v2 gate
-        run: npm run eval:v2
+        run: npm run eval:v2 -- --require-online
+      - name: Validate online telemetry volume
+        run: npm run telemetry:check-volume
       - name: Upload eval v2 report artifact
         uses: actions/upload-artifact@v4
         with:
@@ -182,11 +186,21 @@ jobs:
         run: npm ci
       - name: Generate CycloneDX SBOM
         run: npm run sbom:generate
+      - name: Generate provenance pilot
+        run: npm run provenance:generate
+      - name: Verify supply-chain evidence
+        run: npm run supply-chain:verify
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@v4
         with:
           name: sbom-cyclonedx
           path: .out/sbom/cyclonedx-npm.json
+          if-no-files-found: error
+      - name: Upload provenance artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: provenance-pilot
+          path: .out/provenance/*.json
           if-no-files-found: error
       - name: Attest SBOM provenance (SLSA pilot)
         uses: actions/attest-build-provenance@v2

@@ -997,7 +997,16 @@
       ],
       "parameters": {
         "method": "POST",
-        "url": "http://localhost:5678/webhook/wf-dlq-park",
+        "url": "http://host.containers.internal:3000/dlq/park",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $env.DLQ_INGEST_TOKEN ? ('Bearer ' + $env.DLQ_INGEST_TOKEN) : '' }}"
+            }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ { sourceWorkflow: 'WF-5', failureType: 'telegram_send_failed', reason: $('Assess Telegram command delivery').first().json.reason || 'unknown error', rateLimited: $('Assess Telegram command delivery').first().json.rateLimited || false, context: $('Extract command').first().json } }}",

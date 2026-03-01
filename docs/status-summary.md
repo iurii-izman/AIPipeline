@@ -32,6 +32,8 @@
 - Backup retention timer: `aipipeline-backup-retention.timer` installed/enabled (`systemctl --user status aipipeline-backup-retention.timer`)
 - DR cadence timer: `aipipeline-dr-cadence.timer` installed/enabled (`systemctl --user status aipipeline-dr-cadence.timer`)
 - DR cadence last successful run: `2026-03-01T20:24:59+02:00` (`/var/home/user/Projects/AIPipeline/.out/drills/dr-restore-drill-20260301-202456.json`)
+- Cost governance timer: `aipipeline-cost-governance.timer` installed/enabled
+- Online telemetry report timer: `aipipeline-online-telemetry-report.timer` installed/enabled
 - Local release gate (strict + scorecard): pass  
   `./scripts/release-quality-gate.sh --strict-parity --generate-scorecard --version v0.1.0-alpha.2 --env staging`
 - CI (remote): success with extended jobs (`eval-v2`, `iac-validate`, `cost-governance`, `sbom attestation`)  
@@ -42,7 +44,7 @@
 - IaC baseline: `infra/terraform` + `scripts/check-iac-baseline.sh` + CI job `iac-validate`
 - OTel pilot baseline: `OTEL_PILOT_ENABLED=true` + trace/span correlation in runtime logs
 - AI online telemetry endpoints: `/telemetry/ai-event`, `/telemetry/ai-summary` with JSONL store in `.runtime-logs/ai-online-telemetry.jsonl`
-- Durable DLQ mirror: app endpoints `/dlq/park`, `/dlq/mark` + JSONL store `.runtime-logs/dlq-events.jsonl`; WF-7 updated to mirror park/replay statuses
+- Durable DLQ primary store: app endpoints `/dlq/park`, `/dlq/mark`, `/dlq/events`, `/dlq/replay` + JSONL store `.runtime-logs/dlq-events.jsonl`
 
 ## Hardening Completed
 - `/status` protected with bearer auth + rate-limit + request-size guard
@@ -51,6 +53,7 @@
 - Model controls in WF-3: `MODEL_CLASSIFIER_MODE`, `MODEL_KILL_SWITCH`
 - WF-3 OWASP hardening: sanitized classifier input + strict LLM schema validation + heuristic fallback on mismatch
 - Timeout/abort transport added to typed API clients
+- Persistent idempotency store for GitHub workflow dispatch (`.runtime-logs/idempotency-keys.json`)
 - Eval dataset expanded to `150` labeled cases with CI artifact publishing for eval reports
 - Eval harness v2 added (`scripts/run-ai-eval-v2.js`) with offline+online gate model
 - Release governance v2 baseline added: scorecard template + scorecard generator script
@@ -60,6 +63,8 @@
 - ADR template and full-primary rollout ADR added to repository docs
 - Cost governance baseline added (`scripts/generate-cost-report.js`, `cost:report`, `cost:budget`, CI artifact)
 - Supply-chain baseline extended with provenance pilot (`scripts/generate-provenance-pilot.sh`) and SBOM attestation step in CI
+- Supply-chain strict verification added (`scripts/verify-supply-chain-evidence.sh`, CI + release gate)
+- Online telemetry governance added (`telemetry:check-volume`, `telemetry:report`, daily timer evidence)
 
 ## Open Focus (high-level)
 1. Close remaining P0 production-baseline gaps from strategy v2: IaC rollout maturity + online AI telemetry sample growth.

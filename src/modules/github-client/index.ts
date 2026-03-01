@@ -6,6 +6,7 @@ import {
   withCircuitBreaker,
   withRetry,
 } from "../../lib/resilience";
+import { idempotencyKeyExists, rememberIdempotencyKey } from "../../lib/resilience/idempotencyStore";
 import { fetchWithTimeout, type RequestOptions } from "../../lib/http/fetchWithTimeout";
 
 export type GitHubRepository = {
@@ -100,7 +101,6 @@ export class GitHubClient {
   private readonly fetcher: Fetcher;
   private readonly executeWithBreaker: <T>(operation: () => Promise<T>) => Promise<T>;
   private readonly endpoint = "https://api.github.com";
-  private readonly dispatchIdempotencyKeys = new Set<string>();
   private readonly defaultTimeoutMs?: number;
 
   constructor(options?: GitHubClientOptions) {
@@ -231,7 +231,7 @@ export class GitHubClient {
     idempotencyKey?: string,
     requestOptions?: RequestOptions
   ): Promise<DispatchWorkflowResult> {
-    if (idempotencyKey && this.dispatchIdempotencyKeys.has(idempotencyKey)) {
+    if (idempotencyKey && idempotencyKeyExists(idempotencyKey)) {
       return {
         accepted: true,
         deduplicated: true,
@@ -254,9 +254,7 @@ export class GitHubClient {
       requestOptions
     );
 
-    if (idempotencyKey) {
-      this.dispatchIdempotencyKeys.add(idempotencyKey);
-    }
+    if (idempotencyKey) rememberIdempotencyKey(idempotencyKey);
 
     return {
       accepted: true,

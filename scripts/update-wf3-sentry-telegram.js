@@ -14,7 +14,7 @@ const N8N_URL = process.env.N8N_URL || "http://localhost:5678";
 const N8N_API_KEY = process.env.N8N_API_KEY;
 const WF3_ID = "95voTtHeQwJ7E3m5";
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID || "";
-const DLQ_PARK_URL = process.env.DLQ_PARK_URL || "http://localhost:5678/webhook/wf-dlq-park";
+const DLQ_PARK_URL = process.env.DLQ_PARK_URL || "http://host.containers.internal:3000/dlq/park";
 
 if (!N8N_API_KEY) {
   console.error("N8N_API_KEY not set.");
@@ -121,17 +121,26 @@ return [{ json: { ...$json, signatureValid: valid, signatureReason: valid ? 'ok'
       position: [660, 0],
       parameters: {
         jsCode: `const root = $json.body || $json;
+const sanitize = (value, maxLen) =>
+  String(value ?? '')
+    .replace(/[\\u0000-\\u001f\\u007f]/g, ' ')
+    .replace(/\`/g, "'")
+    .replace(/\\s+/g, ' ')
+    .trim()
+    .slice(0, maxLen);
 const event = root.event || root.data?.event || root;
 const issue = root.issue || root.data?.issue || {};
-const title = event.title || issue.title || root.message || 'Sentry alert';
-const level = (event.level || issue.level || root.level || 'error').toLowerCase();
-const culprit = event.culprit || issue.culprit || '';
-const project = root.project?.slug || root.project_slug || issue.project?.slug || 'node';
-const url = issue.web_url || issue.permalink || event.web_url || root.url || '';
-const fingerprint = (event.fingerprint && event.fingerprint.join(',')) || issue.shortId || issue.id || '';
-const eventId = event.event_id || root.event_id || issue.id || root.id || '';
-const payloadSnippet = JSON.stringify(root).slice(0, 3500);
-return [{ json: { title, level, culprit, project, url, fingerprint, eventId, payloadSnippet } }];`,
+const title = sanitize(event.title || issue.title || root.message || 'Sentry alert', 240);
+const level = sanitize((event.level || issue.level || root.level || 'error').toLowerCase(), 24);
+const culprit = sanitize(event.culprit || issue.culprit || '', 240);
+const project = sanitize(root.project?.slug || root.project_slug || issue.project?.slug || 'node', 96);
+const url = sanitize(issue.web_url || issue.permalink || event.web_url || root.url || '', 500);
+const fingerprint = sanitize((event.fingerprint && event.fingerprint.join(',')) || issue.shortId || issue.id || '', 240);
+const eventId = sanitize(event.event_id || root.event_id || issue.id || root.id || '', 240);
+const payloadSnippet = sanitize(JSON.stringify(root), 2000);
+const classificationInput = { title, level, culprit, project, url, fingerprint, payloadSnippet };
+const promptPayload = 'BEGIN_SENTRY_EVENT\\n' + JSON.stringify(classificationInput) + '\\nEND_SENTRY_EVENT';
+return [{ json: { ...classificationInput, eventId, promptPayload } }];`,
       },
     },
     {
@@ -220,7 +229,7 @@ return [{ json: { ...$json, classifierMode, killSwitch, hasOpenAiKey, useHeurist
         },
         sendBody: true,
         specifyBody: "json",
-        jsonBody: "={{ { model: ($env.OPENAI_MODEL || 'gpt-4o-mini'), temperature: 0, messages: [ { role: 'system', content: 'You classify Sentry incidents. Return only compact JSON with fields: severity (critical|non_critical), confidence (0..1), reason (string <= 140 chars).' }, { role: 'user', content: JSON.stringify({ title: $('Normalize Sentry event').first().json.title, level: $('Normalize Sentry event').first().json.level, culprit: $('Normalize Sentry event').first().json.culprit, project: $('Normalize Sentry event').first().json.project, url: $('Normalize Sentry event').first().json.url, fingerprint: $('Normalize Sentry event').first().json.fingerprint }) } ] } }}",
+        jsonBody: "={{ { model: ($env.OPENAI_MODEL || 'gpt-4o-mini'), temperature: 0, messages: [ { role: 'system', content: 'You classify Sentry incidents. Read only text between BEGIN_SENTRY_EVENT and END_SENTRY_EVENT. Return strict compact JSON only with fields: severity (critical|non_critical), confidence (0..1), reason (1..180 chars).' }, { role: 'user', content: $('Normalize Sentry event').first().json.promptPayload } ] } }}",
         options: {},
       },
     },
@@ -256,19 +265,48 @@ return [{ json: { ...$json, classifierMode, killSwitch, hasOpenAiKey, useHeurist
 const text = $json.choices?.[0]?.message?.content || '';
 let obj = null;
 try { obj = JSON.parse(text); } catch {
-  const m = text.match(/\{[\s\S]*\}/);
+  const m = text.match(/\\{[\\s\\S]*\\}/);
   if (m) {
     try { obj = JSON.parse(m[0]); } catch {}
   }
 }
 const sev = String(obj?.severity || '').toLowerCase();
-const severity = sev === 'critical' ? 'critical' : 'non_critical';
-const confidence = Number.isFinite(Number(obj?.confidence)) ? Number(obj.confidence) : 0.6;
-const reason = (obj?.reason || 'LLM classification fallback').toString().slice(0, 180);
+const confidenceRaw = Number(obj?.confidence);
+const reasonRaw = String(obj?.reason || '').replace(/[\\u0000-\\u001f\\u007f]/g, ' ').replace(/\`/g, "'").trim();
+const schemaValid = (sev === 'critical' || sev === 'non_critical')
+  && Number.isFinite(confidenceRaw) && confidenceRaw >= 0 && confidenceRaw <= 1
+  && reasonRaw.length > 0 && reasonRaw.length <= 180;
+if (!schemaValid) {
+  return [{ json: { ...base, llmOutputValid: false, llmValidationError: 'schema_mismatch' } }];
+}
+const severity = sev;
+const confidence = confidenceRaw;
+const reason = reasonRaw.slice(0, 180);
 const mergedText = ((base.title || '') + ' ' + (base.payloadSnippet || '') + ' ' + reason).toLowerCase();
 const isDbCascade = /(database|db).{0,40}(timeout|timed out|connection pool|too many connections|exhausted)/i.test(mergedText) && /(cascade|spike|retry storm|saturation|overload)/i.test(mergedText);
 const incidentType = isDbCascade ? 'db_timeout_cascade' : (severity === 'critical' ? 'critical_generic' : 'non_critical');
-return [{ json: { ...base, severity, confidence, reason, classifiedBy: 'llm', incidentType } }];`,
+return [{ json: { ...base, severity, confidence, reason, classifiedBy: 'llm', incidentType, llmOutputValid: true } }];`,
+      },
+    },
+    {
+      id: "if-llm-output-valid",
+      name: "If LLM output valid",
+      type: "n8n-nodes-base.if",
+      typeVersion: 2.3,
+      position: [2200, -120],
+      parameters: {
+        conditions: {
+          options: { caseSensitive: true },
+          conditions: [
+            {
+              leftValue: "={{ $json.llmOutputValid }}",
+              rightValue: true,
+              operator: { type: "boolean", operation: "true", singleValue: true },
+            },
+          ],
+          combinator: "and",
+        },
+        options: {},
       },
     },
     {
@@ -290,7 +328,7 @@ const dbCascadeHit = dbCascadeRegex.test(combined) && cascadeRegex.test(combined
 const hit = dbCascadeHit ? 'db_timeout_cascade' : criticalSignals.find(s => combined.includes(s));
 const severity = (l === 'fatal' || Boolean(hit)) ? 'critical' : 'non_critical';
 const incidentType = dbCascadeHit ? 'db_timeout_cascade' : (severity === 'critical' ? 'critical_generic' : 'non_critical');
-const reason = hit ? ('signal: ' + hit) : ('level=' + l);
+const reason = (hit ? ('signal: ' + hit) : ('level=' + l)).slice(0, 180);
 const confidence = severity === 'critical' ? 0.74 : 0.64;
 return [{ json: { ...base, severity, confidence, reason, classifiedBy: 'heuristic', incidentType } }];`,
       },
@@ -300,7 +338,7 @@ return [{ json: { ...base, severity, confidence, reason, classifiedBy: 'heuristi
       name: "If LINEAR_TEAM_ID set",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [2200, 0],
+      position: [2420, 0],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -321,7 +359,7 @@ return [{ json: { ...base, severity, confidence, reason, classifiedBy: 'heuristi
       name: "If critical",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [2420, -120],
+      position: [2640, -120],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -342,7 +380,7 @@ return [{ json: { ...base, severity, confidence, reason, classifiedBy: 'heuristi
       name: "Linear: Create critical issue",
       type: "n8n-nodes-base.linear",
       typeVersion: 1,
-      position: [2640, -220],
+      position: [2860, -220],
       parameters: {
         resource: "issue",
         operation: "create",
@@ -358,7 +396,7 @@ return [{ json: { ...base, severity, confidence, reason, classifiedBy: 'heuristi
       name: "Linear: Create bug issue",
       type: "n8n-nodes-base.linear",
       typeVersion: 1,
-      position: [2640, -20],
+      position: [2860, -20],
       parameters: {
         resource: "issue",
         operation: "create",
@@ -373,7 +411,7 @@ return [{ json: { ...base, severity, confidence, reason, classifiedBy: 'heuristi
       name: "Format critical notification",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
-      position: [2860, -220],
+      position: [3080, -220],
       parameters: {
         jsCode: `const src = $('If critical').first().json;
 const err = $json.error || null;
@@ -399,7 +437,7 @@ return [{ json: { text: preface + '\\n' + src.title + '\\nLevel: ' + src.level +
       name: "Format non-critical notification",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
-      position: [2860, -20],
+      position: [3080, -20],
       parameters: {
         jsCode: `const src = $('If critical').first().json;
 const err = $json.error || null;
@@ -422,7 +460,7 @@ return [{ json: { text: '⚠️ *Sentry issue*\\n' + src.title + '\\nLevel: ' + 
       name: "Format no-linear notification",
       type: "n8n-nodes-base.set",
       typeVersion: 3.4,
-      position: [2420, 180],
+      position: [2640, 180],
       parameters: {
         mode: "manual",
         assignments: {
@@ -442,7 +480,7 @@ return [{ json: { text: '⚠️ *Sentry issue*\\n' + src.title + '\\nLevel: ' + 
       name: "Telegram: notify",
       type: "n8n-nodes-base.telegram",
       typeVersion: 1.2,
-      position: [3080, -20],
+      position: [3300, -20],
       parameters: {
         operation: "sendMessage",
         chatId: CHAT_ID || "={{ $env.TELEGRAM_CHAT_ID || 'YOUR_CHAT_ID' }}",
@@ -456,7 +494,7 @@ return [{ json: { text: '⚠️ *Sentry issue*\\n' + src.title + '\\nLevel: ' + 
       name: "If Linear create failed",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [3080, 120],
+      position: [3300, 120],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -471,10 +509,14 @@ return [{ json: { text: '⚠️ *Sentry issue*\\n' + src.title + '\\nLevel: ' + 
       name: "DLQ: park WF-3 Linear failure",
       type: "n8n-nodes-base.httpRequest",
       typeVersion: 4.2,
-      position: [3300, 120],
+      position: [3520, 120],
       parameters: {
         method: "POST",
         url: DLQ_PARK_URL,
+        sendHeaders: true,
+        headerParameters: {
+          parameters: [{ name: "Authorization", value: "={{ $env.DLQ_INGEST_TOKEN ? ('Bearer ' + $env.DLQ_INGEST_TOKEN) : '' }}" }],
+        },
         sendBody: true,
         specifyBody: "json",
         jsonBody:
@@ -487,7 +529,7 @@ return [{ json: { text: '⚠️ *Sentry issue*\\n' + src.title + '\\nLevel: ' + 
       name: "Assess Telegram notify delivery",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
-      position: [3300, -20],
+      position: [3520, -20],
       parameters: {
         jsCode: `const err = $json.error || null;
 if (!err) return [{ json: { telegramFailed: false } }];
@@ -507,7 +549,7 @@ return [{ json: { telegramFailed: true, rateLimited, reason: msg } }];`,
       name: "If Telegram notify failed",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [3520, -20],
+      position: [3740, -20],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -522,10 +564,14 @@ return [{ json: { telegramFailed: true, rateLimited, reason: msg } }];`,
       name: "DLQ: park WF-3 Telegram failure",
       type: "n8n-nodes-base.httpRequest",
       typeVersion: 4.2,
-      position: [3740, -100],
+      position: [3960, -100],
       parameters: {
         method: "POST",
         url: DLQ_PARK_URL,
+        sendHeaders: true,
+        headerParameters: {
+          parameters: [{ name: "Authorization", value: "={{ $env.DLQ_INGEST_TOKEN ? ('Bearer ' + $env.DLQ_INGEST_TOKEN) : '' }}" }],
+        },
         sendBody: true,
         specifyBody: "json",
         jsonBody:
@@ -575,7 +621,13 @@ return [{ json: { telegramFailed: true, rateLimited, reason: msg } }];`,
         [{ node: "Parse LLM result", type: "main", index: 0 }],
       ],
     },
-    "Parse LLM result": { main: [[{ node: "If LINEAR_TEAM_ID set", type: "main", index: 0 }]] },
+    "Parse LLM result": { main: [[{ node: "If LLM output valid", type: "main", index: 0 }]] },
+    "If LLM output valid": {
+      main: [
+        [{ node: "If LINEAR_TEAM_ID set", type: "main", index: 0 }],
+        [{ node: "Heuristic classify severity", type: "main", index: 0 }],
+      ],
+    },
     "Heuristic classify severity": { main: [[{ node: "If LINEAR_TEAM_ID set", type: "main", index: 0 }]] },
 
     "If LINEAR_TEAM_ID set": {

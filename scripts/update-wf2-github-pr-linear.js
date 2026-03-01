@@ -11,7 +11,7 @@ const http = require("http");
 const N8N_URL = process.env.N8N_URL || "http://localhost:5678";
 const N8N_API_KEY = process.env.N8N_API_KEY;
 const WF2_ID = "k7RSIieuQxwZ8zQT";
-const DLQ_PARK_URL = process.env.DLQ_PARK_URL || "http://localhost:5678/webhook/wf-dlq-park";
+const DLQ_PARK_URL = process.env.DLQ_PARK_URL || "http://host.containers.internal:3000/dlq/park";
 
 if (!N8N_API_KEY) {
   console.error("N8N_API_KEY not set.");
@@ -416,6 +416,10 @@ return [{ json: { linearFailed: true, rateLimited, reason, failureClass } }];`,
       parameters: {
         method: "POST",
         url: DLQ_PARK_URL,
+        sendHeaders: true,
+        headerParameters: {
+          parameters: [{ name: "Authorization", value: "={{ $env.DLQ_INGEST_TOKEN ? ('Bearer ' + $env.DLQ_INGEST_TOKEN) : '' }}" }],
+        },
         sendBody: true,
         specifyBody: "json",
         jsonBody:
@@ -520,6 +524,10 @@ return [{ json: { telegramFailed: true, rateLimited, reason: msg } }];`,
       parameters: {
         method: "POST",
         url: DLQ_PARK_URL,
+        sendHeaders: true,
+        headerParameters: {
+          parameters: [{ name: "Authorization", value: "={{ $env.DLQ_INGEST_TOKEN ? ('Bearer ' + $env.DLQ_INGEST_TOKEN) : '' }}" }],
+        },
         sendBody: true,
         specifyBody: "json",
         jsonBody:

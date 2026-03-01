@@ -84,7 +84,16 @@
       "alwaysOutputData": true,
       "parameters": {
         "method": "POST",
-        "url": "http://localhost:3000/dlq/park",
+        "url": "http://host.containers.internal:3000/dlq/park",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $env.DLQ_INGEST_TOKEN ? ('Bearer ' + $env.DLQ_INGEST_TOKEN) : '' }}"
+            }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ $('Persist parked event').first().json }}",
@@ -272,7 +281,16 @@
       "alwaysOutputData": true,
       "parameters": {
         "method": "POST",
-        "url": "http://localhost:3000/dlq/mark",
+        "url": "http://host.containers.internal:3000/dlq/mark",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $env.DLQ_INGEST_TOKEN ? ('Bearer ' + $env.DLQ_INGEST_TOKEN) : '' }}"
+            }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ { id: $json.id, status: $json.status, lastReplayError: $json.lastReplayError, lastReplayResultAt: $json.lastReplayResultAt } }}",

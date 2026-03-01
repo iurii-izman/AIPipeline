@@ -203,6 +203,8 @@ curl -H "Authorization: Bearer $STATUS_AUTH_TOKEN" \
 
 npm run eval:v2
 npm run telemetry:seed
+npm run telemetry:check-volume
+npm run telemetry:report
 npm run cost:report
 npm run cost:budget
 ```
@@ -224,6 +226,15 @@ Supply-chain provenance pilot:
 ```bash
 npm run sbom:generate
 npm run provenance:generate
+npm run supply-chain:verify
+```
+
+Recurring governance timers:
+
+```bash
+./scripts/install-cost-governance-timer.sh --calendar daily --days 30 --budget 50
+./scripts/install-online-telemetry-report-timer.sh --calendar daily --days 30 --min-events 40
+systemctl --user list-timers --all | rg 'aipipeline-(cost-governance|online-telemetry-report)'
 ```
 
 ## Рекомендованный режим

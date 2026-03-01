@@ -144,7 +144,16 @@
       ],
       "parameters": {
         "method": "POST",
-        "url": "http://localhost:5678/webhook/wf-dlq-park",
+        "url": "http://host.containers.internal:3000/dlq/park",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $env.DLQ_INGEST_TOKEN ? ('Bearer ' + $env.DLQ_INGEST_TOKEN) : '' }}"
+            }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ { sourceWorkflow: 'WF-4', failureType: 'telegram_send_failed', reason: $('Assess digest delivery').first().json.reason || 'unknown error', rateLimited: $('Assess digest delivery').first().json.rateLimited || false, context: $('Build digest').first().json } }}",
@@ -310,7 +319,16 @@
       ],
       "parameters": {
         "method": "POST",
-        "url": "http://localhost:5678/webhook/wf-dlq-park",
+        "url": "http://host.containers.internal:3000/dlq/park",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $env.DLQ_INGEST_TOKEN ? ('Bearer ' + $env.DLQ_INGEST_TOKEN) : '' }}"
+            }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ { sourceWorkflow: 'WF-4', failureType: 'notion_write_failed', reason: $('Assess Notion write').first().json.reason || 'unknown error', rateLimited: $('Assess Notion write').first().json.rateLimited || false, replayTarget: 'https://api.notion.com/v1/pages', replayPayload: { date: $('Build digest').first().json.date, lines: $('Build digest').first().json.lines }, context: $('Build digest').first().json } }}",

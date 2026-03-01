@@ -18,7 +18,7 @@ Source of truth for workflow JSON: `docs/n8n-workflows/*.json`.
 | WF-4 | Schedule (weekday 09:00) | Linear digest → Telegram + optional Notion Sprint Log write + Notion-failure alert/DLQ | ✅ Active |
 | WF-5 | Telegram Trigger | `/status`, `/help`, `/tasks`, `/errors`, `/search`, `/create`, `/deploy`, `/standup` + rate-limit-aware fallbacks + DLQ on Telegram send fail | ✅ Active |
 | WF-6 | Schedule (Monday 10:00) | Notion search (last 7 days) → IF updates exist → Telegram reminder | ✅ Active |
-| WF-7 | Webhook (`/webhook/wf-dlq-park`, `/webhook/wf-dlq-replay`) | Centralized DLQ parking + replay orchestration | ✅ Active |
+| WF-7 | Webhook (`/webhook/wf-dlq-park`, `/webhook/wf-dlq-replay`) | Centralized replay orchestration + durable DLQ sync to app store | ✅ Active |
 
 ---
 
@@ -54,7 +54,7 @@ Source of truth for workflow JSON: `docs/n8n-workflows/*.json`.
 1. Check n8n execution details and identify upstream (`Linear`, `Notion`, `Sentry`, `GitHub`, `Telegram`).
 2. Confirm retry exhaustion (`maxTries=4`).
 3. Inspect parked payload in WF-7.
-4. Replay via `/webhook/wf-dlq-replay` after cooldown.
+4. Replay via `/webhook/wf-dlq-replay` or app `POST /dlq/replay` after cooldown.
 
 ---
 

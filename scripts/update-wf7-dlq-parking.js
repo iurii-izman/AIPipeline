@@ -12,8 +12,8 @@ const http = require("http");
 const N8N_URL = process.env.N8N_URL || "http://localhost:5678";
 const N8N_API_KEY = process.env.N8N_API_KEY;
 const WORKFLOW_NAME = "WF-7: DLQ Parking + Replay (AIPipeline)";
-const DLQ_DURABLE_PARK_URL = process.env.DLQ_DURABLE_PARK_URL || "http://localhost:3000/dlq/park";
-const DLQ_DURABLE_MARK_URL = process.env.DLQ_DURABLE_MARK_URL || "http://localhost:3000/dlq/mark";
+const DLQ_DURABLE_PARK_URL = process.env.DLQ_DURABLE_PARK_URL || "http://host.containers.internal:3000/dlq/park";
+const DLQ_DURABLE_MARK_URL = process.env.DLQ_DURABLE_MARK_URL || "http://host.containers.internal:3000/dlq/mark";
 
 if (!N8N_API_KEY) {
   console.error("N8N_API_KEY not set.");
@@ -148,6 +148,10 @@ return [{ json: { ...item, text } }];`,
       parameters: {
         method: "POST",
         url: DLQ_DURABLE_PARK_URL,
+        sendHeaders: true,
+        headerParameters: {
+          parameters: [{ name: "Authorization", value: "={{ $env.DLQ_INGEST_TOKEN ? ('Bearer ' + $env.DLQ_INGEST_TOKEN) : '' }}" }],
+        },
         sendBody: true,
         specifyBody: "json",
         jsonBody: "={{ $('Persist parked event').first().json }}",
@@ -316,6 +320,10 @@ return [{ json: {
       parameters: {
         method: "POST",
         url: DLQ_DURABLE_MARK_URL,
+        sendHeaders: true,
+        headerParameters: {
+          parameters: [{ name: "Authorization", value: "={{ $env.DLQ_INGEST_TOKEN ? ('Bearer ' + $env.DLQ_INGEST_TOKEN) : '' }}" }],
+        },
         sendBody: true,
         specifyBody: "json",
         jsonBody: "={{ { id: $json.id, status: $json.status, lastReplayError: $json.lastReplayError, lastReplayResultAt: $json.lastReplayResultAt } }}",

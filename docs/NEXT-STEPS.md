@@ -9,7 +9,7 @@
 - Приоритетная очередь на 90 дней (из `docs/strategic-vision-and-tooling.md`):
   - `P0` Stabilize: deploy strict mode (без silent dry-run), Sonar hard gate, eval dataset >=150, backup timer probe.
   - `P1` Harden: DR cadence automation, release scorecard v2, data governance policy checks, safety eval CI job, SBOM generation, SLO-lite policy.
-  - `P1/P2` Scale baseline: OTel pilot, cost reporting/alerts, durable DLQ mirror, online eval-v2 telemetry.
+  - `P1/P2` Scale baseline: OTel pilot + coverage checks, cost reporting/alerts cadence, durable DLQ primary store, online eval-v2 telemetry cadence.
   - Анти-фокус: не запускать queue-mode n8n и альтернативные оркестраторы до закрытия P0/P1 baseline.
 - Reliability hardening выполнен:
   - retry/backoff + rate-limit handling внедрены в WF-2/WF-3/WF-4/WF-5;
@@ -114,6 +114,8 @@
    - DR cadence freshness check: `./scripts/check-dr-cadence.sh --strict`.
    - DR cadence timer: `./scripts/install-dr-cadence-timer.sh --calendar monthly --max-age-days 30` (установлен; контролировать `systemctl --user status aipipeline-dr-cadence.timer` + `systemctl --user status aipipeline-dr-cadence.service`).
    - Health report должен показывать `backup retention timer` статус: `./scripts/stack-health-report.sh --markdown`.
+   - Cost governance timer: `./scripts/install-cost-governance-timer.sh --calendar daily --days 30 --budget 50`.
+   - Online telemetry report timer: `./scripts/install-online-telemetry-report-timer.sh --calendar daily --days 30 --min-events 40`.
 5. Поддерживать release scorecard v2 в релизном цикле:
    - `./scripts/release-quality-gate.sh --strict-parity --generate-scorecard --version vX.Y.Z --env staging`.
    - Через `.github/workflows/release-gate.yml` запускать `workflow_dispatch` с `generate_scorecard=true` и сохранять artifact `release-scorecard-v2` как release evidence.
@@ -126,7 +128,10 @@
 7. Поддерживать регулярный цикл evidence-sync в Notion Sprint Log/Runbook.
 8. Поддерживать closure audit (`audit-linear-github-closure.js`) в регулярном цикле.
 9. Поддерживать IaC baseline (`infra/terraform`) и проверку `npm run iac:validate`.
-10. NotebookLM: weekly UI upload source-bundle (manual-only), подготовка через `./scripts/notebooklm-weekly-refresh.sh`.
+10. Поддерживать supply-chain strict verification:
+   - `npm run sbom:generate && npm run provenance:generate && npm run supply-chain:verify`;
+   - проверять attestation upload в CI job `sbom`.
+11. NotebookLM: weekly UI upload source-bundle (manual-only), подготовка через `./scripts/notebooklm-weekly-refresh.sh`.
 
 ## Рабочий цикл дальше
 

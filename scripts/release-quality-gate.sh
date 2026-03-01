@@ -82,29 +82,38 @@ npm run eval:alpha
 echo "[7/15] safety eval gate"
 npm run eval:safety
 
-echo "[8/15] eval v2 (offline+online)"
+echo "[8/17] eval v2 (offline+online)"
 npm run eval:v2
 
-echo "[9/15] data governance policy"
+echo "[9/17] online telemetry volume"
+npm run telemetry:check-volume
+
+echo "[10/17] online telemetry report"
+npm run telemetry:report
+
+echo "[11/17] data governance policy"
 npm run policy:data-governance
 
 if [[ "$skip_dr_cadence" == true ]]; then
-  echo "[10/15] DR cadence freshness (skipped)"
+  echo "[12/17] DR cadence freshness (skipped)"
 else
-  echo "[10/15] DR cadence freshness"
+  echo "[12/17] DR cadence freshness"
   npm run dr:check-cadence
 fi
 
-echo "[11/15] cost budget check"
+echo "[13/17] cost budget check"
 npm run cost:budget
 
-echo "[12/15] sbom generation"
+echo "[14/17] sbom generation"
 npm run sbom:generate
 
-echo "[13/15] provenance pilot generation"
+echo "[15/17] provenance pilot generation"
 npm run provenance:generate
 
-echo "[14/15] env parity"
+echo "[16/17] supply-chain evidence verify"
+npm run supply-chain:verify
+
+echo "[17/18] env parity"
 if [[ "$strict_parity" == true ]]; then
   "$SCRIPT_DIR/check-env-parity.sh" --strict
 else
@@ -112,9 +121,12 @@ else
 fi
 
 if [[ "$skip_observability" == true ]]; then
-  echo "[15/15] observability alerts probe (skipped)"
+  echo "[18/19] otel trace coverage (skipped)"
+  echo "[19/19] observability alerts probe (skipped)"
 else
-  echo "[15/15] observability alerts probe"
+  echo "[18/19] otel trace coverage"
+  npm run otel:check-coverage
+  echo "[19/19] observability alerts probe"
   "$SCRIPT_DIR/check-observability-alerts.sh"
 fi
 
