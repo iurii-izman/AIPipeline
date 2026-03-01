@@ -93,6 +93,10 @@
 
 ## Что остаётся до полного closure
 
+0. Завершить remote sync после сетевого окна:
+   - `git push origin main` (локально `main` ahead на 3 коммита);
+   - повторно запустить GitHub workflow `Release Gate` с inputs `generate_scorecard=true`, `version=vX.Y.Z`, `target_env=staging|production`;
+   - проверить upload artifact `release-scorecard-v2` в run summary.
 1. Поддерживать rotation/валидность hardening env в keyring и runtime (`STATUS_AUTH_TOKEN`, `GITHUB_WEBHOOK_SECRET`, `SENTRY_WEBHOOK_SECRET`, `MODEL_CLASSIFIER_MODE`, `MODEL_KILL_SWITCH`); bootstrap: `./scripts/bootstrap-hardening-env-keyring.sh`.
 2. Поддерживать актуальность repository ruleset/checks в GitHub (включая `build`, `integration`, `e2e-fixtures`, `eval-alpha`, `security-audit`, `CodeQL`, `SonarCloud`) при изменениях CI.
   - Добавлены новые required checks: `eval-safety`, `sbom`, `data-governance-policy`.
@@ -104,7 +108,7 @@
    - Rollout policy зафиксирована в `docs/adr-001-full-primary-rollout.md`.
 4. Поддерживать backup retention policy в рабочем режиме:
    - cleanup: `./scripts/cleanup-backups.sh --retention-days 7`;
-   - timer: `./scripts/install-backup-retention-timer.sh --retention-days 7`;
+   - timer: `./scripts/install-backup-retention-timer.sh --retention-days 7` (текущий gap: не установлен);
    - DR drill: `./scripts/dr-restore-drill.sh` (регулярно, с evidence в `.out/drills`).
    - DR cadence freshness check: `./scripts/check-dr-cadence.sh --strict`.
    - DR cadence timer: `./scripts/install-dr-cadence-timer.sh --calendar monthly --max-age-days 30` (установлен; контролировать `systemctl --user status aipipeline-dr-cadence.timer` + `systemctl --user status aipipeline-dr-cadence.service`).

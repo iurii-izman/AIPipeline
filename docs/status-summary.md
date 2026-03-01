@@ -7,7 +7,7 @@
 - Release: `v0.1.0-alpha.2`
 - Branch model: `main` as canonical branch
 - Latest major execution: merged PR #24 (2026-03-01)
-- Docs inventory: `69` files in `docs/`
+- Docs inventory: `74` files in `docs/`
 
 ## Delivery State
 - Day-0 and Phases 2–4: completed
@@ -30,6 +30,7 @@
 - GitHub controls sync: `./scripts/sync-github-repo-controls.sh` (deploy webhooks/tokens + parity secrets/vars + required checks)
 - DR cadence timer: `aipipeline-dr-cadence.timer` installed/enabled (`systemctl --user status aipipeline-dr-cadence.timer`)
 - DR cadence last successful run: `2026-03-01T20:24:59+02:00` (`/var/home/user/Projects/AIPipeline/.out/drills/dr-restore-drill-20260301-202456.json`)
+- Git sync state: local `main` is ahead of `origin/main` by 3 commits (push pending due intermittent GitHub connectivity timeout on 2026-03-01)
 
 ## Hardening Completed
 - `/status` protected with bearer auth + rate-limit + request-size guard
@@ -47,7 +48,7 @@
 
 ## Open Focus (high-level)
 1. Close P0 production-baseline gaps from strategy v2: no silent dry-run deploy path + stronger AI eval coverage.
-2. Keep backup retention and DR cadence healthy (`cleanup-backups`, timer, periodic DR drill evidence).
+2. Keep backup retention and DR cadence healthy (`cleanup-backups`, timers, periodic DR drill evidence); current gap: backup retention timer is not installed.
 3. Enforce CI/ruleset consistency and quality/security gates (including `SonarCloud` hard-gate readiness).
 4. Keep periodic closure audits and evidence sync cycles running.
 5. Start 90-day execution slice tracking (strategy v2) in `NEXT-STEPS.md`.
