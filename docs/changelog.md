@@ -22,6 +22,9 @@
 - Eval dataset v1.1 расширен до `80` кейсов (40 critical / 40 non_critical):
   - `evals/datasets/sentry-severity-alpha.json`
   - `npm run eval:alpha` -> `sampleSize: 80`, gate pass.
+- Eval dataset v1.2 расширен до `150` кейсов (75 critical / 75 non_critical):
+  - `evals/datasets/sentry-severity-alpha.json`
+  - `npm run eval:alpha` -> `sampleSize: 150`, gate pass.
 
 ### P1 Harden #2: DR cadence + release scorecard v2 + governance checks
 - Added DR cadence automation baseline:

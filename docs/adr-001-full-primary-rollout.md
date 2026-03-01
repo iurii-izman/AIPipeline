@@ -13,7 +13,7 @@ Accepted
 
 ## Decision
 - Rollout to `full_primary` is allowed only when all preconditions below are true:
-  1. Eval dataset has `>=80` labeled cases (`evals/datasets/sentry-severity-alpha.json` currently 80).
+  1. Eval dataset has `>=150` labeled cases (`evals/datasets/sentry-severity-alpha.json` currently 150).
   2. `npm run eval:alpha` passes gate thresholds:
      - `precisionCritical >= 0.70`
      - `recallCritical >= 0.95`

@@ -21,7 +21,7 @@ AIPipeline — AI-native delivery control plane для solo-разработки
 
 **5 главных рисков**
 1. Неполный production deployment контур (webhook dry-run, нет platform IaC).  
-2. Ограниченная зрелость AI quality gates (offline, dataset 80, без online drift gates).  
+2. Ограниченная зрелость AI quality gates (offline, dataset 150, без online drift gates).  
 3. Недостаточная наблюдаемость для incident SLO (нет OTel tracing/центрального managed telemetry).  
 4. Долг в data governance/privacy (PII-retention и policy-as-code не формализованы).  
 5. Security governance неполный (SBOM/SLSA provenance/dependency policy не закрыты end-to-end).
@@ -141,7 +141,7 @@ Quality gates в CI:
 - AI usage: WF-3 severity classification via OpenAI (если `OPENAI_API_KEY` доступен), fallback на heuristic classifier.
 - Guardrails: sanitized classifier input + delimiters (`BEGIN_SENTRY_EVENT/END_SENTRY_EVENT`), strict schema validation, fallback on mismatch.
 - Feature flags: `MODEL_CLASSIFIER_MODE`, `MODEL_KILL_SWITCH`.
-- Eval: offline dataset `evals/datasets/sentry-severity-alpha.json` (80 labeled cases), gate thresholds enforced by `scripts/run-ai-eval.js` and ADR rollout criteria.
+- Eval: offline dataset `evals/datasets/sentry-severity-alpha.json` (150 labeled cases), gate thresholds enforced by `scripts/run-ai-eval.js` and ADR rollout criteria.
 
 Ограничения:
 - Нет online drift detection/alerting; нет adversarial/prompt-injection regression suite.
@@ -170,7 +170,7 @@ Quality gates в CI:
 | 13 | Нет OpenTelemetry tracing | Нет OTel instrumentation in app/workflows | Medium | Medium | P2 | Добавить trace-id propagation spec | Интегрировать OTel SDK + exporter | >=90% critical paths имеют trace spans |
 | 14 | SonarCloud может soft-pass | `.github/workflows/sonarcloud.yml`: skip when token missing | Medium | Medium | P1 | Сделать hard-fail для protected branches | Governance: secret presence check in repo policy | Sonar scan обязателен на main/protected PR |
 | 15 | Нет SBOM/provenance pipeline | Нет CycloneDX/SLSA artifacts | High | Medium | P1 | Добавить SBOM generation in CI | Внедрить SLSA provenance + dependency policy | Каждый release содержит SBOM + provenance attestation |
-| 16 | AI eval ограничен offline dataset 80 | `evals/datasets/sentry-severity-alpha.json`, `run-ai-eval.js` | High | High | P0 | Расширить dataset до >150 кейсов, incl. hard negatives | Создать eval harness v2 (offline+online scorecards) | Регрессии ловятся до merge/release, FN critical <= target |
+| 16 | AI eval ограничен offline dataset 150 | `evals/datasets/sentry-severity-alpha.json`, `run-ai-eval.js` | High | Medium | P1 | Добавить online drift/fallback telemetry | Создать eval harness v2 (offline+online scorecards) | Регрессии ловятся до merge/release, FN critical <= target |
 | 17 | Нет red-team/prompt-injection eval suite | Нет dedicated adversarial tests | High | Medium | P1 | Добавить базовые attack cases в eval dataset | Отдельный AI safety regression job в CI | Safety suite pass обязательна для model mode change |
 | 18 | Data governance/PII policy не формализованы | Нет data retention/PII classification policy doc+checks | High | Medium | P1 | Добавить policy doc + data inventory | Enforce retention/PII masking checks in workflows | Есть утвержденная policy + automated checks |
 | 19 | Cost controls по LLM/API ограничены | Нет budget alerts/usage dashboards | Medium | High | P1 | Добавить usage logging + monthly budget caps | Cost observability + throttling/batching strategy | Cost variance <= planned budget, alerts on breach |
@@ -285,7 +285,7 @@ Quality gates в CI:
    Файлы: `scripts/stack-health-report.sh`, `docs/operations-profiles.md`  
    Готово: отчет явно показывает backup retention status.
 
-4. **[P1] Eval dataset v1.1** — расширить dataset до >=80 кейсов как промежуточный шаг.  
+4. **[P1] Eval dataset v1.2** — расширить dataset до >=150 кейсов (balanced + hard negatives).  
    Файлы: `evals/datasets/sentry-severity-alpha.json`, `docs/adr-001-full-primary-rollout.md`  
    Готово: `npm run eval:alpha` проходит на расширенном наборе.
 

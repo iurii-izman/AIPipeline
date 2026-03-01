@@ -7,7 +7,7 @@
 ## Сейчас в фокусе
 
 - Приоритетная очередь на 90 дней (из `docs/strategic-vision-and-tooling.md`):
-  - `P0` Stabilize: deploy strict mode (без silent dry-run), Sonar hard gate, eval dataset >=80, backup timer probe.
+  - `P0` Stabilize: deploy strict mode (без silent dry-run), Sonar hard gate, eval dataset >=150, backup timer probe.
   - `P1` Harden: DR cadence automation, release scorecard v2, data governance policy checks, safety eval CI job, SBOM generation, SLO-lite policy.
   - `P1/P2` Scale baseline: OTel pilot, cost reporting/alerts, durable DLQ design+pilot.
   - Анти-фокус: не запускать queue-mode n8n и альтернативные оркестраторы до закрытия P0/P1 baseline.
@@ -104,7 +104,7 @@
    - Для прохождения обязательного SonarCloud scan должен быть задан repo secret `SONAR_TOKEN` (иначе workflow fail-fast).
    - Быстрая синхронизация vars/secrets из keyring: `./scripts/sync-github-repo-controls.sh`.
    - Автоподготовка deploy webhook secrets (из `CLOUDFLARE_PUBLIC_BASE_URL`): `./scripts/bootstrap-deploy-webhooks.sh`.
-3. Поддерживать и расширять eval dataset (текущая база: 80 кейсов) перед rollout-изменениями `MODEL_CLASSIFIER_MODE=full_primary`.
+3. Поддерживать и расширять eval dataset (текущая база: 150 кейсов) перед rollout-изменениями `MODEL_CLASSIFIER_MODE=full_primary`.
    - Rollout policy зафиксирована в `docs/adr-001-full-primary-rollout.md`.
 4. Поддерживать backup retention policy в рабочем режиме:
    - cleanup: `./scripts/cleanup-backups.sh --retention-days 7`;

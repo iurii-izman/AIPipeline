@@ -1478,5 +1478,1335 @@
       "labeledAt": "2026-03-01T00:00:00.000Z",
       "notes": "dataset v1.1 expansion: non-critical warning"
     }
+  },
+  {
+    "caseId": "alpha-081",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 1",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-082",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 2",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-083",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 3",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-084",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 4",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-085",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 5",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-086",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 6",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-087",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 7",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-088",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 8",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-089",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 9",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-090",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 10",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-091",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 11",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-092",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 12",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-093",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 13",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-094",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 14",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-095",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 15",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-096",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 16",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-097",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 17",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-098",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 18",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-099",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 19",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-100",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 20",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-101",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 21",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-102",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 22",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-103",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 23",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-104",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 24",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-105",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 25",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-106",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 26",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-107",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 27",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-108",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 28",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-109",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 29",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-110",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 30",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-111",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 31",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-112",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 32",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-113",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 33",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-114",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 34",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-115",
+    "source": "sentry",
+    "input": {
+      "title": "Critical DB timeout cascade scenario 35",
+      "level": "error",
+      "project": "node",
+      "payloadSnippet": "db connection pool exhausted, retry storm observed"
+    },
+    "expected": {
+      "severity": "critical",
+      "incidentType": "db_timeout_cascade"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: critical set"
+    }
+  },
+  {
+    "caseId": "alpha-116",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 1",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-117",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 2",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-118",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 3",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-119",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 4",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-120",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 5",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-121",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 6",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-122",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 7",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-123",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 8",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-124",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 9",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-125",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 10",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-126",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 11",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-127",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 12",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-128",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 13",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-129",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 14",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-130",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 15",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-131",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 16",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-132",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 17",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-133",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 18",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-134",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 19",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-135",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 20",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-136",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 21",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-137",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 22",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-138",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 23",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-139",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 24",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-140",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 25",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-141",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 26",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-142",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 27",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-143",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 28",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-144",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 29",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-145",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 30",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-146",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 31",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-147",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 32",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-148",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 33",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-149",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 34",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
+  },
+  {
+    "caseId": "alpha-150",
+    "source": "sentry",
+    "input": {
+      "title": "Non-critical warning scenario 35",
+      "level": "warning",
+      "project": "node",
+      "payloadSnippet": "non-blocking warning and normal recovery"
+    },
+    "expected": {
+      "severity": "non_critical",
+      "incidentType": "non_critical"
+    },
+    "meta": {
+      "labeledBy": "maintainer",
+      "labeledAt": "2026-03-01T00:00:00.000Z",
+      "notes": "dataset v1.2 expansion: non-critical set"
+    }
   }
 ]

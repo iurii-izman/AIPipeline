@@ -36,7 +36,7 @@
    - установить `./scripts/install-backup-retention-timer.sh --retention-days 7`;
    - зафиксировать evidence в status-summary / operations docs.
 3) Дальше по 90-day queue:
-   - eval dataset >=80 (промежуточный порог), потом >=150;
+   - поддерживать dataset >=150 + добавить online drift/fallback telemetry;
    - SBOM/provenance и OTel pilot;
    - cost reporting/alerts.
 

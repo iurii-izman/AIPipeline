@@ -39,7 +39,7 @@
 - Model controls in WF-3: `MODEL_CLASSIFIER_MODE`, `MODEL_KILL_SWITCH`
 - WF-3 OWASP hardening: sanitized classifier input + strict LLM schema validation + heuristic fallback on mismatch
 - Timeout/abort transport added to typed API clients
-- Eval dataset expanded to `80` labeled cases with CI artifact publishing for eval reports
+- Eval dataset expanded to `150` labeled cases with CI artifact publishing for eval reports
 - Release governance v2 baseline added: scorecard template + scorecard generator script
 - Data governance baseline added: policy doc + CI/release policy checks
 - DR cadence baseline added: evidence freshness check + systemd automation script
