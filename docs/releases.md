@@ -8,7 +8,8 @@
 
 | Тег | Версия в package.json | Описание |
 |-----|------------------------|----------|
-| **v0.1.0-alpha.1** | 0.1.0-alpha.1 | Альфа 1: Day-0 завершён, WF-1…WF-6, GET /health, GET /status |
+| **v0.1.0-alpha.2** | 0.1.0-alpha.2 | Альфа 2: audit SSoT, WF-1…WF-7 hardening, strict parity/release gate, docs IA cleanup |
+| v0.1.0-alpha.1 | 0.1.0-alpha.1 | Альфа 1: Day-0 завершён, WF-1…WF-6, GET /health, GET /status |
 
 ---
 

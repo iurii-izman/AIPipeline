@@ -2,6 +2,17 @@
 
 Исторический журнал внедрений по проекту AIPipeline.
 
+## 2026-03-01 (Release)
+
+### v0.1.0-alpha.2
+- Version bumped to `0.1.0-alpha.2` and tagged as `v0.1.0-alpha.2`.
+- Mainline includes:
+  - principal audit SSoT (`docs/project-audit-and-roadmap.md`);
+  - WF/security/runtime hardening (auth/rate-limit/size-guard, signature verify, model flags);
+  - expanded quality gates (integration, e2e fixtures, eval harness skeleton, security audit, CodeQL);
+  - strict parity + unified release gate toolchain;
+  - documentation information architecture cleanup + archive normalization.
+
 ## 2026-03-01
 
 ### Merge milestone
