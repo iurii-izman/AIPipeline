@@ -33,6 +33,7 @@ if ! command -v terraform >/dev/null 2>&1; then
 fi
 
 cd "$IAC_DIR"
+terraform fmt -recursive >/dev/null
 terraform fmt -check -recursive
 terraform init -backend=false -input=false >/dev/null
 terraform validate
