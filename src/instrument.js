@@ -58,14 +58,18 @@ if (otelEnabled) {
       ],
     });
 
-    otelSdk
-      .start()
-      .then(() => {
-        console.log(JSON.stringify({ level: "info", message: "otel started", otelMode, exporterUrl }));
-      })
-      .catch((err) => {
-        console.error(JSON.stringify({ level: "error", message: "otel start failed", otelMode, error: String(err) }));
-      });
+    const startResult = otelSdk.start();
+    if (startResult && typeof startResult.then === "function") {
+      startResult
+        .then(() => {
+          console.log(JSON.stringify({ level: "info", message: "otel started", otelMode, exporterUrl }));
+        })
+        .catch((err) => {
+          console.error(JSON.stringify({ level: "error", message: "otel start failed", otelMode, error: String(err) }));
+        });
+    } else {
+      console.log(JSON.stringify({ level: "info", message: "otel started", otelMode, exporterUrl }));
+    }
 
     const shutdown = () => {
       if (!otelSdk) return Promise.resolve();
