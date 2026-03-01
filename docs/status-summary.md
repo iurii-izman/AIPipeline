@@ -87,6 +87,7 @@
   - зафиксированы Top-20 weak spots с evidence/impact/priority/remediation/acceptance criteria;
   - добавлен phased roadmap 20 шагов + setup hardening checklist + Cursor-ready implementation plan;
   - formalized alpha-test track для WF-3 model classification в режиме `Full Primary` с guardrails, rollback и kill switch.
+  - документ актуализирован после крупных реализаций: пересобран в «living SSoT» с текущим прогрессом (~74%), статусами `Closed/Partial/Open` по Top-20 и обновлёнными фазами исполнения.
 - **P0 hardening iteration (2026-03-01):**
   - `src/healthServer.js`: добавлены auth guard для `/status` (`STATUS_AUTH_TOKEN`), rate limiting (`HEALTH_RATE_LIMIT_*`), request body size guard (`MAX_REQUEST_BODY_BYTES`);
   - `src/modules/{linear,notion,github}-client`: добавлен timeout/abort транспорт через `src/lib/http/fetchWithTimeout.ts` и `RequestOptions { timeoutMs?: number; signal?: AbortSignal }`;
@@ -107,6 +108,12 @@
   - добавлен dataset `evals/datasets/sentry-severity-alpha.json` и npm scripts `test:e2e`, `eval:alpha`;
   - CI (`.github/workflows/ci.yml`) расширен job-ами `e2e-fixtures` и `eval-alpha`;
   - новый baseline: `59/59` tests passed (включая e2e/eval unit) + `eval:alpha` gate pass.
+- **Operational hardening block (2026-03-01):**
+  - добавлены `scripts/backup-n8n.sh` и `scripts/restore-n8n.sh` для backup/restore Podman volume `n8n_data` (+ workflow API dump при наличии `N8N_API_KEY`);
+  - добавлен `scripts/check-env-parity.sh` (parity-check критичных env app/n8n/deploy/model, `--strict`);
+  - добавлен единый `scripts/release-quality-gate.sh` (lint/build/test/integration/e2e/eval/parity/alerts + optional backup);
+  - `scripts/evidence-sync-cycle.sh` расширен флагом `--with-backup`;
+  - обновлены runbook/docs: `docs/operations-profiles.md`, `docs/releases.md`.
 - **Доки:** runbooks (в т.ч. [linear-phase3-runbook.md](linear-phase3-runbook.md), [n8n-workflows/README.md](n8n-workflows/README.md), [live-uat-telegram.md](live-uat-telegram.md)), гайды по Notion/Sentry/n8n (step-by-step), keyring, Linear, MCP, audit, и consolidated backlog [tz-remaining-work.md](tz-remaining-work.md).
 
 ---
