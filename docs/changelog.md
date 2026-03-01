@@ -16,6 +16,10 @@
 - Updated release scorecard security section to match current repo controls:
   - `scripts/generate-release-scorecard-v2.sh` now tracks `Docs link integrity` instead of stale Sonar reference;
   - `docs/templates/release-scorecard-v2.md` synced with current gates (`docs-links`, eval-v2, provenance, cost report).
+- Published beta prerelease:
+  - git tag pushed: `v0.1.0-beta.1`;
+  - GitHub prerelease: `https://github.com/iurii-izman/AIPipeline/releases/tag/v0.1.0-beta.1`;
+  - release evidence doc finalized: `docs/release-notes/v0.1.0-beta.1-rc.md`.
 
 ### Autopilot Block 12: Full docs audit + archive consolidation + link integrity gate
 - Completed full docs/code reality audit and cleaned docs IA for beta readiness:
