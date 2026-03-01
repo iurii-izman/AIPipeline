@@ -7,7 +7,7 @@
 - Release: `v0.1.0-alpha.2`
 - Branch model: `main` as canonical branch
 - Latest major execution: merged PR #24 (2026-03-01)
-- Docs inventory: `74` files in `docs/`
+- Docs inventory: `78` files in `docs/`
 
 ## Delivery State
 - Day-0 and Phases 2–4: completed
@@ -36,10 +36,10 @@
 - Online telemetry report timer: `aipipeline-online-telemetry-report.timer` installed/enabled
 - Local release gate (strict + scorecard): pass  
   `./scripts/release-quality-gate.sh --strict-parity --generate-scorecard --version v0.1.0-alpha.2 --env staging`
-- CI (remote): success with extended jobs (`eval-v2`, `iac-validate`, `cost-governance`, `sbom attestation`)  
-  `https://github.com/iurii-izman/AIPipeline/actions/runs/22552504618`
+- CI (remote): success with extended jobs (`eval-v2`, telemetry volume check, `iac-validate`, `cost-governance`, `sbom+provenance verify`)  
+  `https://github.com/iurii-izman/AIPipeline/actions/runs/22553227323`
 - Release Gate (remote): success with scorecard + supply-chain + ai-ops artifacts  
-  `https://github.com/iurii-izman/AIPipeline/actions/runs/22552521848`
+  `https://github.com/iurii-izman/AIPipeline/actions/runs/22553233125`
 - Git sync state: local `main` and `origin/main` are synchronized
 - IaC baseline: `infra/terraform` + `scripts/check-iac-baseline.sh` + CI job `iac-validate`
 - OTel pilot baseline: `OTEL_PILOT_ENABLED=true` + trace/span correlation in runtime logs
