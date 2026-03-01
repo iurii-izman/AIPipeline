@@ -70,6 +70,46 @@ const workflow = {
         path: "wf3-sentry",
         httpMethod: "POST",
         responseMode: "onReceived",
+        options: { rawBody: true },
+      },
+    },
+    {
+      id: "verify-sentry-signature",
+      name: "Verify Sentry signature",
+      type: "n8n-nodes-base.code",
+      typeVersion: 2,
+      position: [220, -200],
+      parameters: {
+        jsCode: `const crypto = require('crypto');
+const headers = $json.headers || {};
+const secret = String($env.SENTRY_WEBHOOK_SECRET || '');
+if (!secret) {
+  return [{ json: { ...$json, signatureValid: true, signatureReason: 'secret-not-configured' } }];
+}
+const signature = headers['sentry-hook-signature'] || headers['Sentry-Hook-Signature'] || '';
+if (!signature || typeof signature !== 'string') {
+  return [{ json: { ...$json, signatureValid: false, signatureReason: 'missing-signature' } }];
+}
+const rawBody = typeof $json.rawBody === 'string'
+  ? $json.rawBody
+  : JSON.stringify($json.body || {});
+const digest = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
+const valid = signature.length === digest.length && crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(digest));
+return [{ json: { ...$json, signatureValid: valid, signatureReason: valid ? 'ok' : 'signature-mismatch' } }];`,
+      },
+    },
+    {
+      id: "if-sentry-signature-valid",
+      name: "If Sentry signature valid",
+      type: "n8n-nodes-base.if",
+      typeVersion: 2.3,
+      position: [440, -200],
+      parameters: {
+        conditions: {
+          options: { caseSensitive: true },
+          conditions: [{ leftValue: "={{ $json.signatureValid }}", rightValue: true, operator: { type: "boolean", operation: "true", singleValue: true } }],
+          combinator: "and",
+        },
         options: {},
       },
     },
@@ -78,7 +118,7 @@ const workflow = {
       name: "Normalize Sentry event",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
-      position: [220, 0],
+      position: [660, 0],
       parameters: {
         jsCode: `const root = $json.body || $json;
 const event = root.event || root.data?.event || root;
@@ -99,7 +139,7 @@ return [{ json: { title, level, culprit, project, url, fingerprint, eventId, pay
       name: "Deduplicate Sentry event",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
-      position: [440, -120],
+      position: [880, -120],
       parameters: {
         jsCode: `const db = $getWorkflowStaticData('global');\nif (!db.seen) db.seen = {};\nconst ttlMs = 7 * 24 * 60 * 60 * 1000;\nconst now = Date.now();\nfor (const [k, ts] of Object.entries(db.seen)) {\n  if (!Number.isFinite(ts) || (now - ts) > ttlMs) delete db.seen[k];\n}\nconst basis = $json.eventId || $json.fingerprint || (($json.project || '') + ':' + ($json.level || '') + ':' + ($json.title || ''));\nconst key = String(basis).slice(0, 400);\nconst seenAt = db.seen[key];\nif (seenAt && (now - seenAt) < ttlMs) {\n  return [{ json: { ...$json, isDuplicate: true, dedupeKey: key } }];\n}\ndb.seen[key] = now;\nreturn [{ json: { ...$json, isDuplicate: false, dedupeKey: key } }];`,
       },
@@ -109,7 +149,7 @@ return [{ json: { title, level, culprit, project, url, fingerprint, eventId, pay
       name: "If duplicate event",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [660, -120],
+      position: [1100, -120],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -126,19 +166,35 @@ return [{ json: { title, level, culprit, project, url, fingerprint, eventId, pay
       },
     },
     {
+      id: "decide-classifier-mode",
+      name: "Decide classifier mode",
+      type: "n8n-nodes-base.code",
+      typeVersion: 2,
+      position: [1320, 0],
+      parameters: {
+        jsCode: `const rawMode = String($env.MODEL_CLASSIFIER_MODE || 'full_primary').toLowerCase();
+const classifierMode = ['full_primary', 'shadow', 'heuristic_only'].includes(rawMode) ? rawMode : 'full_primary';
+const killSwitch = String($env.MODEL_KILL_SWITCH || 'false').toLowerCase() === 'true';
+const hasOpenAiKey = String($env.OPENAI_API_KEY || '').length > 0;
+const useHeuristic = killSwitch || classifierMode === 'heuristic_only' || !hasOpenAiKey;
+const useOpenAI = !useHeuristic;
+return [{ json: { ...$json, classifierMode, killSwitch, hasOpenAiKey, useHeuristic, useOpenAI } }];`,
+      },
+    },
+    {
       id: "if-openai-key",
-      name: "If OPENAI_API_KEY set",
+      name: "If OpenAI enabled",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [880, 0],
+      position: [1540, 0],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
           conditions: [
             {
-              leftValue: "={{ $env.OPENAI_API_KEY || '' }}",
-              rightValue: "",
-              operator: { type: "string", operation: "notEmpty" },
+              leftValue: "={{ $json.useOpenAI }}",
+              rightValue: true,
+              operator: { type: "boolean", operation: "true", singleValue: true },
             },
           ],
           combinator: "and",
@@ -151,7 +207,7 @@ return [{ json: { title, level, culprit, project, url, fingerprint, eventId, pay
       name: "OpenAI classify severity",
       type: "n8n-nodes-base.httpRequest",
       typeVersion: 4.2,
-      position: [1100, -120],
+      position: [1760, -120],
       parameters: {
         method: "POST",
         url: "https://api.openai.com/v1/chat/completions",
@@ -173,7 +229,7 @@ return [{ json: { title, level, culprit, project, url, fingerprint, eventId, pay
       name: "If OpenAI request failed",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [1320, -220],
+      position: [1980, -220],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -194,9 +250,9 @@ return [{ json: { title, level, culprit, project, url, fingerprint, eventId, pay
       name: "Parse LLM result",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
-      position: [1320, -120],
+      position: [1980, -120],
       parameters: {
-        jsCode: `const base = $('Normalize Sentry event').first().json;
+        jsCode: `const base = $('Decide classifier mode').first().json;
 const text = $json.choices?.[0]?.message?.content || '';
 let obj = null;
 try { obj = JSON.parse(text); } catch {
@@ -220,9 +276,9 @@ return [{ json: { ...base, severity, confidence, reason, classifiedBy: 'llm', in
       name: "Heuristic classify severity",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
-      position: [1100, 120],
+      position: [1760, 120],
       parameters: {
-        jsCode: `const base = $input.first().json;
+        jsCode: `const base = $('Decide classifier mode').first().json || $input.first().json;
 const t = (base.title || '').toLowerCase();
 const p = (base.payloadSnippet || '').toLowerCase();
 const combined = (t + ' ' + p).trim();
@@ -244,7 +300,7 @@ return [{ json: { ...base, severity, confidence, reason, classifiedBy: 'heuristi
       name: "If LINEAR_TEAM_ID set",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [1540, 0],
+      position: [2200, 0],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -265,7 +321,7 @@ return [{ json: { ...base, severity, confidence, reason, classifiedBy: 'heuristi
       name: "If critical",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [1760, -120],
+      position: [2420, -120],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -286,7 +342,7 @@ return [{ json: { ...base, severity, confidence, reason, classifiedBy: 'heuristi
       name: "Linear: Create critical issue",
       type: "n8n-nodes-base.linear",
       typeVersion: 1,
-      position: [1980, -220],
+      position: [2640, -220],
       parameters: {
         resource: "issue",
         operation: "create",
@@ -302,7 +358,7 @@ return [{ json: { ...base, severity, confidence, reason, classifiedBy: 'heuristi
       name: "Linear: Create bug issue",
       type: "n8n-nodes-base.linear",
       typeVersion: 1,
-      position: [1980, -20],
+      position: [2640, -20],
       parameters: {
         resource: "issue",
         operation: "create",
@@ -317,7 +373,7 @@ return [{ json: { ...base, severity, confidence, reason, classifiedBy: 'heuristi
       name: "Format critical notification",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
-      position: [2200, -220],
+      position: [2860, -220],
       parameters: {
         jsCode: `const src = $('If critical').first().json;
 const err = $json.error || null;
@@ -343,7 +399,7 @@ return [{ json: { text: preface + '\\n' + src.title + '\\nLevel: ' + src.level +
       name: "Format non-critical notification",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
-      position: [2200, -20],
+      position: [2860, -20],
       parameters: {
         jsCode: `const src = $('If critical').first().json;
 const err = $json.error || null;
@@ -366,7 +422,7 @@ return [{ json: { text: '⚠️ *Sentry issue*\\n' + src.title + '\\nLevel: ' + 
       name: "Format no-linear notification",
       type: "n8n-nodes-base.set",
       typeVersion: 3.4,
-      position: [1760, 180],
+      position: [2420, 180],
       parameters: {
         mode: "manual",
         assignments: {
@@ -386,7 +442,7 @@ return [{ json: { text: '⚠️ *Sentry issue*\\n' + src.title + '\\nLevel: ' + 
       name: "Telegram: notify",
       type: "n8n-nodes-base.telegram",
       typeVersion: 1.2,
-      position: [2420, -20],
+      position: [3080, -20],
       parameters: {
         operation: "sendMessage",
         chatId: CHAT_ID || "={{ $env.TELEGRAM_CHAT_ID || 'YOUR_CHAT_ID' }}",
@@ -400,7 +456,7 @@ return [{ json: { text: '⚠️ *Sentry issue*\\n' + src.title + '\\nLevel: ' + 
       name: "If Linear create failed",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [2420, 120],
+      position: [3080, 120],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -415,7 +471,7 @@ return [{ json: { text: '⚠️ *Sentry issue*\\n' + src.title + '\\nLevel: ' + 
       name: "DLQ: park WF-3 Linear failure",
       type: "n8n-nodes-base.httpRequest",
       typeVersion: 4.2,
-      position: [2640, 120],
+      position: [3300, 120],
       parameters: {
         method: "POST",
         url: DLQ_PARK_URL,
@@ -431,7 +487,7 @@ return [{ json: { text: '⚠️ *Sentry issue*\\n' + src.title + '\\nLevel: ' + 
       name: "Assess Telegram notify delivery",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
-      position: [2640, -20],
+      position: [3300, -20],
       parameters: {
         jsCode: `const err = $json.error || null;
 if (!err) return [{ json: { telegramFailed: false } }];
@@ -451,7 +507,7 @@ return [{ json: { telegramFailed: true, rateLimited, reason: msg } }];`,
       name: "If Telegram notify failed",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [2860, -20],
+      position: [3520, -20],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -466,7 +522,7 @@ return [{ json: { telegramFailed: true, rateLimited, reason: msg } }];`,
       name: "DLQ: park WF-3 Telegram failure",
       type: "n8n-nodes-base.httpRequest",
       typeVersion: 4.2,
-      position: [3080, -100],
+      position: [3740, -100],
       parameters: {
         method: "POST",
         url: DLQ_PARK_URL,
@@ -499,11 +555,14 @@ return [{ json: { telegramFailed: true, rateLimited, reason: msg } }];`,
     },
   ],
   connections: {
-    "Sentry Webhook": { main: [[{ node: "Normalize Sentry event", type: "main", index: 0 }]] },
+    "Sentry Webhook": { main: [[{ node: "Verify Sentry signature", type: "main", index: 0 }]] },
+    "Verify Sentry signature": { main: [[{ node: "If Sentry signature valid", type: "main", index: 0 }]] },
+    "If Sentry signature valid": { main: [[{ node: "Normalize Sentry event", type: "main", index: 0 }], []] },
     "Normalize Sentry event": { main: [[{ node: "Deduplicate Sentry event", type: "main", index: 0 }]] },
     "Deduplicate Sentry event": { main: [[{ node: "If duplicate event", type: "main", index: 0 }]] },
-    "If duplicate event": { main: [[], [{ node: "If OPENAI_API_KEY set", type: "main", index: 0 }]] },
-    "If OPENAI_API_KEY set": {
+    "If duplicate event": { main: [[], [{ node: "Decide classifier mode", type: "main", index: 0 }]] },
+    "Decide classifier mode": { main: [[{ node: "If OpenAI enabled", type: "main", index: 0 }]] },
+    "If OpenAI enabled": {
       main: [
         [{ node: "OpenAI classify severity", type: "main", index: 0 }],
         [{ node: "Heuristic classify severity", type: "main", index: 0 }],

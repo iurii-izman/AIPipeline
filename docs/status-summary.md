@@ -87,6 +87,12 @@
   - зафиксированы Top-20 weak spots с evidence/impact/priority/remediation/acceptance criteria;
   - добавлен phased roadmap 20 шагов + setup hardening checklist + Cursor-ready implementation plan;
   - formalized alpha-test track для WF-3 model classification в режиме `Full Primary` с guardrails, rollback и kill switch.
+- **P0 hardening iteration (2026-03-01):**
+  - `src/healthServer.js`: добавлены auth guard для `/status` (`STATUS_AUTH_TOKEN`), rate limiting (`HEALTH_RATE_LIMIT_*`), request body size guard (`MAX_REQUEST_BODY_BYTES`);
+  - `src/modules/{linear,notion,github}-client`: добавлен timeout/abort транспорт через `src/lib/http/fetchWithTimeout.ts` и `RequestOptions { timeoutMs?: number; signal?: AbortSignal }`;
+  - `scripts/update-wf2-github-pr-linear.js`: добавлена проверка GitHub webhook подписи (`GITHUB_WEBHOOK_SECRET`) перед обработкой payload;
+  - `scripts/update-wf3-sentry-telegram.js`: добавлена проверка Sentry webhook подписи (`SENTRY_WEBHOOK_SECRET`) + feature flags `MODEL_CLASSIFIER_MODE` и `MODEL_KILL_SWITCH` для управляемого режима классификации;
+  - тесты расширены (`tests/health-server.test.ts`, `tests/*client.test.ts`), baseline теперь `48/48` passed.
 - **Доки:** runbooks (в т.ч. [linear-phase3-runbook.md](linear-phase3-runbook.md), [n8n-workflows/README.md](n8n-workflows/README.md), [live-uat-telegram.md](live-uat-telegram.md)), гайды по Notion/Sentry/n8n (step-by-step), keyring, Linear, MCP, audit, и consolidated backlog [tz-remaining-work.md](tz-remaining-work.md).
 
 ---

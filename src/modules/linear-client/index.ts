@@ -6,6 +6,7 @@ import {
   withCircuitBreaker,
   withRetry,
 } from "../../lib/resilience";
+import { fetchWithTimeout, type RequestOptions } from "../../lib/http/fetchWithTimeout";
 
 export type LinearIssue = {
   id: string;
@@ -50,6 +51,7 @@ type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 type LinearClientOptions = {
   apiKey?: string;
   fetcher?: Fetcher;
+  defaultTimeoutMs?: number;
 };
 
 function isRetryableStatus(status: number): boolean {
@@ -79,11 +81,13 @@ export class LinearClient {
   private readonly fetcher: Fetcher;
   private readonly endpoint = "https://api.linear.app/graphql";
   private readonly executeWithBreaker: <T>(operation: () => Promise<T>) => Promise<T>;
+  private readonly defaultTimeoutMs?: number;
 
   constructor(options?: LinearClientOptions) {
     const cfg = loadConfig({ requireLinear: true });
     this.apiKey = options?.apiKey ?? cfg.linearApiKey!;
     this.fetcher = options?.fetcher ?? fetch;
+    this.defaultTimeoutMs = options?.defaultTimeoutMs;
     const guarded = withCircuitBreaker(
       async <T>(operation: () => Promise<T>) => {
         return operation();
@@ -93,21 +97,34 @@ export class LinearClient {
     this.executeWithBreaker = guarded as <T>(operation: () => Promise<T>) => Promise<T>;
   }
 
-  private async runGraphQL<TData>(query: string, variables: Record<string, unknown>, idempotencyKey?: string): Promise<TData> {
+  private async runGraphQL<TData>(
+    query: string,
+    variables: Record<string, unknown>,
+    idempotencyKey?: string,
+    requestOptions?: RequestOptions
+  ): Promise<TData> {
     const execute = () =>
       withRetry(
         async () => {
           let response: Response;
           try {
-            response = await this.fetcher(this.endpoint, {
-              method: "POST",
-              headers: {
-                Authorization: this.apiKey,
-                "Content-Type": "application/json",
-                ...(idempotencyKey ? { "X-Idempotency-Key": idempotencyKey } : {}),
+            response = await fetchWithTimeout(
+              this.fetcher,
+              this.endpoint,
+              {
+                method: "POST",
+                headers: {
+                  Authorization: this.apiKey,
+                  "Content-Type": "application/json",
+                  ...(idempotencyKey ? { "X-Idempotency-Key": idempotencyKey } : {}),
+                },
+                body: JSON.stringify({ query, variables }),
               },
-              body: JSON.stringify({ query, variables }),
-            });
+              {
+                timeoutMs: requestOptions?.timeoutMs ?? this.defaultTimeoutMs,
+                signal: requestOptions?.signal,
+              }
+            );
           } catch (error) {
             throw new LinearError({
               message: "Linear request failed at network layer",
@@ -164,19 +181,27 @@ export class LinearClient {
     }
   }
 
-  async findIssue(identifier: string): Promise<LinearIssue | null> {
+  async findIssue(identifier: string, requestOptions?: RequestOptions): Promise<LinearIssue | null> {
     const data = await this.runGraphQL<{ issues: { nodes: LinearIssue[] } }>(
       "query($identifier:String!){issues(filter:{identifier:{eq:$identifier}},first:1){nodes{id identifier title state{name type} url}}}",
-      { identifier }
+      { identifier },
+      undefined,
+      requestOptions
     );
     return data.issues.nodes[0] ?? null;
   }
 
-  async updateIssueState(issueId: string, stateId: string, idempotencyKey?: string): Promise<LinearIssue> {
+  async updateIssueState(
+    issueId: string,
+    stateId: string,
+    idempotencyKey?: string,
+    requestOptions?: RequestOptions
+  ): Promise<LinearIssue> {
     const data = await this.runGraphQL<{ issueUpdate: { success: boolean; issue: LinearIssue } }>(
       "mutation($id:String!,$stateId:String!){issueUpdate(id:$id,input:{stateId:$stateId}){success issue{id identifier title state{name type} url}}}",
       { id: issueId, stateId },
-      idempotencyKey
+      idempotencyKey,
+      requestOptions
     );
     if (!data.issueUpdate.success) {
       throw new LinearError({
@@ -188,11 +213,12 @@ export class LinearClient {
     return data.issueUpdate.issue;
   }
 
-  async createIssue(input: LinearCreateIssueInput, idempotencyKey?: string): Promise<LinearIssue> {
+  async createIssue(input: LinearCreateIssueInput, idempotencyKey?: string, requestOptions?: RequestOptions): Promise<LinearIssue> {
     const data = await this.runGraphQL<{ issueCreate: { success: boolean; issue: LinearIssue } }>(
       "mutation($input:IssueCreateInput!){issueCreate(input:$input){success issue{id identifier title state{name type} url}}}",
       { input },
-      idempotencyKey
+      idempotencyKey,
+      requestOptions
     );
     if (!data.issueCreate.success) {
       throw new LinearError({
@@ -204,10 +230,12 @@ export class LinearClient {
     return data.issueCreate.issue;
   }
 
-  async listIssues(limit = 50): Promise<LinearIssue[]> {
+  async listIssues(limit = 50, requestOptions?: RequestOptions): Promise<LinearIssue[]> {
     const data = await this.runGraphQL<{ issues: { nodes: LinearIssue[] } }>(
       "query($first:Int!){issues(first:$first){nodes{id identifier title state{name type} url}}}",
-      { first: limit }
+      { first: limit },
+      undefined,
+      requestOptions
     );
     return data.issues.nodes;
   }

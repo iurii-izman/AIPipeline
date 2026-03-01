@@ -6,6 +6,7 @@ import {
   withCircuitBreaker,
   withRetry,
 } from "../../lib/resilience";
+import { fetchWithTimeout, type RequestOptions } from "../../lib/http/fetchWithTimeout";
 
 export type NotionPageRef = {
   id: string;
@@ -54,6 +55,7 @@ type NotionClientOptions = {
   token?: string;
   fetcher?: Fetcher;
   notionVersion?: string;
+  defaultTimeoutMs?: number;
 };
 
 type NotionListResponse = {
@@ -123,12 +125,14 @@ export class NotionClient {
   private readonly notionVersion: string;
   private readonly endpoint = "https://api.notion.com/v1";
   private readonly executeWithBreaker: <T>(operation: () => Promise<T>) => Promise<T>;
+  private readonly defaultTimeoutMs?: number;
 
   constructor(options?: NotionClientOptions) {
     const cfg = loadConfig({ requireNotion: true });
     this.token = options?.token ?? cfg.notionToken!;
     this.fetcher = options?.fetcher ?? fetch;
     this.notionVersion = options?.notionVersion ?? cfg.notionVersion;
+    this.defaultTimeoutMs = options?.defaultTimeoutMs;
     const guarded = withCircuitBreaker(
       async <T>(operation: () => Promise<T>) => operation(),
       defaultCircuitBreakerPolicy
@@ -139,22 +143,31 @@ export class NotionClient {
   private async runRequest<T>(
     path: string,
     init?: RequestInit,
-    errorContext = "Notion request failed"
+    errorContext = "Notion request failed",
+    requestOptions?: RequestOptions
   ): Promise<T> {
     const execute = () =>
       withRetry(
         async () => {
           let response: Response;
           try {
-            response = await this.fetcher(`${this.endpoint}${path}`, {
-              ...init,
-              headers: {
-                Authorization: `Bearer ${this.token}`,
-                "Notion-Version": this.notionVersion,
-                "Content-Type": "application/json",
-                ...(init?.headers ?? {}),
+            response = await fetchWithTimeout(
+              this.fetcher,
+              `${this.endpoint}${path}`,
+              {
+                ...init,
+                headers: {
+                  Authorization: `Bearer ${this.token}`,
+                  "Notion-Version": this.notionVersion,
+                  "Content-Type": "application/json",
+                  ...(init?.headers ?? {}),
+                },
               },
-            });
+              {
+                timeoutMs: requestOptions?.timeoutMs ?? this.defaultTimeoutMs,
+                signal: requestOptions?.signal,
+              }
+            );
           } catch (error) {
             throw new NotionError({
               message: `${errorContext} at network layer`,
@@ -208,14 +221,15 @@ export class NotionClient {
     }
   }
 
-  async search(query: string, pageSize = 5): Promise<NotionSearchResult[]> {
+  async search(query: string, pageSize = 5, requestOptions?: RequestOptions): Promise<NotionSearchResult[]> {
     const data = await this.runRequest<NotionListResponse>(
       "/search",
       {
         method: "POST",
         body: JSON.stringify({ query, page_size: pageSize }),
       },
-      "Notion search failed"
+      "Notion search failed",
+      requestOptions
     );
 
     const rows = Array.isArray(data.results) ? data.results : [];
@@ -229,7 +243,7 @@ export class NotionClient {
     });
   }
 
-  async createPage(input: NotionCreatePageInput): Promise<NotionPageRef> {
+  async createPage(input: NotionCreatePageInput, requestOptions?: RequestOptions): Promise<NotionPageRef> {
     const properties: Record<string, unknown> = {
       ...(input.properties ?? {}),
     };
@@ -271,7 +285,8 @@ export class NotionClient {
           ...(children ? { children } : {}),
         }),
       },
-      "Notion create page failed"
+      "Notion create page failed",
+      requestOptions
     );
 
     const id = payload.id;
@@ -289,7 +304,7 @@ export class NotionClient {
     };
   }
 
-  async findPageByTitle(parentDatabaseId: string, title: string): Promise<NotionPageRef | null> {
+  async findPageByTitle(parentDatabaseId: string, title: string, requestOptions?: RequestOptions): Promise<NotionPageRef | null> {
     const maxPages = 3;
     let cursor: string | undefined;
 
@@ -303,7 +318,8 @@ export class NotionClient {
             ...(cursor ? { start_cursor: cursor } : {}),
           }),
         },
-        "Notion database query failed"
+        "Notion database query failed",
+        requestOptions
       );
 
       const rows = Array.isArray(data.results) ? data.results : [];
@@ -329,25 +345,29 @@ export class NotionClient {
 
   async createPageIdempotent(
     input: NotionCreatePageInput,
-    idempotencyKey?: string
+    idempotencyKey?: string,
+    requestOptions?: RequestOptions
   ): Promise<{ created: boolean; page: NotionPageRef }> {
     if (!idempotencyKey) {
-      const page = await this.createPage(input);
+      const page = await this.createPage(input, requestOptions);
       return { created: true, page };
     }
 
     const marker = `[idem:${idempotencyKey}]`;
     const markedTitle = input.title.includes(marker) ? input.title : `${input.title} ${marker}`;
 
-    const existing = await this.findPageByTitle(input.parentDatabaseId, markedTitle);
+    const existing = await this.findPageByTitle(input.parentDatabaseId, markedTitle, requestOptions);
     if (existing) {
       return { created: false, page: existing };
     }
 
-    const page = await this.createPage({
-      ...input,
-      title: markedTitle,
-    });
+    const page = await this.createPage(
+      {
+        ...input,
+        title: markedTitle,
+      },
+      requestOptions
+    );
 
     return { created: true, page };
   }

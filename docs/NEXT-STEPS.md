@@ -34,6 +34,11 @@
   - alert-oriented probe `scripts/check-observability-alerts.sh` (synthetic + Loki error signal + n8n failed executions + audit stream);
   - audit stream критических операций (`.runtime-logs/audit.log`) добавлен в stack/webhook scripts;
   - Grafana dashboard `AIPipeline Overview` расширен: Error Signal, DLQ/Workflow Failures, Audit Trail.
+- P0 hardening (итерация 2026-03-01) внедрён:
+  - `/status` auth guard + rate limiting + body-size guard;
+  - timeout/abort transport layer для typed TS clients;
+  - webhook signature verification для WF-2 (GitHub) и WF-3 (Sentry);
+  - model feature flags для WF-3 (`MODEL_CLASSIFIER_MODE`, `MODEL_KILL_SWITCH`).
 
 ## Операционные проверки
 
@@ -68,9 +73,10 @@
 
 ## Что остаётся до полного closure
 
-1. Поддерживать регулярный цикл evidence-sync в Notion Sprint Log/Runbook.
-2. Поддерживать closure audit (`audit-linear-github-closure.js`) в регулярном цикле.
-3. NotebookLM: weekly UI upload source-bundle (manual-only), подготовка через `./scripts/notebooklm-weekly-refresh.sh`.
+1. Включить и проверить новые env-параметры в runtime n8n/app: `STATUS_AUTH_TOKEN`, `HEALTH_RATE_LIMIT_MAX_REQUESTS`, `HEALTH_RATE_LIMIT_WINDOW_MS`, `MAX_REQUEST_BODY_BYTES`, `GITHUB_WEBHOOK_SECRET`, `SENTRY_WEBHOOK_SECRET`, `MODEL_CLASSIFIER_MODE`, `MODEL_KILL_SWITCH`.
+2. Поддерживать регулярный цикл evidence-sync в Notion Sprint Log/Runbook.
+3. Поддерживать closure audit (`audit-linear-github-closure.js`) в регулярном цикле.
+4. NotebookLM: weekly UI upload source-bundle (manual-only), подготовка через `./scripts/notebooklm-weekly-refresh.sh`.
 
 ## Рабочий цикл дальше
 

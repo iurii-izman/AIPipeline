@@ -135,6 +135,24 @@ describe("NotionClient", () => {
     await expect(client.search("query")).rejects.toMatchObject({ code: "NETWORK", retryable: true });
   });
 
+  it("times out request when timeoutMs is exceeded", async () => {
+    process.env.NOTION_TOKEN = "notion-token";
+
+    const client = new NotionClient({
+      fetcher: async (_url, init) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener(
+            "abort",
+            () => reject(new DOMException("aborted", "AbortError")),
+            { once: true }
+          );
+        }),
+      defaultTimeoutMs: 5,
+    });
+
+    await expect(client.search("query")).rejects.toMatchObject({ code: "NETWORK", retryable: true });
+  });
+
   it("throws typed bad response when create page payload misses id", async () => {
     process.env.NOTION_TOKEN = "notion-token";
 

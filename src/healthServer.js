@@ -9,6 +9,49 @@ const { log, correlationIdFromRequest } = require("./logger.js");
 
 const DEFAULT_PORT = 3000;
 const N8N_URL = process.env.N8N_URL || "http://localhost:5678";
+const rateBuckets = new Map();
+
+function resetRateLimiter() {
+  rateBuckets.clear();
+}
+
+function getRateLimitWindowMs() {
+  return Number(process.env.HEALTH_RATE_LIMIT_WINDOW_MS || 60_000);
+}
+
+function getRateLimitMaxRequests() {
+  return Number(process.env.HEALTH_RATE_LIMIT_MAX_REQUESTS || 60);
+}
+
+function getMaxRequestBodyBytes() {
+  return Number(process.env.MAX_REQUEST_BODY_BYTES || 1_048_576);
+}
+
+function enforceRateLimit(key) {
+  const rateLimitWindowMs = getRateLimitWindowMs();
+  const rateLimitMaxRequests = getRateLimitMaxRequests();
+  const now = Date.now();
+  const bucket = rateBuckets.get(key);
+  if (!bucket || now - bucket.startedAt >= rateLimitWindowMs) {
+    rateBuckets.set(key, { startedAt: now, count: 1 });
+    return true;
+  }
+  if (bucket.count >= rateLimitMaxRequests) return false;
+  bucket.count += 1;
+  return true;
+}
+
+function extractBearerToken(req) {
+  const value = req.headers?.authorization;
+  if (!value || typeof value !== "string") return "";
+  const parts = value.split(" ");
+  if (parts.length !== 2 || parts[0].toLowerCase() !== "bearer") return "";
+  return parts[1];
+}
+
+function getStatusAuthToken() {
+  return process.env.STATUS_AUTH_TOKEN || "";
+}
 
 /**
  * Pings n8n (GET base URL). Returns "reachable" or "unreachable".
@@ -76,13 +119,44 @@ function checkN8n(correlationId) {
 function requestHandler(req, res) {
   const url = req.url?.split("?")[0] ?? "/";
   const correlationId = correlationIdFromRequest(req);
+  const remoteAddress = req.socket?.remoteAddress || "unknown";
+  const contentLengthRaw = req.headers?.["content-length"];
+  const contentLength = Number(Array.isArray(contentLengthRaw) ? contentLengthRaw[0] : contentLengthRaw);
+  const maxRequestBodyBytes = getMaxRequestBodyBytes();
+  const rateLimitWindowMs = getRateLimitWindowMs();
+  const rateLimitMaxRequests = getRateLimitMaxRequests();
   res.setHeader("x-correlation-id", correlationId);
   log("info", "http request received", {
     correlationId,
     method: req.method,
     url,
-    remoteAddress: req.socket?.remoteAddress,
+    remoteAddress,
   });
+
+  if (Number.isFinite(contentLength) && contentLength > maxRequestBodyBytes) {
+    res.writeHead(413);
+    res.end();
+    log("error", "request rejected due to content length", {
+      correlationId,
+      contentLength,
+      maxAllowedBytes: maxRequestBodyBytes,
+      url,
+    });
+    return;
+  }
+
+  if ((url === "/health" || url === "/status") && !enforceRateLimit(`${remoteAddress}:${url}`)) {
+    res.writeHead(429);
+    res.end();
+    log("error", "rate limit exceeded", {
+      correlationId,
+      url,
+      remoteAddress,
+      rateLimitMaxRequests,
+      rateLimitWindowMs,
+    });
+    return;
+  }
 
   if (req.method === "GET" && url === "/health") {
     res.setHeader("Content-Type", "application/json");
@@ -99,6 +173,19 @@ function requestHandler(req, res) {
     return;
   }
   if (req.method === "GET" && url === "/status") {
+    const statusAuthToken = getStatusAuthToken();
+    if (statusAuthToken) {
+      const token = extractBearerToken(req);
+      if (!token || token !== statusAuthToken) {
+        res.writeHead(401);
+        res.end();
+        log("error", "status endpoint unauthorized", {
+          correlationId,
+          remoteAddress,
+        });
+        return;
+      }
+    }
     const env = {
       github: Boolean(process.env.GITHUB_PERSONAL_ACCESS_TOKEN),
       linear: Boolean(process.env.LINEAR_API_KEY),
@@ -152,4 +239,4 @@ function start(port = Number(process.env.PORT) || DEFAULT_PORT) {
   });
 }
 
-module.exports = { start, requestHandler };
+module.exports = { start, requestHandler, resetRateLimiter };

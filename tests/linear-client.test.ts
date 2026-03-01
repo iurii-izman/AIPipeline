@@ -104,6 +104,25 @@ describe("LinearClient", () => {
     await expect(client.listIssues()).rejects.toBeInstanceOf(LinearError);
   });
 
+  it("times out request when timeoutMs is exceeded", async () => {
+    process.env.LINEAR_API_KEY = "lin_key";
+    process.env.LINEAR_TEAM_ID = "team_id";
+
+    const client = new LinearClient({
+      fetcher: async (_url, init) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener(
+            "abort",
+            () => reject(new DOMException("aborted", "AbortError")),
+            { once: true }
+          );
+        }),
+      defaultTimeoutMs: 5,
+    });
+
+    await expect(client.listIssues()).rejects.toMatchObject({ code: "NETWORK" });
+  });
+
   it("throws when updateIssueState returns success=false", async () => {
     process.env.LINEAR_API_KEY = "lin_key";
     process.env.LINEAR_TEAM_ID = "team_id";
