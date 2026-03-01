@@ -1,444 +1,740 @@
-# AIPipeline: Comprehensive Project Audit & Roadmap (Principal Engineer Review)
+# AIPipeline — Principal Engineer Audit & Roadmap
 
-Дата аудита: 2026-03-01  
-Репозиторий: `AIPipeline`  
-Контекст: solo-разработка, late-alpha / early-MVP
+**Date:** 2026-03-01
+**Auditor:** Principal Engineer review (automated, Claude Code)
+**Scope:** Full repository — source, tests, CI/CD, docs, scripts, infra configs
+**Commit:** `a7c92ff` (HEAD of `main`)
+
+---
+
+## Table of Contents
+
+- [A. Executive Summary](#a-executive-summary)
+- [B. Current State Map](#b-current-state-map)
+- [C. Top-20 Weak Spots](#c-top-20-weak-spots)
+- [D. Roadmap: 20 Steps](#d-roadmap-20-steps)
+- [E. Setup Hardening Checklist](#e-setup-hardening-checklist)
+- [F. Cursor-ready Implementation Plan](#f-cursor-ready-implementation-plan)
+- [G. Appendices](#g-appendices)
 
 ---
 
 ## A. Executive Summary
 
-### Что это за система
-AIPipeline — AI-native delivery pipeline для операционного управления разработкой через интеграцию Linear, Notion, GitHub, n8n, Sentry, Telegram и MCP-серверов Cursor. Основная ценность сейчас — не продуктовая фича, а надежный delivery/control plane: triage, notification, orchestration, incident handoff, evidence sync.
+### What is AIPipeline?
 
-### Текущая зрелость
-Система находится на стадии **late-alpha / early-MVP**:
-- Day-0 и фазы baseline-интеграции завершены (`docs/status-summary.md`, `docs/NEXT-STEPS.md`).
-- Runtime-цепочка workflow активирована на уровне артефактов WF-1..WF-7 (`docs/n8n-workflows/*.json`, `scripts/update-wf*.js`).
-- Есть typed API clients с resilience (retry + circuit breaker) и unit tests.
-- Отсутствуют production-grade security controls на webhook/API perimeter и полноформатный AI eval/guardrail контур.
+AIPipeline is an **AI-native solo-developer delivery pipeline** that integrates Linear (task tracking), Notion (specs/ADR), GitHub (code/CI), Cursor (AI IDE), n8n (automation hub), Sentry (error monitoring), and Telegram (command center) into a single automated workflow. It runs on Fedora COSMIC Atomic with 8 GB RAM.
 
-### Что работает хорошо
-1. Сильная документационная дисциплина: **63 файла** в `docs/` на 2026-03-01.  
-2. Клиенты интеграций реализованы с typed errors, retry/backoff и circuit breaker:  
-   - `src/modules/linear-client/index.ts`  
-   - `src/modules/notion-client/index.ts`  
-   - `src/modules/github-client/index.ts`  
-3. Конфигурация валидируется через zod fail-fast: `src/config/env.ts`.  
-4. Structured logging + redaction + correlation ID: `src/logger.js`, `src/healthServer.js`.  
-5. CI quality baseline стабилен: `lint`, `typecheck`, `test`, `coverage` (42/42 тестов, coverage gate проходит).
+### Target audience
 
-### Что блокирует production-ready
-1. Entry-point бизнес-логики фактически stub (`src/index.js`).
-2. Нет E2E и реальных integration тестов с живыми провайдерами.
-3. Нет formal AI eval harness при Full Primary-пути в WF-3.
-4. Нет webhook signature verification для WF-2/WF-3.
-5. Нет API hardening для `/status` (auth/rate-limit/payload policy).
+A single developer who wants automated delivery tooling without a team — issue triage, spec generation, CI/CD, error classification, and daily digests all wired together and operated via Telegram.
 
-### Top-5 рисков (P0/P1)
-1. **P0 Security:** невалидируемые webhook-и (WF-2/WF-3) позволяют spoofed events.  
-2. **P0 AI Quality/Operations:** Full Primary без формальных quality gates может породить ложные P0-инциденты и noise escalation.  
-3. **P1 Reliability:** отсутствие timeout/AbortController в TS clients повышает риск hanging requests и деградации очередей.  
-4. **P1 Recovery:** DLQ основан на workflow static data без durable storage/backup policy.  
-5. **P1 Platform:** отсутствует deployment target и средовая parity-модель staging↔production.
+### Maturity assessment
 
-### Top-5 возможностей (быстрые рычаги value)
-1. Ввести timeout-контур и унифицированный transport wrapper для всех TS-клиентов.
-2. Закрыть perimeter: HMAC verify + auth/rate-limit на health/status.
-3. Формализовать AI eval + rollback + kill switch и перевести WF-3 в управляемый Full Primary.
-4. Добавить integration/e2e harness на webhook fixtures (WF-2/3/5/7).
-5. Внедрить security scanning pipeline (deps + container + SAST).
+**Late-alpha / early-MVP.** Day-0 infrastructure is complete. Seven n8n workflows are active. Three typed TypeScript integration clients (Linear, Notion, GitHub) are built with enterprise-grade resilience patterns (retry, circuit breaker, idempotency). However:
+
+- The application entry point is a stub (`src/index.js:10` — `return "AIPipeline"`)
+- No production deployment target exists — deploy workflows fire webhooks to empty URLs
+- No AI evaluation harness — the LLM classification in WF-3 is untested in code
+- Real business logic beyond pipeline orchestration has not been started
+
+### Top 5 risks
+
+| # | Risk | Impact |
+|---|------|--------|
+| 1 | **No graceful shutdown** — process.exit without draining connections; in-flight requests lost on restart | Data loss, broken health probes |
+| 2 | **Unauthenticated /health and /status endpoints** — /status reveals which secrets are loaded (boolean flags) | Information disclosure in any network context beyond localhost |
+| 3 | **In-memory circuit breaker and idempotency state** — lost on every restart/redeploy | Duplicate dispatches, thundering herd after restart |
+| 4 | **No dependency vulnerability scanning** — no `npm audit`, Snyk, or Dependabot configured | Supply-chain compromise undetected |
+| 5 | **Mixed JS/TS codebase with coverage gap** — JS files (`index.js`, `healthServer.js`, `logger.js`, `instrument.js`) excluded from coverage threshold | Regressions in core server code go unnoticed |
+
+### Top 5 opportunities
+
+| # | Opportunity | Value |
+|---|-------------|-------|
+| 1 | **Migrate JS to TS** — 4 files, ~250 lines total; unlocks full type-safety and unified coverage | Eliminates dual-language friction, increases coverage |
+| 2 | **Add `npm audit` to CI** — single YAML line in `ci.yml` | Catches CVEs before merge, zero effort |
+| 3 | **Graceful shutdown with SIGTERM handler** — 20 lines of code | Safe restarts, enables container-grade readiness |
+| 4 | **Containerize the app** — Dockerfile + `stack-control.sh` integration | Parity with n8n/observability stack, reproducible deploys |
+| 5 | **AI eval harness for WF-3** — test LLM severity classification against labeled fixture set | Catches prompt drift, regression-tests the AI component |
 
 ---
 
 ## B. Current State Map
 
-### B1. Архитектура (текстовая схема)
+### Architecture diagram
 
-```text
-Telegram / Sentry / GitHub events
-          │
-          ▼
-      n8n Workflows (WF-1..WF-7)
-          │
-          ├─ Linear API (issues/state)
-          ├─ Notion API (search/pages/sprint log)
-          ├─ GitHub API (workflow dispatch/runs)
-          └─ Telegram API (alerts/commands)
-
-Node app (src/index.js + src/healthServer.js)
-          │
-          ├─ /health, /status
-          ├─ structured logs + correlation id
-          └─ Sentry SDK init (src/instrument.js)
-
-Control Plane & Ops
-  scripts/*.sh + scripts/*.js
-  docs/status-summary.md + docs/NEXT-STEPS.md
+```
+┌─────────── PLAN ──────────┐  ┌──────── BUILD ────────┐  ┌───── OBSERVE ──────┐
+│                            │  │                        │  │                    │
+│  Linear                    │  │  GitHub (code + CI)    │  │  Sentry            │
+│  (tasks, labels, states)   │  │  ├─ ci.yml             │  │  (errors, alerts)  │
+│                            │  │  ├─ deploy-staging.yml  │  │                    │
+│  Notion                    │  │  └─ deploy-prod.yml     │  │  Grafana/Loki      │
+│  (specs, ADR, Sprint Log)  │  │                        │  │  (logs, dashboards)│
+│                            │  │  Cursor + Claude Code  │  │                    │
+└────────────┬───────────────┘  │  (AI IDE + agents)     │  │  Telegram          │
+             │                  │                        │  │  (WF-5 commands)   │
+             │                  └───────────┬────────────┘  └─────────┬──────────┘
+             │                              │                         │
+             └──────────────┬───────────────┘                         │
+                            │                                         │
+                    ┌───────▼─────────────────────────────────────────▼──┐
+                    │                  n8n (Podman)                       │
+                    │  WF-1: Linear → Telegram notification              │
+                    │  WF-2: GitHub PR → parse AIP-XX → Linear Done      │
+                    │  WF-3: Sentry alert → LLM classify → Linear/TG     │
+                    │  WF-4: Daily standup digest (cron 09:00)           │
+                    │  WF-5: Telegram command center (/status, /tasks…)  │
+                    │  WF-6: Monday Notion-reminder                      │
+                    │  WF-7: DLQ parking + replay                        │
+                    └────────────────────────────────────────────────────┘
+                            │
+                    ┌───────▼────────────┐
+                    │  AIPipeline App     │
+                    │  src/index.js       │
+                    │  GET /health        │
+                    │  GET /status        │
+                    └────────────────────┘
 ```
 
-### B2. Модульная карта (код)
+### MCP (Model Context Protocol) servers
 
-| Path | Роль | Критичность | Quality State | Ключевой Tech Debt |
-|---|---|---:|---|---|
-| `src/index.js` | Entry point | High | Minimal/stub | Нет orchestration, graceful shutdown, runtime lifecycle |
-| `src/healthServer.js` | `/health`, `/status`, n8n probe | High | Functional baseline | Нет auth/rate-limit/body limits |
-| `src/logger.js` | JSON logging + redaction | High | Good baseline | Не интегрирован единообразно в TS clients |
-| `src/instrument.js` | Sentry init | Medium | Minimal | Нет traces/profiles/sampling policy |
-| `src/config/env.ts` | Typed env schema + validation | High | Strong | Нет secret rotation/expiry guardrails |
-| `src/lib/resilience/retry.ts` | Retry/backoff | High | Good | Нет jitter strategy и budget policy |
-| `src/lib/resilience/circuitBreaker.ts` | Circuit breaker | High | Good | Состояние in-memory, без persistence |
-| `src/modules/linear-client/index.ts` | Linear GraphQL client | High | Strong | Нет timeout/AbortController |
-| `src/modules/notion-client/index.ts` | Notion REST client + idempotent create | High | Strong | Idempotency marker strategy требует governance |
-| `src/modules/github-client/index.ts` | GitHub REST client + dispatch dedupe | High | Strong | Dedupe in-memory, теряется на restart |
+| Server | Transport | Source |
+|--------|-----------|--------|
+| Notion | stdio / npx | `.cursor/mcp.json` |
+| GitHub | stdio / npx | `.cursor/mcp.json` |
+| Linear | stdio / npx | `.cursor/mcp.json` |
+| Telegram | stdio / npx | `.cursor/mcp.json` |
+| n8n-mcp | stdio / npx | `.cursor/mcp.json` |
+| filesystem | stdio / npx | `.cursor/mcp.json` |
+| Sentry | remote / OAuth | `~/.cursor/mcp.json` |
 
-### B3. Тестовая карта
+### Module table
 
-| Scope | Файлы | Статус |
-|---|---|---|
-| Smoke | `tests/smoke.test.ts` | Есть, минимальный |
-| Server/API | `tests/health-server.test.ts` | Есть, базовые маршруты |
-| Config | `tests/env.test.ts` | Есть, валидирует required/defaults |
-| Resilience | `tests/retry.test.ts`, `tests/circuit-breaker.test.ts` | Есть |
-| Integrations (mocked) | `tests/linear-client.test.ts`, `tests/notion-client.test.ts`, `tests/github-client.test.ts` | Есть, без real API |
-| E2E | — | Нет |
+| Module | Path | Role | Lines | Lang | Criticality | Tech Debt |
+|--------|------|------|-------|------|-------------|-----------|
+| Entry point | `src/index.js` | App bootstrap, starts health server | 32 | JS | **High** | Stub — `main()` returns string literal |
+| Health server | `src/healthServer.js` | HTTP /health, /status, n8n probe | 156 | JS | **High** | No auth, no graceful shutdown, no body-size limit |
+| Logger | `src/logger.js` | Structured JSON logging, redaction | 49 | JS | Medium | Not configurable (no log-level filter) |
+| Instrument | `src/instrument.js` | Sentry SDK init | 13 | JS | Low | Minimal — works as intended |
+| Config | `src/config/env.ts` | Zod schema validation | 87 | TS | **High** | Solid — fail-fast with clear messages |
+| Retry | `src/lib/resilience/retry.ts` | Exponential backoff wrapper | 39 | TS | **High** | Clean — no jitter (minor) |
+| Circuit breaker | `src/lib/resilience/circuitBreaker.ts` | In-memory state machine | 71 | TS | **High** | State lost on restart; no sliding window |
+| Policy defaults | `src/lib/resilience/policy.ts` | Default retry/CB settings | 14 | TS | Low | Differs from CLAUDE.md spec (see W-05) |
+| Linear client | `src/modules/linear-client/index.ts` | GraphQL API wrapper | 215 | TS | **High** | Well-structured, tested |
+| Notion client | `src/modules/notion-client/index.ts` | REST API wrapper | 355 | TS | **High** | Well-structured, tested |
+| GitHub client | `src/modules/github-client/index.ts` | REST API wrapper | 273 | TS | **High** | In-memory dedup set (lost on restart) |
 
-### B4. CI/CD и релизный контур
+### Quality metrics
 
-| Artifact | Что делает | Ограничение |
-|---|---|---|
-| `.github/workflows/ci.yml` | lint/typecheck/test/coverage | Нет security scan стадий |
-| `.github/workflows/deploy-staging.yml` | validate + webhook deploy/dry-run | `curl` без retry/timeout policy |
-| `.github/workflows/deploy-production.yml` | confirm gate + webhook deploy/dry-run | Нет environment parity enforcement |
+| Metric | Value | Target | Status |
+|--------|-------|--------|--------|
+| Coverage threshold | 80% | 80% | Configured — but only covers `src/**/*.ts` |
+| Test files | 8 | — | All passing |
+| Lint errors | 0 | 0 | Clean |
+| Typecheck errors | 0 | 0 | Clean |
+| Pre-commit hooks | 7 | — | Active (trailing WS, EOF, YAML, JSON, merge-conflict, large files, private key detect) |
+| Dependency count (prod) | 2 (`@sentry/node`, `zod`) | — | Minimal |
+| Node version | >= 22 | >= 22 | Enforced in `package.json` and CI |
 
-### B5. Операционный baseline (факты)
+### AI components assessment
 
-- Проверка окружения: `./scripts/health-check-env.sh` — **зелёная** для keyring/env/app init.  
-- n8n runtime при проверке — **container exists but stopped** (операционная ситуация).  
-- WF артефакты: `docs/n8n-workflows/wf-1...wf-7*.json` присутствуют и синхронизируются скриптами.
-
-### B6. Качество (из актуального прогона)
-
-- Команды: `npm run lint && npm run build && npm test && npm run coverage` — **passed**.  
-- Тесты: **42/42 passed**.  
-- Coverage (v8, include=`src/**/*.ts`):  
-  - Statements: **93.04%**  
-  - Branches: **80.97%**  
-  - Functions: **98.03%**  
-  - Lines: **93.04%**
-
-### B7. AI-компоненты
-
-- WF-3 включает LLM classification через OpenAI (`OPENAI_MODEL`, default `gpt-4o-mini`) с heuristic fallback (`scripts/update-wf3-sentry-telegram.js`).
-- Реализованы critical-path ветки для `db_timeout_cascade` с P0-ориентацией и immediate actions.
-- Нет formal eval harness (offline dataset, threshold governance, canary rollback policy).
+| Component | Location | Status | Testability |
+|-----------|----------|--------|-------------|
+| WF-3 LLM severity classification | n8n workflow `wf-3-sentry-telegram.json` | Active — uses OpenAI API with heuristic fallback | **Untested in code** — no eval harness, no fixtures, no prompt regression tests |
+| WF-5 Telegram command center | n8n workflow `wf-5-status.json` | Active — string matching | Tested via live UAT only |
+| Sentry MCP | Remote OAuth | Active | N/A (third-party) |
 
 ---
 
-## C. Top-20 Weak Spots (Evidence-Driven)
+## C. Top-20 Weak Spots
 
-| # | Weak Spot | Evidence | Impact | Probability | Priority | Quick Fix (1-3d) | Systemic Fix (1-4w) | Acceptance Criteria |
-|---:|---|---|---|---|---|---|---|---|
-| 1 | Entry point stub без доменной логики | `src/index.js` | Нет app lifecycle и orchestration | High | P1 | Добавить bootstrap orchestration и startup checks | Перевести app-core на TS с service container | `main()` запускает контролируемые сервисы и health lifecycle |
-| 2 | Нет graceful shutdown | `src/index.js`, `src/healthServer.js` | Риск data loss/зависших соединений | Medium | P1 | SIGINT/SIGTERM handlers + server.close | Unified shutdown manager + drain policy | Остановка завершает inflight-запросы в SLA |
-| 3 | `/status` без auth | `src/healthServer.js` | Утечка operational состояния | High | P0 | Bearer token guard для `/status` | Policy-based auth (role/tier) + audit | Неавторизованные запросы получают 401/403 |
-| 4 | Нет rate limiting на health endpoints | `src/healthServer.js` | DoS на control endpoint | Medium | P1 | In-memory limiter | External/shared limiter (redis/nginx) | 429 на burst, стабильная latency |
-| 5 | Нет request size limits | `src/healthServer.js` | Resource exhaustion | Medium | P1 | Body size cap + early reject | Standardized HTTP security middleware | Большие payloads отклоняются c 413 |
-| 6 | Webhook signature verification отсутствует (WF-2) | `scripts/update-wf2-github-pr-linear.js` | Spoofed GitHub events | High | P0 | Проверка `X-Hub-Signature-256` | Shared webhook verification module + replay protection | Invalid signature не проходит в workflow |
-| 7 | Webhook signature verification отсутствует (WF-3) | `scripts/update-wf3-sentry-telegram.js` | Spoofed Sentry incidents | High | P0 | Проверка Sentry HMAC/timestamp | Unified n8n webhook gateway + nonce cache | Replay/forged payload блокируется |
-| 8 | TS clients без timeout/AbortController | `src/modules/*-client/index.ts` | Hanging calls, queue starvation | High | P1 | `fetchWithTimeout` wrapper | Transport layer lib + per-endpoint budgets | Все исходящие вызовы имеют timeout contract |
-| 9 | Circuit breaker state volatile | `src/lib/resilience/circuitBreaker.ts` | Lost protection after restart | Medium | P2 | Документировать ограничение + metrics | Persisted/shared breaker state | Поведение breaker детерминировано между рестартами |
-|10| GitHub dispatch dedupe volatile | `src/modules/github-client/index.ts` | Повторные dispatch после reboot | Medium | P2 | TTL map + logs | Durable idempotency store | Дубликаты не исполняются после рестарта |
-|11| DLQ на workflow static data без durable storage | `scripts/update-wf7-dlq-parking.js` | Потеря parked events | Medium | P1 | Регулярный backup static data | Перенос DLQ в durable DB/queue | Recovery из backup подтверждён drill-тестом |
-|12| Нет backup/restore стратегии для n8n data volume | `scripts/export-n8n-workflows.sh` (только workflows) | Потеря credentials/history | Medium | P1 | Backup volume через cron/script | DR runbook + восстановление в staging | Restore test проходит end-to-end |
-|13| Нет real integration tests с API провайдерами | `tests/*.test.ts` | Не ловятся API contract drift | Medium | P1 | Contract tests на sandbox endpoints | Nightly integration suite + fixtures | Nightly pipeline ловит breaking API changes |
-|14| Нет E2E тестов workflows | `docs/n8n-workflows/*.json`, `scripts/update-wf*.js` | Не покрыты сценарии orchestration | High | P1 | Fixture-driven webhook replay tests | Dedicated E2E harness для WF-2/3/5/7 | Critical сценарии проходят автоматически |
-|15| Нет formal AI eval harness при Full Primary | `scripts/update-wf3-sentry-telegram.js` | False P0/incident noise | High | P0 | Описать базовые thresholds + logging | Offline+online eval pipeline + release gates | Model rollout блокируется при threshold breach |
-|16| Нет feature-flag kill switch для model mode | env docs + WF-3 logic | Риск неконтролируемого поведения | Medium | P0 | `MODEL_KILL_SWITCH`, `MODEL_CLASSIFIER_MODE` | Central config service + runtime toggles | Переключение в heuristic-only без redeploy |
-|17| CI без dependency vuln scanning | `.github/workflows/ci.yml` | Supply chain риск | Medium | P1 | `npm audit --audit-level=high` stage | SCA pipeline (Dependabot/Snyk/OSV) | Build fail при High/Critical уязвимостях |
-|18| Нет SAST/DAST и container scanning | `.github/workflows/*` | Security blind spots | Medium | P1 | CodeQL + Trivy baseline | Security pipeline with policy gates | Security report обязателен для релиза |
-|19| Deploy webhooks через curl без retry/timeouts | `.github/workflows/deploy-*.yml` | Нестабильный deploy trigger | Medium | P2 | curl retry flags + timeout | Signed deployment API + ack protocol | Deploy trigger устойчив к transient failure |
-|20| Mixed JS/TS архитектура без migration plan | `src/*.js` + `src/**/*.ts` | Инконсистентность стандартов и tooling | Medium | P2 | Зафиксировать migration roadmap | Полный app-core в TS + shared logger contracts | Единый TS coding standard для runtime |
+| # | Weakness | Evidence | Impact | Prob. | Pri. | Quick Fix (1-3 d) | Systemic Fix (1-4 wk) | Acceptance Criteria |
+|---|----------|----------|--------|-------|------|--------------------|------------------------|---------------------|
+| **W-01** | **No graceful shutdown** — `server.listen()` never registers SIGTERM/SIGINT; in-flight requests aborted on kill | `src/healthServer.js:147-153`, `src/index.js:15-31` | Dropped requests, inconsistent state during restart | High | **P0** | Add SIGTERM handler: `server.close()` + 5s drain | Add connection tracking, `uncaughtException` handler | Process shuts down with 0 dropped requests |
+| **W-02** | **Unauthenticated /status exposes env flags** — returns which tokens are configured (booleans) | `src/healthServer.js:102-109` | Info disclosure — attacker learns active integrations | Med | **P0** | Bind to `127.0.0.1` only | Add bearer-token auth on `/status`; keep `/health` public for probes | `/status` requires auth or returns 401 |
+| **W-03** | **No dependency vulnerability scanning** — no `npm audit`, Dependabot, or Snyk in CI | `.github/workflows/ci.yml` — no audit step | CVE in transitive dep ships undetected | High | **P0** | Add `npm audit --audit-level=high` to `ci.yml` | Enable Dependabot; add audit as pre-commit hook | CI fails on high/critical CVEs |
+| **W-04** | **Coverage only measures TS files** — JS core (`index.js`, `healthServer.js`, `logger.js`, `instrument.js`) excluded | `vitest.config.ts:9` — `include: ["src/**/*.ts"]` | False confidence — 80% passes while core server uncovered | High | **P1** | Change include to `["src/**/*.{ts,js}"]` or migrate JS to TS | Migrate all 4 JS files to TypeScript | Coverage includes all source files |
+| **W-05** | **Retry policy defaults diverge from docs** — code: `maxAttempts:4, base:250ms, max:2000ms`; docs: "3 attempts, 1s/4s/16s" | `src/lib/resilience/policy.ts:4-8` vs `CLAUDE.md` | Confusion when debugging; behavior != contract | Med | **P1** | Align `policy.ts` to doc values (or update docs) | Add test asserting policy matches spec | Constants match integration-standards doc |
+| **W-06** | **In-memory circuit breaker state lost on restart** — state stored in closure variables | `src/lib/resilience/circuitBreaker.ts:21-24` | CB resets to "closed" after restart — thundering herd to failing upstream | Med | **P1** | Document as known limitation; add startup probe delay | Persist CB state to file/Redis | CB state survives restart (or documented accepted risk) |
+| **W-07** | **GitHub dispatch idempotency uses in-memory Set** — `dispatchIdempotencyKeys` lost on restart | `src/modules/github-client/index.ts:101` | Duplicate workflow dispatches after restart | Med | **P1** | Document as known limitation | Persist keys with TTL-based expiry | Dedup survives restart (or documented) |
+| **W-08** | **No SAST/DAST in CI** — no CodeQL, Semgrep, or security scanning | `.github/workflows/ci.yml` | Injection/auth vulnerabilities go undetected | Med | **P1** | Add CodeQL analysis workflow | Add Semgrep with custom rules | CI includes SAST scan; findings block merge |
+| **W-09** | **No retry jitter** — pure exponential backoff without randomization | `src/lib/resilience/retry.ts:13-16` | Thundering herd when multiple retries fire simultaneously | Low | **P2** | Add +/-20% random jitter | Full jitter per AWS best practices | Retry delays are non-deterministic |
+| **W-10** | **No request body-size limit** — health server has no Content-Length check or method guard | `src/healthServer.js:76-140` | Memory exhaustion via large POST body | Low | **P2** | Return 405 for non-GET; set `maxHeadersCount` | Use lightweight framework with built-in limits | Non-GET returns 405; large bodies rejected |
+| **W-11** | **Deploy webhooks have no retry** — bare `curl -fsSL` without `--retry` | `.github/workflows/deploy-staging.yml:82-85` | Transient network failure — deploy silently skipped | Med | **P2** | Add `--retry 3 --retry-delay 5` to curl | Deploy via GitHub Deployments API with status tracking | Deploy retries on failure |
+| **W-12** | **No container image for the app** — n8n/Grafana/Loki run in Podman; app runs bare on host | `scripts/stack-control.sh`, `src/index.js` | No parity between dev and "prod" | Med | **P2** | Create `Dockerfile` (Node 22 alpine multi-stage) | Integrate into `stack-control.sh` profiles | `podman run aipipeline` serves `/health` |
+| **W-13** | **No log-level filtering** — every log line emitted; no way to reduce noise | `src/logger.js:25-38` | Debug noise in production; Loki ingestion costs | Low | **P2** | Add `LOG_LEVEL` env var; filter in `log()` | Integrate with pino for levels + transports | `LOG_LEVEL=error` suppresses info/debug |
+| **W-14** | **Notion idempotency pollutes titles** — appends `[idem:key]` to page titles | `src/modules/notion-client/index.ts:339-340` | Visible marker in Notion UI | Low | **P2** | Document as convention | Use custom Notion property for marker | Marker not visible in page title |
+| **W-15** | **No backup/restore strategy** — n8n volume, credentials have no backup | Architecture — no backup scripts or docs | Single volume loss = total n8n state loss | Med | **P2** | Add `podman volume export` script | Automated daily backup + documented restore | Backup runs; restore tested on fresh volume |
+| **W-16** | **No prompt injection protection for WF-3** — Sentry payloads passed to LLM without sanitization | n8n workflow `wf-3-sentry-telegram.json` | Crafted error could manipulate severity classification | Low | **P2** | Sanitize input: strip code blocks, limit to 2000 chars | Validate LLM output schema; add adversarial test fixtures | Adversarial inputs produce correct severity |
+| **W-17** | **No staging/production environment parity** — deploy workflows exist but no infra definition | `.github/workflows/deploy-*.yml` — webhook-only | "Works on my machine" risk | Med | **P2** | Document target environment | Define IaC (Compose/Ansible) for staging/prod | `docker compose up` replicates staging |
+| **W-18** | **No cost monitoring for API calls** — no usage tracking or budget alerts | Architecture — no metrics on API call counts | Surprise OpenAI bill or rate-limit exhaustion | Low | **P3** | Add counters to clients; expose via `/status` | Grafana dashboard + budget alerts | API call rates visible; alert on threshold |
+| **W-19** | **No health check for MCP servers** — 6 servers configured but no automated probe | `.cursor/mcp.json` | MCP silently fails — agent tools broken | Low | **P3** | Add MCP check to `health-check-env.sh` | Probe endpoint for each server | Health report shows MCP server status |
+| **W-20** | **No rate-limit on health endpoints** — every `/status` call triggers n8n probe | `src/healthServer.js:87-130` | DoS via rapid polling | Low | **P3** | Cache `/status` for 10s | Use framework with `rate-limit` plugin | >60 req/min returns 429 |
 
 ---
 
-## D. Roadmap: 20 Steps (Stabilize → Harden → Scale → Productize)
+## D. Roadmap: 20 Steps
 
-### Phase 1: Stabilize (1-5)
+### Phase 1 — Stabilize (Steps 1-5)
 
-| Step | Goal | Actions | Dependencies | Effort | Risks | Acceptance Criteria | Output Artifact |
-|---:|---|---|---|---|---|---|---|
-| 1 | Закрыть perimeter `/status` | Добавить auth guard + tests | `src/healthServer.js` | S | Ошибка env rollout | 401/403/200 покрыты unit тестами | PR: `health-auth-guard` |
-| 2 | Добавить rate-limit и body limits | In-memory limiter + 413 policy | Step 1 | S | false positives | Burst получает 429, нормальный трафик без деградации | PR: `health-rate-limit` |
-| 3 | Ввести graceful shutdown | SIGTERM/SIGINT + drain | `src/index.js` | S | race conditions | shutdown <= timeout, без hanging sockets | PR: `runtime-shutdown` |
-| 4 | Ввести timeout-контур API клиентов | `fetchWithTimeout` + `RequestOptions` | `src/modules/*-client` | M | side effects retry | Все вызовы имеют timeout, тесты green | PR: `clients-timeout-layer` |
-| 5 | Быстрый security baseline в CI | `npm audit`, CodeQL bootstrap | `.github/workflows/ci.yml` | S | noisy findings | CI публикует security stage report | PR: `ci-security-baseline` |
+#### Step 1: Graceful Shutdown
 
-### Phase 2: Harden (6-10)
+- **Goal:** Zero dropped requests on SIGTERM
+- **Actions:**
+  1. Add `process.on('SIGTERM', ...)` and `process.on('SIGINT', ...)` in `src/index.js`
+  2. Call `server.close()` with a drain timeout (5 s)
+  3. Log shutdown events via structured logger
+  4. Add test: spawn server, send request, `kill -TERM`, verify response completes
+- **Rationale:** Foundation for container deployment and safe restarts
+- **Dependencies:** None
+- **Effort:** S (< 1 day)
+- **Risks:** None — purely additive
+- **AC:** Server drains in-flight requests before exit; test passes
+- **Artifact:** Modified `src/index.js`, new `tests/shutdown.test.ts`
 
-| Step | Goal | Actions | Dependencies | Effort | Risks | Acceptance Criteria | Output Artifact |
-|---:|---|---|---|---|---|---|---|
-| 6 | Верификация GitHub webhook signature | HMAC verify + replay guard (WF-2) | Step 5 | M | webhook incompatibility | forged events rejected | PR: `wf2-hmac-verify` |
-| 7 | Верификация Sentry webhook signature | HMAC/timestamp verify (WF-3) | Step 6 | M | provider edge cases | replay/forged payload blocked | PR: `wf3-hmac-verify` |
-| 8 | Формализация DLQ durability | Backup static data + restore script | `scripts/update-wf7-*` | M | backup drift | restore drill проходит | PR: `dlq-backup-restore` |
-| 9 | Integration tests с sandbox API | Add nightly integration suite | Steps 4-7 | M | flaky externals | nightly suite стабильно проходит | PR: `integration-harness` |
-|10| E2E workflow replay harness | Fixture replay для WF-2/3/5/7 | Step 9 | L | fixture staleness | critical flows pass E2E | PR: `workflow-e2e-suite` |
+#### Step 2: Secure /status Endpoint
 
-### Phase 3: Scale (11-15)
+- **Goal:** Prevent information disclosure
+- **Actions:**
+  1. Bind health server to `127.0.0.1` by default (env `HEALTH_HOST` override)
+  2. Add `HEALTH_AUTH_TOKEN` env var; if set, require `Authorization: Bearer <token>` on `/status`
+  3. Keep `/health` unauthenticated (for container probes)
+  4. Update `/status` tests
+- **Rationale:** Closes W-02
+- **Dependencies:** None
+- **Effort:** S (< 1 day)
+- **Risks:** Breaking monitoring scripts that call `/status` without auth
+- **AC:** Unauthenticated `/status` returns 401 when token set; `/health` always 200
+- **Artifact:** Modified `src/healthServer.js`, updated tests
 
-| Step | Goal | Actions | Dependencies | Effort | Risks | Acceptance Criteria | Output Artifact |
-|---:|---|---|---|---|---|---|---|
-|11| Внедрить Model Eval Dataset | Схема `EvalCase/EvalResult`, labeling guide | Steps 9-10 | M | labeling quality | dataset >= baseline объем, quality review | PR: `ai-eval-dataset` |
-|12| Запустить offline eval pipeline | precision/recall/FNR по severity | Step 11 | M | metric misread | eval report versioned per model | PR: `ai-offline-evals` |
-|13| Включить Full Primary с guardrails | mode flags + rollback triggers + kill switch | Steps 11-12 | M | false P0 escalation | auto fallback при breach thresholds | PR: `ai-full-primary-guarded` |
-|14| Online canary + drift alarms | telemetry + alerting for model drift | Step 13 | M | alert fatigue | drift SLA/alarms валидированы | PR: `ai-online-canary` |
-|15| Cost observability | token/API cost accounting dashboard | Steps 12-14 | M | data incompleteness | еженедельный cost report + budget alarms | PR: `cost-observability` |
+#### Step 3: Add npm audit to CI
 
-### Phase 4: Productize (16-20)
+- **Goal:** Catch known CVEs before merge
+- **Actions:**
+  1. Add `npm audit --audit-level=high` step to `ci.yml` after install
+  2. Add `.github/dependabot.yml` for automated npm PRs
+- **Rationale:** Closes W-03 — zero-effort security baseline
+- **Dependencies:** None
+- **Effort:** S (< 1 day)
+- **Risks:** May find existing vulnerabilities needing triage
+- **AC:** CI fails on high/critical findings; Dependabot PRs weekly
+- **Artifact:** Modified `ci.yml`, new `dependabot.yml`
 
-| Step | Goal | Actions | Dependencies | Effort | Risks | Acceptance Criteria | Output Artifact |
-|---:|---|---|---|---|---|---|---|
-|16| Staging↔Production parity policy | parity checklist + env matrix enforcement | Steps 1-15 | M | config drift | parity check обязателен в release | PR: `env-parity-policy` |
-|17| Container/image security gate | Trivy/Grype pipeline + policy | Step 5 | M | false positives | High/Critical gate enforced | PR: `container-security-scan` |
-|18| SLO/SLA и incident policy | Define SLOs + runbook integration | Steps 8-16 | M | metric noise | incidents routed by severity policy | PR: `slo-incident-policy` |
-|19| JS→TS core migration | `src/index.js` + `src/healthServer.js` + `src/logger.js` migration | Steps 3-4 | L | regression risk | app runtime полностью TS | PR: `core-ts-migration` |
-|20| Release governance v1 | ADR/RFC + quality/security/eval gates | All previous | M | process overhead | release checklist обязательный и автоматизирован | PR: `release-governance-v1` |
+#### Step 4: Migrate JS Core to TypeScript
 
-### Отдельный трек: Model Alpha Test (Full Primary)
+- **Goal:** Unified language, full coverage
+- **Actions:**
+  1. Rename `src/index.js` → `src/index.ts`
+  2. Rename `src/healthServer.js` → `src/healthServer.ts`
+  3. Rename `src/logger.js` → `src/logger.ts`
+  4. Rename `src/instrument.js` → `src/instrument.ts`
+  5. Add type annotations; fix strict-mode errors
+  6. Update `package.json` `start` script to use `tsx` or compile step
+- **Rationale:** Closes W-04 — removes dual-language friction
+- **Dependencies:** None
+- **Effort:** M (1-2 days)
+- **Risks:** CJS `require()` needs migration to ESM
+- **AC:** `npm run build` typechecks all files; coverage includes all source
+- **Artifact:** 4 renamed/typed files, updated `package.json`
 
-#### Политика режима
-- `MODEL_CLASSIFIER_MODE=full_primary|shadow|heuristic_only`
-- `MODEL_KILL_SWITCH=true|false`
-- Default для alpha-test: `full_primary`, но с немедленным fallback на `heuristic_only` при guardrail breach.
+#### Step 5: Align Retry Policy with Docs
 
-#### Quality Gates (обязательные)
-- `critical` recall >= 0.95
-- `critical` false negative rate <= 0.05
-- precision по `critical` >= 0.70
-- не более X ложных P0 за rolling window (зафиксировать числом в ADR)
+- **Goal:** Code matches documented contract
+- **Actions:**
+  1. Update `src/lib/resilience/policy.ts` to `{ maxAttempts: 3, baseDelayMs: 1000, maxDelayMs: 16000 }`
+  2. Or: update docs to match current values — decide which is correct
+  3. Add test asserting policy values match documented spec
+  4. Add jitter to retry calculation (+/-20%)
+- **Rationale:** Closes W-05 and W-09
+- **Dependencies:** None
+- **Effort:** S (< 1 day)
+- **Risks:** Changing retry timing may affect rate-limit behavior
+- **AC:** `policy.ts` values match integration-standards doc; jitter applied
+- **Artifact:** Modified `policy.ts`, `retry.ts`, possibly updated docs
 
-#### Rollback Triggers
-- breach любого quality gate 2 окна подряд
-- аномальный рост DLQ/false escalation
-- operator override (manual kill switch)
+### Phase 2 — Harden (Steps 6-10)
 
-#### Observability/Audit
-- логировать `model_version`, `decision`, `confidence`, `fallback_reason`, `incident_type`
-- хранить replay payload для postmortem и регрессии
+#### Step 6: SAST in CI
+
+- **Goal:** Automated security scanning on every PR
+- **Actions:**
+  1. Add CodeQL workflow (`.github/workflows/codeql.yml`)
+  2. Configure for JavaScript/TypeScript
+  3. Block PRs on high-severity findings
+- **Rationale:** Closes W-08
+- **Dependencies:** Step 3 (audit clean first)
+- **Effort:** S (< 1 day)
+- **Risks:** False positives initially
+- **AC:** CodeQL runs on every PR; results in Security tab
+- **Artifact:** New `.github/workflows/codeql.yml`
+
+#### Step 7: Containerize the App
+
+- **Goal:** Run AIPipeline app in Podman alongside n8n
+- **Actions:**
+  1. Create `Dockerfile` (multi-stage: build + runtime Node 22 alpine)
+  2. Add `HEALTHCHECK` pointing to `/health`
+  3. Update `scripts/stack-control.sh` to include app container
+  4. Add `.dockerignore`
+- **Rationale:** Closes W-12
+- **Dependencies:** Step 1 (graceful shutdown for container lifecycle)
+- **Effort:** M (1-2 days)
+- **Risks:** Keyring secrets unavailable in container (use env vars or secrets mount)
+- **AC:** `podman build` succeeds; `podman run` serves `/health`
+- **Artifact:** `Dockerfile`, `.dockerignore`, modified `stack-control.sh`
+
+#### Step 8: Deploy Webhook Reliability
+
+- **Goal:** Deploys don't silently fail
+- **Actions:**
+  1. Add `--retry 3 --retry-delay 5 --max-time 30` to curl in both deploy workflows
+  2. Add verification step after webhook call
+- **Rationale:** Closes W-11
+- **Dependencies:** None
+- **Effort:** S (< 1 day)
+- **Risks:** None
+- **AC:** Deploy retries on transient failure; summary shows retry count
+- **Artifact:** Modified deploy YAML files
+
+#### Step 9: n8n Backup Strategy
+
+- **Goal:** Recoverable n8n state
+- **Actions:**
+  1. Create `scripts/backup-n8n.sh` — exports Podman volume + workflow JSON
+  2. Add `scripts/restore-n8n.sh`
+  3. Document in `docs/runbook-n8n.md`
+  4. Add backup step to `evidence-sync-cycle.sh`
+- **Rationale:** Closes W-15
+- **Dependencies:** None
+- **Effort:** S (< 1 day)
+- **Risks:** Large backups if n8n has extensive execution history
+- **AC:** Backup produces restorable archive; restore tested on fresh volume
+- **Artifact:** Backup/restore scripts, updated docs
+
+#### Step 10: Structured Logger Upgrade
+
+- **Goal:** Configurable log levels
+- **Actions:**
+  1. Add `LOG_LEVEL` env var (debug < info < warn < error)
+  2. Filter in `log()` function
+  3. Add to Zod config schema
+  4. Update Loki/Promtail config for level parsing
+- **Rationale:** Closes W-13
+- **Dependencies:** Step 4 (cleaner after TS migration)
+- **Effort:** S (< 1 day)
+- **Risks:** None — backward compatible (default info)
+- **AC:** `LOG_LEVEL=error` suppresses info/debug; test verifies
+- **Artifact:** Modified logger and config modules
+
+### Phase 3 — Scale (Steps 11-15)
+
+#### Step 11: Integration Test Suite
+
+- **Goal:** Verify real API interactions with mock servers
+- **Actions:**
+  1. Create `tests/integration/` directory
+  2. Integration tests for Linear, Notion, GitHub clients against mock HTTP
+  3. Add `npm run test:integration` script
+  4. Separate CI job for integration tests
+- **Rationale:** Current tests mock all HTTP — no confidence in actual API compatibility
+- **Dependencies:** Steps 4-5
+- **Effort:** L (3-5 days)
+- **Risks:** Maintaining mock servers; API changes
+- **AC:** Integration tests exercise full request/response cycle
+- **Artifact:** `tests/integration/`, updated `package.json`, `ci.yml`
+
+#### Step 12: AI Eval Harness for WF-3
+
+- **Goal:** Regression-test LLM severity classification
+- **Actions:**
+  1. Create `tests/ai-eval/` with fixture set (20+ Sentry alert payloads + expected severity)
+  2. Eval script sends fixtures through classification logic
+  3. Metrics: accuracy, false-positive rate, latency
+  4. Document prompt versioning strategy
+- **Rationale:** Catches prompt drift or model upgrade regressions
+- **Dependencies:** n8n running locally
+- **Effort:** L (3-5 days)
+- **Risks:** LLM non-determinism; need threshold-based pass/fail
+- **AC:** Eval runs; accuracy > 85% on fixture set
+- **Artifact:** `tests/ai-eval/`, fixtures, report template
+
+#### Step 13: WF-3 Input Sanitization
+
+- **Goal:** Prevent prompt injection via Sentry payloads
+- **Actions:**
+  1. Sanitization node in WF-3 before LLM call
+  2. Strip markdown/code blocks, truncate to 2000 chars
+  3. Validate LLM response against expected schema (severity enum)
+  4. Add adversarial test fixtures
+- **Rationale:** Closes W-16
+- **Dependencies:** Step 12
+- **Effort:** M (1-2 days)
+- **Risks:** Over-sanitization may remove useful context
+- **AC:** Adversarial inputs produce correct severity
+- **Artifact:** Modified WF-3, new eval fixtures
+
+#### Step 14: API Cost Monitoring
+
+- **Goal:** Track and alert on API usage
+- **Actions:**
+  1. Add call counters to each client (requests, errors, circuit-open skips)
+  2. Expose via `/status`
+  3. Grafana panel for call rates
+  4. Budget alert for OpenAI (>100 calls/day)
+- **Rationale:** Closes W-18
+- **Dependencies:** Step 10
+- **Effort:** M (1-2 days)
+- **Risks:** Counter accuracy in concurrent scenarios
+- **AC:** Grafana shows call rates; alert fires at threshold
+- **Artifact:** Modified clients, Grafana dashboard update
+
+#### Step 15: Health Check Rate Limiting
+
+- **Goal:** Prevent DoS via health endpoints
+- **Actions:**
+  1. Cache `/status` for 10s (including n8n probe result)
+  2. In-memory rate limiter: 60 req/min per IP
+  3. Return 429 when exceeded
+- **Rationale:** Closes W-20
+- **Dependencies:** Step 2
+- **Effort:** S (< 1 day)
+- **Risks:** May affect monitoring tools
+- **AC:** Repeated calls return cached; >60/min returns 429
+- **Artifact:** Modified health server
+
+### Phase 4 — Productize (Steps 16-20)
+
+#### Step 16: Environment Parity (Docker Compose)
+
+- **Goal:** One-command local staging environment
+- **Actions:**
+  1. Create `docker-compose.yml` (app, n8n, grafana, loki, promtail)
+  2. Env-specific configs: `.env.staging`, `.env.production`
+  3. Add `scripts/start-local-staging.sh`
+  4. Document in `docs/local-staging.md`
+- **Rationale:** Closes W-17
+- **Dependencies:** Step 7
+- **Effort:** M (1-2 days)
+- **Risks:** 8 GB RAM may not run all services
+- **AC:** `docker compose up` starts all; `/health` responds
+- **Artifact:** `docker-compose.yml`, env files, docs
+
+#### Step 17: Persistent Circuit Breaker State
+
+- **Goal:** CB state survives restarts
+- **Actions:**
+  1. File-based CB persistence (`~/.aipipeline/circuit-breaker.json`)
+  2. Load on startup; save on transition
+  3. TTL-based expiry for persisted state
+  4. Update tests
+- **Rationale:** Closes W-06
+- **Dependencies:** Step 7 (container needs volume mount)
+- **Effort:** M (1-2 days)
+- **Risks:** File I/O; need async write
+- **AC:** Kill + restart; CB stays open if previously opened
+- **Artifact:** Modified `circuitBreaker.ts`, state file handling
+
+#### Step 18: Notion Idempotency via Properties
+
+- **Goal:** Clean page titles
+- **Actions:**
+  1. Add `idempotency_key` custom property to target databases
+  2. Query by property instead of title-matching
+  3. Remove title marker logic
+  4. Update tests
+- **Rationale:** Closes W-14
+- **Dependencies:** Notion database schema change (manual)
+- **Effort:** M (1-2 days)
+- **Risks:** Existing pages still have markers
+- **AC:** Idempotent create uses property; titles are clean
+- **Artifact:** Modified `notion-client/index.ts`
+
+#### Step 19: MCP Health Probes
+
+- **Goal:** Automated MCP server verification
+- **Actions:**
+  1. Add MCP probe to `scripts/health-check-env.sh`
+  2. Start each server, send test request, verify, shut down
+  3. Report in health report
+- **Rationale:** Closes W-19
+- **Dependencies:** None
+- **Effort:** M (1-2 days)
+- **Risks:** Slow start/stop cycle
+- **AC:** Health report shows green/red per MCP server
+- **Artifact:** Modified `health-check-env.sh`
+
+#### Step 20: End-to-End Pipeline Test
+
+- **Goal:** Verify full delivery pipeline
+- **Actions:**
+  1. Create `tests/e2e/pipeline.test.ts`
+  2. Sequence: Linear issue → Notion spec → PR → WF-2 → Linear state → Telegram
+  3. Use test project + test chat
+  4. Manual CI workflow (`workflow_dispatch`)
+- **Rationale:** Ultimate pipeline confidence
+- **Dependencies:** Steps 11, 12, 16
+- **Effort:** L (3-5 days)
+- **Risks:** Flaky (external deps); slow
+- **AC:** E2E passes on staging
+- **Artifact:** `tests/e2e/`, CI workflow
 
 ---
 
 ## E. Setup Hardening Checklist
 
-Формат: `[ ] item | owner | frequency | evidence`
+### Dev Setup
 
-### E1. Dev Workstation
-- [ ] Проверка keyring/env (`health-check-env`) | Dev | daily | `scripts/health-check-env.sh` output
-- [ ] Версии Node/npm/tooling pinned | Dev | weekly | `package.json`, CI logs
-- [ ] Pre-commit hooks active (secret leakage guard) | Dev | per-commit | hook logs
-- [ ] MCP servers health-check в Cursor | Dev | weekly | `docs/mcp-enable-howto.md`
+- [ ] Node >= 22 installed
+- [ ] `npm ci` succeeds
+- [ ] `npm run lint && npm run build && npm test` pass
+- [ ] GNOME keyring accessible (`secret-tool lookup server github.com user aipipeline`)
+- [ ] `source scripts/load-env-from-keyring.sh` loads all secrets
+- [ ] `./scripts/system-check.sh` all green
+- [ ] Pre-commit hooks installed (`pre-commit install`)
+- [ ] Cursor launches with MCP servers green
+- [ ] Git hooks active (7 pre-commit checks)
 
-### E2. CI
-- [ ] `lint/typecheck/test/coverage` обязательны | Dev | every PR | `.github/workflows/ci.yml`
-- [ ] Dependency scan stage | DevSec | daily/PR | CI security report
-- [ ] SAST stage (CodeQL/semgrep) | DevSec | daily/PR | CI SARIF artifacts
-- [ ] Coverage gate для изменённых областей | Dev | every PR | coverage summary
+### CI
 
-### E3. CD
-- [ ] Deploy webhook retries/timeouts | DevOps | every deploy | deploy logs
-- [ ] Signed deploy requests / auth policy | DevOps | per release | deploy API logs
-- [ ] Staging parity checklist | DevOps | per release | parity report
-- [ ] Manual approval policy для production | Dev | per release | workflow_dispatch evidence
+- [ ] `ci.yml` runs lint, typecheck, test, coverage on every PR
+- [ ] Coverage threshold at 80%
+- [ ] `npm audit --audit-level=high` in CI *(W-03)*
+- [ ] Dependabot configured *(W-03)*
+- [ ] CodeQL or SAST scanner *(W-08)*
+- [ ] Branch protection: require CI + review, no force-push
+- [ ] `engines.node >= 22` enforced
 
-### E4. Observability
-- [ ] Structured logs с correlation id end-to-end | Dev | continuous | runtime logs
-- [ ] Error signal dashboard green | Dev | daily | Grafana snapshot
-- [ ] Alert probe (`check-observability-alerts`) | Dev | daily | script report
-- [ ] Incident runbooks актуализированы | Dev | monthly | `docs/*runbook*.md`
+### CD
 
-### E5. MLOps / Evals
-- [ ] Eval dataset versioned | ML owner (solo) | weekly | `evals/datasets/*`
-- [ ] Offline eval report per model | ML owner | per model change | `evals/reports/*`
-- [ ] Online canary drift monitor | ML owner | continuous | alerts + logs
-- [ ] Kill switch drill executed | ML owner | bi-weekly | drill checklist
+- [ ] Staging validates before webhook *(existing)*
+- [ ] Production requires `DEPLOY` confirmation *(existing)*
+- [ ] Deploy webhook has retry *(W-11)*
+- [ ] Deploy status verification *(W-11)*
+- [ ] Concurrency groups *(existing)*
 
-### E6. Security / Compliance
-- [ ] Webhook signature verify включен (WF-2/WF-3) | DevSec | continuous | workflow logs
-- [ ] Least-privilege token scopes ревью | DevSec | monthly | `docs/token-least-privilege.md`
-- [ ] Secret rotation cadence | DevSec | quarterly | access matrix evidence
-- [ ] Audit trail для критичных операций | DevOps | continuous | `.runtime-logs/audit.log`
+### Observability
 
-### E7. Data Governance
-- [ ] Data retention policy для DLQ/executions | Dev | monthly | policy doc
-- [ ] PII redaction policy for logs | Dev | continuous | logger tests/review
-- [ ] Backup/restore n8n data volume | DevOps | weekly + drill monthly | backup logs
-- [ ] Evidence sync в Notion Sprint Log | Dev | weekly | `scripts/evidence-sync-cycle.sh`
+- [ ] Structured JSON logging in all source files
+- [ ] Correlation ID via `x-correlation-id`
+- [ ] `LOG_LEVEL` env var *(W-13)*
+- [ ] Sentry SDK with environment tag
+- [ ] Grafana dashboard (Error Signal, DLQ, Audit Trail) *(existing)*
+- [ ] Loki ingesting via Promtail *(existing)*
+- [ ] Alert probes *(existing)*
+- [ ] API call counters *(W-18)*
 
-### E8. Cost Control
-- [ ] API request metering (GitHub/Linear/Notion/OpenAI) | Dev | daily | cost dashboard
-- [ ] Budget thresholds + alerts | Dev | monthly | alert config
-- [ ] High-cost path optimization review | Dev | monthly | optimization notes
-- [ ] Model mode economics review (`full_primary`) | Dev | bi-weekly | eval + cost report
+### MLOps / AI
+
+- [ ] WF-3 has heuristic fallback *(existing)*
+- [ ] Prompt version tracked
+- [ ] Eval harness with fixtures *(Step 12)*
+- [ ] Input sanitization before LLM *(Step 13)*
+- [ ] LLM response schema validation *(Step 13)*
+- [ ] OpenAI budget alert *(Step 14)*
+
+### Security
+
+- [ ] Secrets in GNOME keyring only
+- [ ] `.gitignore` excludes `.env`, `*.pem`, `.secrets`
+- [ ] Pre-commit detects private keys
+- [ ] `/status` authenticated *(W-02)*
+- [ ] Token scopes documented *(existing)*
+- [ ] SAST in CI *(W-08)*
+- [ ] Dependency audit in CI *(W-03)*
+
+### Data Governance
+
+- [ ] Field-level data mapping *(existing)*
+- [ ] Idempotency keys on mutations *(existing)*
+- [ ] n8n dedup via static data *(existing)*
+- [ ] DLQ via WF-7 *(existing)*
+- [ ] n8n backup strategy *(W-15)*
+
+### Cost Control
+
+- [ ] 2 prod deps only *(existing)*
+- [ ] Profile-based service management *(existing)*
+- [ ] n8n execution history pruning
+- [ ] OpenAI budget alert *(Step 14)*
+- [ ] API call rate dashboard *(Step 14)*
 
 ---
 
-## F. Cursor-Ready Implementation Plan
+## F. Cursor-ready Implementation Plan
 
-### F1. Приоритизированный backlog
+### Priority blocks
 
-#### P0 (немедленно)
-1. Auth + rate limit + body limits для `/status` / `/health`.
-2. HMAC verification для WF-2/WF-3.
-3. AI Full Primary governance: eval gates + kill switch + rollback policy.
-4. Timeout/AbortController для всех TS clients.
+#### P0 — Do This Week (3 items)
 
-#### P1 (после P0)
-1. Durable DLQ + backup/restore strategy.
-2. Integration + E2E harness для WF critical paths.
-3. Security scanning pipeline (deps + SAST + container).
-4. Staging/production parity policy.
+| # | Issue | Effort | Files | Closes |
+|---|-------|--------|-------|--------|
+| 1 | Graceful shutdown handler | S | `src/index.js` | W-01 |
+| 2 | Secure /status (bind localhost + auth) | S | `src/healthServer.js`, tests | W-02 |
+| 3 | `npm audit` in CI + Dependabot | S | `ci.yml`, `dependabot.yml` | W-03 |
 
-#### P2 (планомерно)
-1. JS→TS migration app core.
-2. Cost observability и budget controls.
-3. Persisted breaker/idempotency state.
-4. Release governance automation.
+#### P1 — Do Next Sprint (5 items)
 
-### F2. Рекомендуемый порядок PR
-1. PR-01: `health endpoint security`  
-2. PR-02: `client timeout transport`  
-3. PR-03: `wf2/wf3 webhook signature verification`  
-4. PR-04: `ai model flags + kill switch`  
-5. PR-05: `offline eval harness`  
-6. PR-06: `workflow e2e fixtures`  
-7. PR-07: `dlq durability + backup`  
-8. PR-08: `ci security gates`  
-9. PR-09: `parity + release checklist`  
-10. PR-10: `core ts migration`
+| # | Issue | Effort | Files | Closes |
+|---|-------|--------|-------|--------|
+| 4 | Migrate JS to TS (4 files) | M | `src/*.js` → `.ts` | W-04 |
+| 5 | Align retry policy + add jitter | S | `policy.ts`, `retry.ts`, docs | W-05, W-09 |
+| 6 | CodeQL SAST in CI | S | `codeql.yml` | W-08 |
+| 7 | Document in-memory state limitations | S | ADR or `architecture.md` | W-06, W-07 |
+| 8 | Deploy webhook retry | S | `deploy-*.yml` | W-11 |
 
-### F3. Dependencies Graph (упрощённо)
-- `Endpoint security` -> `Webhook trust model` -> `AI Full Primary rollout`
-- `Timeout transport` -> `Integration tests` -> `E2E reliability`
-- `DLQ durability` -> `Incident recovery SLA`
-- `Security CI gates` -> `Release governance`
+#### P2 — Do This Month (7 items)
 
-### F4. Quick Wins (48-72h)
-1. Добавить `fetchWithTimeout` и проброс `timeoutMs` в 3 TS клиента.
-2. Усилить deploy curl (`--retry`, `--retry-all-errors`, `--connect-timeout`, `--max-time`).
-3. Ввести env flags `MODEL_CLASSIFIER_MODE`, `MODEL_KILL_SWITCH`.
-4. Добавить минимальный auth token guard на `/status`.
-5. Добавить начальный security stage (`npm audit`).
+| # | Issue | Effort | Files | Closes |
+|---|-------|--------|-------|--------|
+| 9 | Containerize app | M | `Dockerfile`, `stack-control.sh` | W-12 |
+| 10 | Log-level filtering | S | logger, config | W-13 |
+| 11 | n8n backup/restore | S | scripts, docs | W-15 |
+| 12 | WF-3 input sanitization | M | n8n workflow | W-16 |
+| 13 | Health rate limiting + caching | S | health server | W-20 |
+| 14 | Method guard (405) + body-size | S | health server | W-10 |
+| 15 | Docker Compose staging | M | `docker-compose.yml` | W-17 |
 
-### F5. Definition of Done (для каждого пакета)
-- Код + тесты + документация + runbook update.
-- CI green (lint/typecheck/test/coverage + security stages где применимо).
-- Evidence в `docs/status-summary.md` и/или Sprint Log.
-- Изменения воспроизводимы локально через documented script/command.
+### PR ordering (dependency-aware)
+
+```
+PR-1: Graceful shutdown (Step 1)          ← no deps
+PR-2: Secure /status (Step 2)            ← no deps
+PR-3: npm audit + Dependabot (Step 3)    ← no deps
+         ↓
+PR-4: JS → TS migration (Step 4)         ← after PR-1,2 (same files)
+PR-5: Retry policy alignment (Step 5)    ← no deps
+PR-6: CodeQL (Step 6)                    ← after PR-3
+         ↓
+PR-7: Containerize app (Step 7)          ← after PR-1
+PR-8: Deploy webhook retry (Step 8)      ← no deps
+PR-9: n8n backup (Step 9)               ← no deps
+PR-10: Log-level filtering (Step 10)     ← after PR-4
+         ↓
+PR-11: Integration tests (Step 11)       ← after PR-4,5
+PR-12: AI eval harness (Step 12)         ← no deps
+PR-13: WF-3 sanitization (Step 13)       ← after PR-12
+PR-14: API cost monitoring (Step 14)     ← after PR-10
+PR-15: Health rate limiting (Step 15)    ← after PR-2
+         ↓
+PR-16: Docker Compose (Step 16)          ← after PR-7
+PR-17: Persistent CB state (Step 17)     ← after PR-7
+PR-18: Notion idempotency fix (Step 18)  ← no deps
+PR-19: MCP health probes (Step 19)       ← no deps
+PR-20: E2E pipeline test (Step 20)       ← after PR-11,12,16
+```
+
+### Quick Wins Block (48-72 hours)
+
+These 5 items close 6 of 20 weak spots with ~6 hours of focused work:
+
+1. **Graceful shutdown** (2h) — 20 lines in `src/index.js` → closes W-01
+2. **Secure /status** (2h) — bind localhost, add auth → closes W-02
+3. **npm audit in CI** (30min) — 1 YAML step + Dependabot → closes W-03
+4. **Retry policy alignment** (1h) — 4 numbers in `policy.ts`, jitter in `retry.ts` → closes W-05, W-09
+5. **Deploy webhook retry** (30min) — `--retry 3` on curl → closes W-11
 
 ---
 
 ## G. Appendices
 
-### G1. Code Style & Consistency Recommendations
+### G.1 Code Style Recommendations
 
-1. Завершить migration к TypeScript runtime core: `src/index.js`, `src/healthServer.js`, `src/logger.js`, `src/instrument.js` -> `*.ts`.
-2. Ввести единый transport abstraction:
-   - `RequestOptions { timeoutMs?: number; signal?: AbortSignal }`
-   - `fetchWithTimeout` + normalization ошибок.
-3. Вынести общие policy-константы (retry/breaker/timeout/limits) в единый config layer.
-4. Внедрить единый logger interface в TS clients вместо разрозненного logging style.
-5. Ввести shared error taxonomy для app + workflows.
+Current style is well-defined (`.prettierrc.json`, `eslint.config.js`). Recommendations:
 
-### G2. ADR/RFC Template (короткий)
+1. **Consistent error class pattern** — `LinearError`, `NotionError`, `GitHubError` duplicate the same structure. Extract `BaseApiError` when next touching these files.
 
-```md
-# ADR-XXX: <title>
-- Date:
-- Status: Proposed | Accepted | Superseded
-- Context:
-- Decision:
-- Alternatives considered:
-- Consequences:
-- Rollback plan:
-- Evidence/links:
+2. **Consistent `toXxxError` helper** — same duplication. Extract generic `toApiError` factory.
+
+3. **Prefer named ESM exports** — after TS migration, standardize on ESM throughout (currently `src/index.js` uses CJS `module.exports`).
+
+4. **Function length** — all within the 50-line limit. `requestHandler` in `healthServer.js` is ~63 lines (borderline); consider extracting route handlers after TS migration.
+
+5. **JSDoc vs types** — after TS migration, types replace JSDoc for params/returns; keep JSDoc for module descriptions only.
+
+### G.2 ADR Template
+
+```markdown
+# ADR-NNN: <Title>
+
+**Date:** YYYY-MM-DD
+**Status:** Proposed | Accepted | Superseded by ADR-NNN
+**Deciders:** <names>
+
+## Context
+
+What is the problem? What forces are at play?
+
+## Decision
+
+What is the change we are making?
+
+## Consequences
+
+### Positive
+- ...
+
+### Negative
+- ...
+
+### Neutral
+- ...
+
+## Alternatives Considered
+
+| Option | Pros | Cons | Why rejected |
+|--------|------|------|--------------|
+| ... | ... | ... | ... |
 ```
 
-### G3. AI Evals Mini-Guide
+### G.3 AI Eval Mini-Guide
 
-#### Dataset schema
+#### Fixture format
 
-```ts
-type EvalCase = {
-  caseId: string;
-  source: "sentry";
-  input: {
-    title: string;
-    level?: string;
-    culprit?: string;
-    project?: string;
-    payloadSnippet?: string;
-  };
-  expected: {
-    severity: "critical" | "non_critical";
-    incidentType?: "db_timeout_cascade" | "critical_generic" | "non_critical";
-  };
-  meta?: {
-    labeledBy: string;
-    labeledAt: string;
-    notes?: string;
-  };
-};
-
-type ClassificationDecision = {
-  modelVersionTag: string;
-  severity: "critical" | "non_critical";
-  confidence: number;
-  reason: string;
-  fallbackUsed: boolean;
-};
-
-type EvalResult = {
-  modelVersionTag: string;
-  evaluatedAt: string;
-  sampleSize: number;
-  metrics: {
-    precisionCritical: number;
-    recallCritical: number;
-    fnrCritical: number;
-    macroF1: number;
-  };
-  pass: boolean;
-};
+```json
+{
+  "id": "fixture-001",
+  "input": {
+    "title": "DatabaseError: connection timeout after 30s",
+    "culprit": "src/db/pool.ts",
+    "level": "error",
+    "count": 150,
+    "firstSeen": "2026-03-01T08:00:00Z",
+    "tags": { "environment": "production", "service": "api" }
+  },
+  "expected": {
+    "severity": "critical",
+    "category": "db_timeout_cascade",
+    "shouldCreateLinearIssue": true,
+    "shouldNotifyTelegram": true
+  }
+}
 ```
 
-#### Labeling policy
-- Каждый critical-кейс должен иметь source evidence (Sentry payload или postmortem).
-- Неоднозначные кейсы помечаются `needs_review` и не входят в release gate.
-- Для `db_timeout_cascade` обязательны сигналы: DB timeout + cascade behavior.
+#### Evaluation metrics
 
-#### Offline pipeline
-1. Сбор и дедупликация кейсов.
-2. Label review.
-3. Batch inference candidate model.
-4. Подсчёт метрик (precision/recall/FNR/F1).
-5. Gate decision (`pass/fail`) + публикация отчёта.
+| Metric | Formula | Target |
+|--------|---------|--------|
+| Accuracy | correct / total | > 85% |
+| Critical recall | true_critical / actual_critical | > 95% |
+| False critical rate | false_critical / total | < 5% |
+| Latency p95 | 95th percentile LLM call | < 5s |
 
-#### Online pipeline (Full Primary)
-1. Runtime logging всех решений классификатора.
-2. Сравнение с downstream outcomes (false escalation / missed critical).
-3. Drift detection и weekly review.
-4. Автоматический fallback при breach.
+#### Prompt versioning
 
-#### Release gate
-- Model update разрешён только при `EvalResult.pass=true` и активном rollback плане.
-- Для прод-включения требуется kill-switch drill (успешный).
+- Store prompts in `prompts/wf3-severity-v{N}.txt`
+- Each version gets an eval run; results in `tests/ai-eval/results/`
+- Never deploy a prompt version that regresses on critical recall
 
 ---
 
-## Проверочный baseline (на дату аудита)
+## Summary
 
-- `docs/` содержит **63** файла (факт инвентаризации).  
-- WF-цепочка задокументирована и экспортирована как **WF-1..WF-7**.  
-- Coverage gate уже enforced и проходит (`branches ~80.97%`).  
-- `health-check-env` подтверждает keyring/app readiness, при этом n8n может быть остановлен операционно.  
-- WF-3 уже использует LLM (default `gpt-4o-mini`) с heuristic fallback, но требует formal eval governance для Full Primary.
+**AIPipeline is a well-architected solo-developer delivery pipeline at late-alpha stage.** The documentation is exceptional (40+ docs), the resilience patterns are enterprise-grade, and the integration between 7 external services is thoughtfully designed.
+
+The 20 weak spots are primarily **operational hardening** — the code works, but lacks safety nets (auth, graceful shutdown, scanning, backup) for reliable long-term operation. None are architectural flaws.
+
+The 6-hour Quick Wins block closes the most impactful 6 risks immediately. The full 20-step roadmap takes the project from alpha to production-grade over 4-6 weeks.
+
+**Priority order:** Stabilize (security + reliability) → Harden (CI + containers) → Scale (testing + AI eval) → Productize (staging parity + E2E).
