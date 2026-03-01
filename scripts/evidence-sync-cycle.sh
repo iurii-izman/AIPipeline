@@ -23,6 +23,8 @@ linear_issue=""
 state_type="completed"
 date_override=""
 dry_run=false
+with_backup=false
+skip_synthetic=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -54,9 +56,17 @@ while [[ $# -gt 0 ]]; do
       dry_run=true
       shift 1
       ;;
+    --with-backup)
+      with_backup=true
+      shift 1
+      ;;
+    --skip-synthetic)
+      skip_synthetic=true
+      shift 1
+      ;;
     *)
       echo "Unknown argument: $1" >&2
-      echo "Usage: $0 [--profile core|extended|full] [--title T] [--summary S] [--linear AIP-XX] [--state-type completed] [--date YYYY-MM-DD] [--dry-run]" >&2
+      echo "Usage: $0 [--profile core|extended|full] [--title T] [--summary S] [--linear AIP-XX] [--state-type completed] [--date YYYY-MM-DD] [--dry-run] [--with-backup] [--skip-synthetic]" >&2
       exit 1
       ;;
   esac
@@ -81,7 +91,12 @@ acceptance_report="$tmp_dir/acceptance.md"
 
 "$SCRIPT_DIR/stack-health-report.sh" --markdown >"$health_report"
 "$SCRIPT_DIR/profile-acceptance-check.sh" "$profile" --markdown >"$acceptance_report"
-"$SCRIPT_DIR/synthetic-health-status-check.sh" >/dev/null
+if [[ "$skip_synthetic" != "true" ]]; then
+  "$SCRIPT_DIR/synthetic-health-status-check.sh" >/dev/null
+fi
+if [[ "$with_backup" == "true" ]]; then
+  "$SCRIPT_DIR/backup-n8n.sh" --label "evidence-${today}" >/dev/null
+fi
 
 if [[ -z "$summary" ]]; then
   summary="Regular ${profile} profile evidence sync (${today})."
@@ -89,9 +104,16 @@ fi
 
 detail_lines=()
 detail_lines+=("Profile: ${profile}")
-detail_lines+=("Synthetic probe: OK")
+if [[ "$skip_synthetic" == "true" ]]; then
+  detail_lines+=("Synthetic probe: skipped")
+else
+  detail_lines+=("Synthetic probe: OK")
+fi
 detail_lines+=("Acceptance checklist: PASS")
 detail_lines+=("Stack health snapshot generated (${today})")
+if [[ "$with_backup" == "true" ]]; then
+  detail_lines+=("n8n backup: created")
+fi
 if [[ -n "$linear_issue" ]]; then
   detail_lines+=("Linear closure target: ${linear_issue} (state-type=${state_type})")
 else

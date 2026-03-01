@@ -82,6 +82,41 @@
   - добавлен `scripts/audit-linear-github-closure.js` (проверка merged PR с `Closes AIP-XX` против state в Linear);
   - сгенерирован отчёт `.out/linear-github-closure-audit.md`;
   - текущий результат: `referenced_not_done = 0`.
+- **Comprehensive project audit (2026-03-01):**
+  - добавлен единый документ `docs/project-audit-and-roadmap.md` (секции A-G);
+  - зафиксированы Top-20 weak spots с evidence/impact/priority/remediation/acceptance criteria;
+  - добавлен phased roadmap 20 шагов + setup hardening checklist + Cursor-ready implementation plan;
+  - formalized alpha-test track для WF-3 model classification в режиме `Full Primary` с guardrails, rollback и kill switch.
+  - документ актуализирован после крупных реализаций: пересобран в «living SSoT» с текущим прогрессом (~80%), статусами `Closed/Partial/Open` по Top-20 и обновлёнными фазами исполнения.
+- **P0 hardening iteration (2026-03-01):**
+  - `src/healthServer.js`: добавлены auth guard для `/status` (`STATUS_AUTH_TOKEN`), rate limiting (`HEALTH_RATE_LIMIT_*`), request body size guard (`MAX_REQUEST_BODY_BYTES`);
+  - `src/modules/{linear,notion,github}-client`: добавлен timeout/abort транспорт через `src/lib/http/fetchWithTimeout.ts` и `RequestOptions { timeoutMs?: number; signal?: AbortSignal }`;
+  - `scripts/update-wf2-github-pr-linear.js`: добавлена проверка GitHub webhook подписи (`GITHUB_WEBHOOK_SECRET`) перед обработкой payload;
+  - `scripts/update-wf3-sentry-telegram.js`: добавлена проверка Sentry webhook подписи (`SENTRY_WEBHOOK_SECRET`) + feature flags `MODEL_CLASSIFIER_MODE` и `MODEL_KILL_SWITCH` для управляемого режима классификации;
+  - тесты расширены (`tests/health-server.test.ts`, `tests/*client.test.ts`), baseline теперь `48/48` passed.
+- **CI/security + integration harness iteration (2026-03-01):**
+  - добавлен integration suite `tests/integration/clients-http.integration.test.ts` (реальные HTTP вызовы через локальный сервер + `fetch`, без synthetic response mocks);
+  - добавлен npm script `test:integration` в `package.json`;
+  - CI (`.github/workflows/ci.yml`) расширен job-ами `integration` и `security-audit` (`npm audit --audit-level=high`);
+  - добавлен отдельный SAST workflow `.github/workflows/codeql.yml`;
+  - deploy workflows (`deploy-staging.yml`, `deploy-production.yml`) усилены retry/timeout параметрами `curl`;
+  - общий baseline тестов теперь `51/51` passed + отдельный `npm run test:integration` (`3/3`).
+- **E2E fixtures + AI eval harness skeleton (2026-03-01):**
+  - добавлен `tests/e2e/workflow-fixtures.test.ts` для regression-проверок exported workflow fixtures WF-2/WF-3/WF-5/WF-7;
+  - добавлен eval module `src/evals/{types.ts,metrics.ts}` + unit tests `tests/evals/metrics.test.ts`;
+  - добавлен runtime eval CLI `scripts/run-ai-eval.js` + runtime helper `src/evals/runtime.js`;
+  - добавлен dataset `evals/datasets/sentry-severity-alpha.json` и npm scripts `test:e2e`, `eval:alpha`;
+  - CI (`.github/workflows/ci.yml`) расширен job-ами `e2e-fixtures` и `eval-alpha`;
+  - baseline повышен: `61/61` tests passed (включая e2e/eval unit + доп. coverage tests), `npm run coverage` проходит; branch coverage `80.44%` (threshold 80%).
+- **Operational hardening block (2026-03-01):**
+  - добавлены `scripts/backup-n8n.sh` и `scripts/restore-n8n.sh` для backup/restore Podman volume `n8n_data` (+ workflow API dump при наличии `N8N_API_KEY`);
+  - добавлен `scripts/check-env-parity.sh` (parity-check критичных env app/n8n/deploy/model, `--strict`);
+  - добавлен `scripts/bootstrap-hardening-env-keyring.sh` для idempotent bootstrap hardening env в keyring (`STATUS_AUTH_TOKEN`, webhook secrets, model flags);
+  - добавлен единый `scripts/release-quality-gate.sh` (lint/build/test/integration/e2e/eval/parity/alerts + optional backup);
+  - `scripts/evidence-sync-cycle.sh` расширен флагом `--with-backup`;
+  - обновлены runbook/docs: `docs/operations-profiles.md`, `docs/releases.md`.
+  - parity snapshot (2026-03-01): `./scripts/check-env-parity.sh --strict` pass (`Missing=0`) после bootstrap hardening env.
+  - full release gate snapshot (2026-03-01): `npm run release:gate -- --strict-parity` pass (включая observability alerts probe после warm-up observability stack).
 - **Доки:** runbooks (в т.ч. [linear-phase3-runbook.md](linear-phase3-runbook.md), [n8n-workflows/README.md](n8n-workflows/README.md), [live-uat-telegram.md](live-uat-telegram.md)), гайды по Notion/Sentry/n8n (step-by-step), keyring, Linear, MCP, audit, и consolidated backlog [tz-remaining-work.md](tz-remaining-work.md).
 
 ---

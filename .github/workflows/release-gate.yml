@@ -1,0 +1,30 @@
+name: Release Gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      strict_parity:
+        description: "Run parity check in strict mode"
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - name: Install
+        run: npm ci
+      - name: Run release quality gate
+        run: |
+          if [[ "${{ inputs.strict_parity }}" == "true" ]]; then
+            ./scripts/release-quality-gate.sh --strict-parity --skip-observability
+          else
+            ./scripts/release-quality-gate.sh --skip-observability
+          fi

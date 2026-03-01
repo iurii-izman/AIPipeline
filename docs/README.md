@@ -13,6 +13,7 @@
 |----------|------------|
 | [status-summary.md](status-summary.md) | Что сделано / не сделано, таблица статусов (SSoT) |
 | [current-phase.md](current-phase.md) | Текущий фокус и ссылки на status-summary, NEXT-STEPS |
+| [project-audit-and-roadmap.md](project-audit-and-roadmap.md) | Комплексный Principal Engineer аудит и roadmap (A-G, Top-20 рисков, 20 шагов) |
 | [next-steps-step-by-step.md](next-steps-step-by-step.md) | **Пошагово дальше:** чек-лист apply/sync для WF-1…WF-7 и Linear |
 | [what-to-do-manually.md](what-to-do-manually.md) | Что обязательно сделать в n8n UI и внешних сервисах после скриптов WF-2…WF-7 |
 
@@ -22,6 +23,7 @@
 | [keyring-credentials.md](keyring-credentials.md) | Keyring: список записей, атрибуты (User/Server), CLI, как обновить пароль |
 | [mcp-enable-howto.md](mcp-enable-howto.md) | Как включить MCP в Cursor (env из keyring, aipipeline-cursor), типичные ошибки |
 | [runbook.md](runbook.md) | Операции: code review, MCP, n8n, setup guides, релизы |
+| [post-reboot-runbook.md](post-reboot-runbook.md) | **После перезагрузки ПК:** команды для запуска cloudflared, n8n, приложения |
 | [operations-profiles.md](operations-profiles.md) | Единые профили запуска сервисов (`core/extended/full`) и stack health report |
 | [operations-access-matrix.md](operations-access-matrix.md) | Ownership/rotation/audit trail для service accounts и bot-профилей |
 | [releases.md](releases.md) | Версионирование, теги, чек-лист перед релизом (alpha/beta/stable) |

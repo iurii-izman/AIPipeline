@@ -34,6 +34,26 @@
   - alert-oriented probe `scripts/check-observability-alerts.sh` (synthetic + Loki error signal + n8n failed executions + audit stream);
   - audit stream критических операций (`.runtime-logs/audit.log`) добавлен в stack/webhook scripts;
   - Grafana dashboard `AIPipeline Overview` расширен: Error Signal, DLQ/Workflow Failures, Audit Trail.
+- P0 hardening (итерация 2026-03-01) внедрён:
+  - `/status` auth guard + rate limiting + body-size guard;
+  - timeout/abort transport layer для typed TS clients;
+  - webhook signature verification для WF-2 (GitHub) и WF-3 (Sentry);
+  - model feature flags для WF-3 (`MODEL_CLASSIFIER_MODE`, `MODEL_KILL_SWITCH`).
+- CI/security + integration harness (итерация 2026-03-01) внедрён:
+  - integration tests `tests/integration/clients-http.integration.test.ts` + script `npm run test:integration`;
+  - CI jobs `integration` + `security-audit` (`npm audit --audit-level=high`);
+  - CodeQL workflow добавлен (`.github/workflows/codeql.yml`);
+  - deploy webhook curl в staging/production усилен retry+timeout policy.
+- E2E fixtures + AI eval harness skeleton (итерация 2026-03-01) внедрён:
+  - `tests/e2e/workflow-fixtures.test.ts` покрывает ключевые workflow-invariants для WF-2/WF-3/WF-5/WF-7;
+  - `src/evals/*` + `tests/evals/metrics.test.ts` добавляют offline eval metrics/gate primitives;
+  - `scripts/run-ai-eval.js` + dataset `evals/datasets/sentry-severity-alpha.json` дают воспроизводимый alpha eval gate (`npm run eval:alpha`);
+  - CI дополнен jobs `e2e-fixtures` и `eval-alpha`.
+- Operational hardening block (итерация 2026-03-01) внедрён:
+  - backup/restore `n8n_data`: `scripts/backup-n8n.sh`, `scripts/restore-n8n.sh`;
+  - env parity-check: `scripts/check-env-parity.sh` (`--strict`);
+  - unified release gate: `scripts/release-quality-gate.sh`;
+  - `evidence-sync-cycle.sh` поддерживает `--with-backup`.
 
 ## Операционные проверки
 
@@ -68,9 +88,13 @@
 
 ## Что остаётся до полного closure
 
-1. Поддерживать регулярный цикл evidence-sync в Notion Sprint Log/Runbook.
-2. Поддерживать closure audit (`audit-linear-github-closure.js`) в регулярном цикле.
-3. NotebookLM: weekly UI upload source-bundle (manual-only), подготовка через `./scripts/notebooklm-weekly-refresh.sh`.
+1. Поддерживать rotation/валидность hardening env в keyring и runtime (`STATUS_AUTH_TOKEN`, `GITHUB_WEBHOOK_SECRET`, `SENTRY_WEBHOOK_SECRET`, `MODEL_CLASSIFIER_MODE`, `MODEL_KILL_SWITCH`); bootstrap: `./scripts/bootstrap-hardening-env-keyring.sh`.
+2. При необходимости подключить branch protection rule для новых CI checks (`integration`, `e2e-fixtures`, `eval-alpha`, `security-audit`, `CodeQL`) в GitHub UI.
+3. Расширить eval dataset (>=50 кейсов) для реалистичного quality gate перед rollout `MODEL_CLASSIFIER_MODE=full_primary`.
+4. Запустить backup retention policy (например, cron/systemd timer + cleanup старше N дней) вокруг `scripts/backup-n8n.sh`.
+5. Поддерживать регулярный цикл evidence-sync в Notion Sprint Log/Runbook.
+6. Поддерживать closure audit (`audit-linear-github-closure.js`) в регулярном цикле.
+7. NotebookLM: weekly UI upload source-bundle (manual-only), подготовка через `./scripts/notebooklm-weekly-refresh.sh`.
 
 ## Рабочий цикл дальше
 

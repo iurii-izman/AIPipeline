@@ -6,6 +6,7 @@ import {
   withCircuitBreaker,
   withRetry,
 } from "../../lib/resilience";
+import { fetchWithTimeout, type RequestOptions } from "../../lib/http/fetchWithTimeout";
 
 export type GitHubRepository = {
   id: number;
@@ -44,6 +45,7 @@ type GitHubClientOptions = {
   owner?: string;
   repo?: string;
   fetcher?: Fetcher;
+  defaultTimeoutMs?: number;
 };
 
 export class GitHubError extends Error {
@@ -99,6 +101,7 @@ export class GitHubClient {
   private readonly executeWithBreaker: <T>(operation: () => Promise<T>) => Promise<T>;
   private readonly endpoint = "https://api.github.com";
   private readonly dispatchIdempotencyKeys = new Set<string>();
+  private readonly defaultTimeoutMs?: number;
 
   constructor(options?: GitHubClientOptions) {
     const cfg = loadConfig({ requireGithub: true });
@@ -106,6 +109,7 @@ export class GitHubClient {
     this.owner = options?.owner ?? cfg.githubOwner!;
     this.repo = options?.repo ?? cfg.githubRepo!;
     this.fetcher = options?.fetcher ?? fetch;
+    this.defaultTimeoutMs = options?.defaultTimeoutMs;
     const guarded = withCircuitBreaker(
       async <T>(operation: () => Promise<T>) => operation(),
       defaultCircuitBreakerPolicy
@@ -113,22 +117,35 @@ export class GitHubClient {
     this.executeWithBreaker = guarded as <T>(operation: () => Promise<T>) => Promise<T>;
   }
 
-  private async runRequest<T>(path: string, init?: RequestInit, errorContext = "GitHub request failed"): Promise<T> {
+  private async runRequest<T>(
+    path: string,
+    init?: RequestInit,
+    errorContext = "GitHub request failed",
+    requestOptions?: RequestOptions
+  ): Promise<T> {
     const execute = () =>
       withRetry(
         async () => {
           let response: Response;
           try {
-            response = await this.fetcher(`${this.endpoint}${path}`, {
-              ...init,
-              headers: {
-                Authorization: `Bearer ${this.token}`,
-                Accept: "application/vnd.github+json",
-                "User-Agent": "AIPipeline-GitHubClient",
-                "X-GitHub-Api-Version": "2022-11-28",
-                ...(init?.headers ?? {}),
+            response = await fetchWithTimeout(
+              this.fetcher,
+              `${this.endpoint}${path}`,
+              {
+                ...init,
+                headers: {
+                  Authorization: `Bearer ${this.token}`,
+                  Accept: "application/vnd.github+json",
+                  "User-Agent": "AIPipeline-GitHubClient",
+                  "X-GitHub-Api-Version": "2022-11-28",
+                  ...(init?.headers ?? {}),
+                },
               },
-            });
+              {
+                timeoutMs: requestOptions?.timeoutMs ?? this.defaultTimeoutMs,
+                signal: requestOptions?.signal,
+              }
+            );
           } catch (error) {
             throw new GitHubError({
               message: `${errorContext} at network layer`,
@@ -185,11 +202,12 @@ export class GitHubClient {
     }
   }
 
-  async getRepository(): Promise<GitHubRepository> {
+  async getRepository(requestOptions?: RequestOptions): Promise<GitHubRepository> {
     const payload = await this.runRequest<Record<string, unknown>>(
       `/repos/${this.owner}/${this.repo}`,
       { method: "GET" },
-      "GitHub get repository failed"
+      "GitHub get repository failed",
+      requestOptions
     );
 
     if (typeof payload.id !== "number" || typeof payload.full_name !== "string" || typeof payload.default_branch !== "string") {
@@ -208,7 +226,11 @@ export class GitHubClient {
     };
   }
 
-  async dispatchWorkflow(input: DispatchWorkflowInput, idempotencyKey?: string): Promise<DispatchWorkflowResult> {
+  async dispatchWorkflow(
+    input: DispatchWorkflowInput,
+    idempotencyKey?: string,
+    requestOptions?: RequestOptions
+  ): Promise<DispatchWorkflowResult> {
     if (idempotencyKey && this.dispatchIdempotencyKeys.has(idempotencyKey)) {
       return {
         accepted: true,
@@ -228,7 +250,8 @@ export class GitHubClient {
           ...(input.inputs ? { inputs: input.inputs } : {}),
         }),
       },
-      "GitHub workflow dispatch failed"
+      "GitHub workflow dispatch failed",
+      requestOptions
     );
 
     if (idempotencyKey) {
@@ -243,13 +266,14 @@ export class GitHubClient {
     };
   }
 
-  async listWorkflowRuns(workflow: string, limit = 10): Promise<GitHubWorkflowRun[]> {
+  async listWorkflowRuns(workflow: string, limit = 10, requestOptions?: RequestOptions): Promise<GitHubWorkflowRun[]> {
     const payload = await this.runRequest<Record<string, unknown>>(
       `/repos/${this.owner}/${this.repo}/actions/workflows/${encodeURIComponent(workflow)}/runs?per_page=${encodeURIComponent(
         String(limit)
       )}`,
       { method: "GET" },
-      "GitHub list workflow runs failed"
+      "GitHub list workflow runs failed",
+      requestOptions
     );
 
     const rawRuns = Array.isArray(payload.workflow_runs) ? payload.workflow_runs : [];

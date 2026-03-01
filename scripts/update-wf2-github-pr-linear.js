@@ -67,7 +67,46 @@ const workflow = {
         path: "wf2-github-pr",
         httpMethod: "POST",
         responseMode: "onReceived",
-        options: {},
+        options: { rawBody: true },
+      },
+    },
+    {
+      id: "verify-github-signature",
+      name: "Verify GitHub signature",
+      type: "n8n-nodes-base.code",
+      typeVersion: 2,
+      position: [220, -220],
+      parameters: {
+        jsCode: `const crypto = require('crypto');
+const headers = $json.headers || {};
+const secret = String($env.GITHUB_WEBHOOK_SECRET || '');
+if (!secret) {
+  return [{ json: { ...$json, signatureValid: true, signatureReason: 'secret-not-configured' } }];
+}
+const signature = headers['x-hub-signature-256'] || headers['X-Hub-Signature-256'] || '';
+if (!signature || typeof signature !== 'string' || !signature.startsWith('sha256=')) {
+  return [{ json: { ...$json, signatureValid: false, signatureReason: 'missing-signature' } }];
+}
+const rawBody = typeof $json.rawBody === 'string'
+  ? $json.rawBody
+  : JSON.stringify($json.body || {});
+const digest = 'sha256=' + crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
+const valid = signature.length === digest.length && crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(digest));
+return [{ json: { ...$json, signatureValid: valid, signatureReason: valid ? 'ok' : 'signature-mismatch' } }];`,
+      },
+    },
+    {
+      id: "if-signature-valid",
+      name: "If GitHub signature valid",
+      type: "n8n-nodes-base.if",
+      typeVersion: 2.3,
+      position: [440, -220],
+      parameters: {
+        conditions: {
+          options: { caseSensitive: true },
+          conditions: [{ leftValue: "={{ $json.signatureValid }}", rightValue: true, operator: { type: "boolean", operation: "true", singleValue: true } }],
+          combinator: "and",
+        },
       },
     },
     {
@@ -75,7 +114,7 @@ const workflow = {
       name: "Extract PR payload",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
-      position: [220, 0],
+      position: [660, 0],
       parameters: {
         jsCode: `const action = ($json.body?.action || '').toLowerCase();\nconst pr = $json.body?.pull_request || {};\nconst merged = Boolean(pr.merged);\nconst branch = pr.head?.ref || '';\nconst title = pr.title || '(untitled PR)';\nconst url = pr.html_url || '';\nconst number = pr.number || '';\nconst headers = $json.headers || {};\nconst deliveryId = headers['x-github-delivery'] || headers['X-GitHub-Delivery'] || '';\nconst match = branch.match(/(AIP-\\d+)/i) || title.match(/(AIP-\\d+)/i);\nconst issueKey = match ? match[1].toUpperCase() : '';\nconst teamKey = issueKey ? issueKey.split('-')[0] : '';\nreturn [{ json: { action, merged, branch, title, url, number, issueKey, teamKey, deliveryId } }];`,
       },
@@ -85,7 +124,7 @@ const workflow = {
       name: "Deduplicate delivery",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
-      position: [440, -120],
+      position: [880, -120],
       parameters: {
         jsCode: `const db = $getWorkflowStaticData('global');\nif (!db.seen) db.seen = {};\nconst ttlMs = 7 * 24 * 60 * 60 * 1000;\nconst now = Date.now();\nfor (const [k, ts] of Object.entries(db.seen)) {\n  if (!Number.isFinite(ts) || (now - ts) > ttlMs) delete db.seen[k];\n}\nconst key = $json.deliveryId || (($json.action || '') + ':' + ($json.number || '') + ':' + ($json.url || '') + ':' + String($json.merged));\nconst seenAt = db.seen[key];\nif (seenAt && (now - seenAt) < ttlMs) {\n  return [{ json: { ...$json, isDuplicate: true, dedupeKey: key } }];\n}\ndb.seen[key] = now;\nreturn [{ json: { ...$json, isDuplicate: false, dedupeKey: key } }];`,
       },
@@ -95,7 +134,7 @@ const workflow = {
       name: "If delivery duplicate",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [660, -120],
+      position: [1100, -120],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -109,7 +148,7 @@ const workflow = {
       name: "If PR opened/closed",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [880, 0],
+      position: [1320, 0],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -126,7 +165,7 @@ const workflow = {
       name: "If merged",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [1100, 0],
+      position: [1540, 0],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -140,7 +179,7 @@ const workflow = {
       name: "If has AIP key",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [1320, -120],
+      position: [1760, -120],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -154,7 +193,7 @@ const workflow = {
       name: "If LINEAR_API_KEY set",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [1540, -120],
+      position: [1980, -120],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -168,7 +207,7 @@ const workflow = {
       name: "Linear: find issue id",
       type: "n8n-nodes-base.httpRequest",
       typeVersion: 4.2,
-      position: [1760, -220],
+      position: [2200, -220],
       parameters: {
         method: "POST",
         url: "https://api.linear.app/graphql",
@@ -190,7 +229,7 @@ const workflow = {
       name: "Linear: pick issue id",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
-      position: [1980, -220],
+      position: [2420, -220],
       parameters: {
         jsCode: `const node = $json?.data?.issues?.nodes?.[0];\nreturn [{ json: { issueId: node?.id || '', issueIdentifier: node?.identifier || $('Extract PR payload').first().json.issueKey || '' } }];`,
       },
@@ -200,7 +239,7 @@ const workflow = {
       name: "If Linear issue found",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [2200, -220],
+      position: [2640, -220],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -214,7 +253,7 @@ const workflow = {
       name: "Linear: get team states",
       type: "n8n-nodes-base.httpRequest",
       typeVersion: 4.2,
-      position: [2420, -320],
+      position: [2860, -320],
       parameters: {
         method: "POST",
         url: "https://api.linear.app/graphql",
@@ -236,7 +275,7 @@ const workflow = {
       name: "Linear: pick Done state",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
-      position: [2640, -320],
+      position: [3080, -320],
       parameters: {
         jsCode: `const states = $json?.data?.teams?.nodes?.[0]?.states || [];\nconst done = states.find(s => (s.type || '').toLowerCase() === 'completed') || states.find(s => (s.name || '').toLowerCase() === 'done');\nreturn [{ json: { doneStateId: done?.id || '' } }];`,
       },
@@ -246,7 +285,7 @@ const workflow = {
       name: "If Done state found",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [2860, -320],
+      position: [3300, -320],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -260,7 +299,7 @@ const workflow = {
       name: "Linear: update issue state",
       type: "n8n-nodes-base.httpRequest",
       typeVersion: 4.2,
-      position: [3080, -400],
+      position: [3520, -400],
       parameters: {
         method: "POST",
         url: "https://api.linear.app/graphql",
@@ -282,7 +321,7 @@ const workflow = {
       name: "Assess Linear update result",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
-      position: [3300, -400],
+      position: [3740, -400],
       parameters: {
         jsCode: `const body = $json.body || {};
 const err = $json.error || body.error || null;
@@ -317,7 +356,7 @@ return [{ json: { linearFailed: true, rateLimited, reason, failureClass } }];`,
       name: "If Linear update failed",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [3520, -400],
+      position: [3960, -400],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -332,7 +371,7 @@ return [{ json: { linearFailed: true, rateLimited, reason, failureClass } }];`,
       name: "Set merged + updated",
       type: "n8n-nodes-base.set",
       typeVersion: 3.4,
-      position: [3740, -500],
+      position: [4180, -500],
       parameters: {
         mode: "manual",
         assignments: {
@@ -352,7 +391,7 @@ return [{ json: { linearFailed: true, rateLimited, reason, failureClass } }];`,
       name: "Set merged + Linear failed",
       type: "n8n-nodes-base.set",
       typeVersion: 3.4,
-      position: [3740, -300],
+      position: [4180, -300],
       parameters: {
         mode: "manual",
         assignments: {
@@ -373,7 +412,7 @@ return [{ json: { linearFailed: true, rateLimited, reason, failureClass } }];`,
       name: "DLQ: park Linear failure",
       type: "n8n-nodes-base.httpRequest",
       typeVersion: 4.2,
-      position: [3960, -300],
+      position: [4400, -300],
       parameters: {
         method: "POST",
         url: DLQ_PARK_URL,
@@ -389,7 +428,7 @@ return [{ json: { linearFailed: true, rateLimited, reason, failureClass } }];`,
       name: "Set merged fallback",
       type: "n8n-nodes-base.set",
       typeVersion: 3.4,
-      position: [3080, -120],
+      position: [3520, -120],
       parameters: {
         mode: "manual",
         assignments: {
@@ -409,7 +448,7 @@ return [{ json: { linearFailed: true, rateLimited, reason, failureClass } }];`,
       name: "Set PR opened",
       type: "n8n-nodes-base.set",
       typeVersion: 3.4,
-      position: [1540, 220],
+      position: [1980, 220],
       parameters: {
         mode: "manual",
         assignments: {
@@ -429,7 +468,7 @@ return [{ json: { linearFailed: true, rateLimited, reason, failureClass } }];`,
       name: "Telegram: send",
       type: "n8n-nodes-base.telegram",
       typeVersion: 1.2,
-      position: [4180, -100],
+      position: [4620, -100],
       parameters: {
         operation: "sendMessage",
         chatId: "={{ $env.TELEGRAM_CHAT_ID || 'YOUR_CHAT_ID' }}",
@@ -442,7 +481,7 @@ return [{ json: { linearFailed: true, rateLimited, reason, failureClass } }];`,
       name: "Assess Telegram delivery",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
-      position: [4400, -100],
+      position: [4840, -100],
       parameters: {
         jsCode: `const err = $json.error || null;
 if (!err) return [{ json: { telegramFailed: false } }];
@@ -462,7 +501,7 @@ return [{ json: { telegramFailed: true, rateLimited, reason: msg } }];`,
       name: "If Telegram delivery failed",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [4620, -100],
+      position: [5060, -100],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -477,7 +516,7 @@ return [{ json: { telegramFailed: true, rateLimited, reason: msg } }];`,
       name: "DLQ: park Telegram failure",
       type: "n8n-nodes-base.httpRequest",
       typeVersion: 4.2,
-      position: [4840, -180],
+      position: [5280, -180],
       parameters: {
         method: "POST",
         url: DLQ_PARK_URL,
@@ -490,7 +529,9 @@ return [{ json: { telegramFailed: true, rateLimited, reason: msg } }];`,
     },
   ],
   connections: {
-    "GitHub PR Webhook": { main: [[{ node: "Extract PR payload", type: "main", index: 0 }]] },
+    "GitHub PR Webhook": { main: [[{ node: "Verify GitHub signature", type: "main", index: 0 }]] },
+    "Verify GitHub signature": { main: [[{ node: "If GitHub signature valid", type: "main", index: 0 }]] },
+    "If GitHub signature valid": { main: [[{ node: "Extract PR payload", type: "main", index: 0 }], []] },
     "Extract PR payload": { main: [[{ node: "Deduplicate delivery", type: "main", index: 0 }]] },
     "Deduplicate delivery": { main: [[{ node: "If delivery duplicate", type: "main", index: 0 }]] },
     "If delivery duplicate": { main: [[], [{ node: "If PR opened/closed", type: "main", index: 0 }]] },

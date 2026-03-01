@@ -52,6 +52,13 @@ _load GITHUB_REPO github.com aipipeline-repo
 _load GITHUB_WORKFLOW_STAGING github.com aipipeline-workflow-staging
 _load GITHUB_WORKFLOW_PRODUCTION github.com aipipeline-workflow-production
 
+# Hardening/runtime controls
+_load STATUS_AUTH_TOKEN aipipeline.local status-auth-token
+_load GITHUB_WEBHOOK_SECRET github.com aipipeline-webhook-secret
+_load SENTRY_WEBHOOK_SECRET sentry.io aipipeline-webhook-secret
+_load MODEL_CLASSIFIER_MODE openai.com aipipeline-classifier-mode
+_load MODEL_KILL_SWITCH openai.com aipipeline-kill-switch
+
 # Compatibility fallbacks for OPENAI_API_KEY if stored with custom attributes.
 if [[ -z "${OPENAI_API_KEY:-}" ]]; then
   OPENAI_API_KEY="$(secret-tool lookup server openai.com key OPENAI_API_KEY 2>/dev/null || true)"

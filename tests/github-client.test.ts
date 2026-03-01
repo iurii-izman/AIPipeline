@@ -119,6 +119,26 @@ describe("GitHubClient", () => {
     await expect(client.getRepository()).rejects.toMatchObject({ code: "NETWORK", retryable: true });
   });
 
+  it("times out request when timeoutMs is exceeded", async () => {
+    process.env.GITHUB_PERSONAL_ACCESS_TOKEN = "ghp_test";
+    process.env.GITHUB_OWNER = "iurii-izman";
+    process.env.GITHUB_REPO = "AIPipeline";
+
+    const client = new GitHubClient({
+      fetcher: async (_url, init) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener(
+            "abort",
+            () => reject(new DOMException("aborted", "AbortError")),
+            { once: true }
+          );
+        }),
+      defaultTimeoutMs: 5,
+    });
+
+    await expect(client.getRepository()).rejects.toMatchObject({ code: "NETWORK", retryable: true });
+  });
+
   it("fails fast when required github env is missing", async () => {
     delete process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
     delete process.env.GITHUB_OWNER;

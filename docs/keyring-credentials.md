@@ -45,6 +45,11 @@
 | GitHub Repo (опц.) | `AIPipeline — GitHub Repo` | `aipipeline-repo` | `github.com` | repo name (WF-5 `/deploy`) | ☑ |
 | GitHub Workflow Staging (опц.) | `AIPipeline — GitHub Workflow Staging` | `aipipeline-workflow-staging` | `github.com` | filename workflow для staging deploy | ☑ |
 | GitHub Workflow Production (опц.) | `AIPipeline — GitHub Workflow Production` | `aipipeline-workflow-production` | `github.com` | filename workflow для production deploy | ☑ |
+| Status Auth Token (hardening) | `AIPipeline — Status Auth Token` | `status-auth-token` | `aipipeline.local` | Bearer token для `/status` auth guard | ☑ |
+| GitHub Webhook Secret (hardening) | `AIPipeline — GitHub Webhook Secret` | `aipipeline-webhook-secret` | `github.com` | HMAC verify для WF-2 webhook | ☑ |
+| Sentry Webhook Secret (hardening) | `AIPipeline — Sentry Webhook Secret` | `aipipeline-webhook-secret` | `sentry.io` | Signature verify для WF-3 webhook | ☑ |
+| Model Classifier Mode (hardening) | `AIPipeline — Model Classifier Mode` | `aipipeline-classifier-mode` | `openai.com` | `full_primary|shadow|heuristic_only` для WF-3 | ☑ |
+| Model Kill Switch (hardening) | `AIPipeline — Model Kill Switch` | `aipipeline-kill-switch` | `openai.com` | `true|false` kill switch для WF-3 | ☑ |
 | ngrok authtoken (опц.) | `AIPipeline — ngrok` | `aipipeline` | `ngrok.com` | [dashboard.ngrok.com](https://dashboard.ngrok.com/get-started/your-authtoken) — для скрипта `run-n8n-with-ngrok.sh` (Telegram webhook по HTTPS) | ☑ |
 
 **Примечание:** Sentry MCP использует OAuth (логин в браузере), в keyring его хранить не обязательно. В keyring — DSN для SDK в коде и для n8n, если нужен. **Sentry Auth Token** — только для автоматической регистрации webhook (WF-3) через API.
@@ -101,6 +106,17 @@ secret-tool store --label="AIPipeline — Cloudflared Tunnel Token" server cloud
 
 # Cloudflare public URL (example: https://n8n.example.com)
 secret-tool store --label="AIPipeline — Cloudflare Public Base URL" server cloudflare.com user aipipeline-public-url
+
+# /status bearer token
+secret-tool store --label="AIPipeline — Status Auth Token" server aipipeline.local user status-auth-token
+
+# Webhook secrets (WF-2/WF-3)
+secret-tool store --label="AIPipeline — GitHub Webhook Secret" server github.com user aipipeline-webhook-secret
+secret-tool store --label="AIPipeline — Sentry Webhook Secret" server sentry.io user aipipeline-webhook-secret
+
+# Model feature flags
+secret-tool store --label="AIPipeline — Model Classifier Mode" server openai.com user aipipeline-classifier-mode
+secret-tool store --label="AIPipeline — Model Kill Switch" server openai.com user aipipeline-kill-switch
 ```
 
 > **Важно:** CLI-шаблоны выше используют `server` (не `service`), чтобы быть совместимыми с GUI-записями. Если ранее ключи создавались с `service`, скрипт всё равно их найдёт (fallback).
