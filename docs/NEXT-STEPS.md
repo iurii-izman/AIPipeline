@@ -96,6 +96,7 @@
 0. Подтверждать remote release evidence после изменений в hardening/scale baseline:
    - запускать GitHub workflow `Release Gate` с inputs `generate_scorecard=true`, `version=vX.Y.Z`, `target_env=staging|production`;
    - проверять upload artifact `release-scorecard-v2` в run summary;
+   - фиксировать ссылки на artifacts (`release-scorecard-v2`, `release-supply-chain`, `release-ai-ops`) в архивном closure snapshot.
    - учитывать, что в GitHub-hosted runner gate использует `--skip-dr-cadence` (локальный DR cadence остается обязательным в ops цикле).
 1. Поддерживать rotation/валидность hardening env в keyring и runtime (`STATUS_AUTH_TOKEN`, `GITHUB_WEBHOOK_SECRET`, `SENTRY_WEBHOOK_SECRET`, `MODEL_CLASSIFIER_MODE`, `MODEL_KILL_SWITCH`); bootstrap: `./scripts/bootstrap-hardening-env-keyring.sh`.
 2. Поддерживать актуальность repository ruleset/checks в GitHub (включая `build`, `integration`, `e2e-fixtures`, `eval-alpha`, `eval-safety`, `eval-v2`, `sbom`, `iac-validate`, `cost-governance`, `security-audit`, `CodeQL`, `SonarCloud`) при изменениях CI.
@@ -116,6 +117,7 @@
 5. Поддерживать release scorecard v2 в релизном цикле:
    - `./scripts/release-quality-gate.sh --strict-parity --generate-scorecard --version vX.Y.Z --env staging`.
    - Через `.github/workflows/release-gate.yml` запускать `workflow_dispatch` с `generate_scorecard=true` и сохранять artifact `release-scorecard-v2` как release evidence.
+   - Для локального strict gate нужен активный app endpoint на `localhost:3000` (`./scripts/stack-control.sh start core` или `PORT=3000 node src/index.js`), иначе synthetic probe будет fail.
    - Проверять `release-supply-chain` (SBOM + provenance) и `release-ai-ops` (eval-v2 + cost report) artifacts.
    - Шаблон: `docs/templates/release-scorecard-v2.md`.
 6. Поддерживать data governance policy gate в CI/release:

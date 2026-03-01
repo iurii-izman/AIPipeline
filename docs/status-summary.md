@@ -16,7 +16,7 @@
 - Stable HTTPS mode: active (Cloudflare Tunnel path documented)
 
 ## Quality Baseline
-- Tests: `65/65` passing
+- Tests: `67/67` passing
 - Coverage: branch `80.44%` (threshold `80%`) pass
 - CI required checks: green
 - Security checks: `npm audit` gate + CodeQL + SonarCloud workflow active (`.github/workflows/sonarcloud.yml`)
@@ -27,10 +27,13 @@
 - Strict parity check: `./scripts/check-env-parity.sh --strict` => `Missing=0`
 - Unified release gate: `npm run release:gate -- --strict-parity` => pass
 - Observability alerts probe: pass after stack warm-up
+- Synthetic probe aligned with `/status` auth policy (`scripts/synthetic-health-status-check.sh` sends bearer token when `STATUS_AUTH_TOKEN` is set)
 - GitHub controls sync: `./scripts/sync-github-repo-controls.sh` (deploy webhooks/tokens + parity secrets/vars + required checks)
 - Backup retention timer: `aipipeline-backup-retention.timer` installed/enabled (`systemctl --user status aipipeline-backup-retention.timer`)
 - DR cadence timer: `aipipeline-dr-cadence.timer` installed/enabled (`systemctl --user status aipipeline-dr-cadence.timer`)
 - DR cadence last successful run: `2026-03-01T20:24:59+02:00` (`/var/home/user/Projects/AIPipeline/.out/drills/dr-restore-drill-20260301-202456.json`)
+- Local release gate (strict + scorecard): pass  
+  `./scripts/release-quality-gate.sh --strict-parity --generate-scorecard --version v0.1.0-alpha.2 --env staging`
 - CI (remote): success with extended jobs (`eval-v2`, `iac-validate`, `cost-governance`, `sbom attestation`)  
   `https://github.com/iurii-izman/AIPipeline/actions/runs/22552504618`
 - Release Gate (remote): success with scorecard + supply-chain + ai-ops artifacts  

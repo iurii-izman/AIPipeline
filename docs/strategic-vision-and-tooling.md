@@ -12,9 +12,9 @@ AIPipeline находится на стадии `late-alpha / early-MVP` и уж
 Ключевой вектор на 3-6 месяцев: закрыть production baseline (deploy guardrails без silent dry-run, rollback-ready контур, SLO-lite, AI safety/eval maturity, SBOM baseline). Ключевой вектор на 6-12 месяцев: операционная устойчивость (durable DLQ/idempotency, OTel correlation, cost observability, governance). Дальше - продуктовый контур (IaC staging/prod, provenance, data governance enforcement).
 
 Текущий приоритетный баланс:
-- `P0`: deploy-contract hardening, AI eval/safety coverage, infrastructure baseline.
-- `P1`: DR cadence automation, supply-chain controls, SLO/alert routing, cost governance.
-- `P2`: расширения масштаба (queue mode, расширенный RBAC, advanced optimization).
+- `P0`: поддерживать закрытые production guardrails (deploy strict mode, Sonar hard gate, strict profile checks) без регрессий.
+- `P1`: DR cadence + release scorecard operational loop, safety/eval v2, supply-chain, cost/telemetry governance.
+- `P2`: расширения масштаба (queue mode, расширенный RBAC, advanced optimization, managed telemetry).
 
 Evidence:
 - [docs/status-summary.md](/var/home/user/Projects/AIPipeline/docs/status-summary.md)
@@ -46,9 +46,9 @@ Evidence:
 
 ### 2.2 Где есть пробелы, требующие подтверждения
 
-- Не хватает production-grade telemetry evidence -> как получить: внедрить OTel + managed telemetry и хранить регулярные incident/postmortem evidence.
-- Не хватает инфраструктурного контракта staging/prod -> как получить: IaC baseline + environment contract doc + post-deploy checks.
-- Не хватает формального data governance policy-as-code -> как получить: data inventory + retention/PII policy + автоматические проверки.
+- Не хватает устойчивого online telemetry объема для релизных решений -> как получить: регулярный telemetry seed/ingest + еженедельный eval v2 online scorecard.
+- Не хватает полноценно durable DLQ + persistent idempotency -> как получить: миграция от mirror-only к primary durable store.
+- Не хватает полного release evidence цикла на каждый релиз -> как получить: обязательная фиксация ссылок на artifacts (scorecard + supply-chain + ai-ops) в archive/history.
 
 Evidence:
 - [docs/project-audit-and-roadmap.md](/var/home/user/Projects/AIPipeline/docs/project-audit-and-roadmap.md)
@@ -124,10 +124,10 @@ Evidence:
 | 10 | Retention automation не enforced | P2 | Timer presence probe | Scheduled retention policy | C-10 |
 | 11 | DR drill не цикличен | P1 | Weekly reminder + evidence check | Monthly automated drill | C-11 |
 | 12 | Observability локально optional | P1 | Production telemetry requirements | Managed telemetry layer | C-12 |
-| 13 | Нет OTel tracing | P2 | Trace propagation spec | OTel SDK + exporter | C-13 |
+| 13 | Нет OTel tracing | P1 | Trace propagation spec | OTel SDK + exporter | C-13 |
 | 14 | Sonar soft-pass сценарий | P1 | Hard gate на protected branches | Secret governance check | C-14 |
 | 15 | Нет SBOM/provenance pipeline | P1 | SBOM generation в CI | SLSA provenance enforcement | C-15 |
-| 16 | Eval dataset ограничен | P0 | Расширить до >=80 и затем >=150 | Eval harness v2 + online scorecards | C-16 |
+| 16 | Eval dataset ограничен | P1 | Расширить до >=80 и затем >=150 | Eval harness v2 + online scorecards | C-16 |
 | 17 | Нет safety/red-team suite | P1 | Adversarial набор в eval | Dedicated AI safety CI job | C-17 |
 | 18 | Data governance не формализован | P1 | Policy doc + data inventory | Retention/PII checks | C-18 |
 | 19 | Cost controls ограничены | P1 | Usage logging + budget caps | Cost dashboards + anomaly alerts | C-19 |
@@ -232,9 +232,9 @@ Evidence:
 3. `[P1]` Добавить backup-retention статус в unified health report.  
    Файл: `scripts/stack-health-report.sh`  
    Done: отчет явно показывает состояние timer/retention.
-4. `[P0]` Расширить eval dataset до промежуточного порога >=80.  
+4. `[P1]` Расширить eval dataset до >=150 и включить online eval-v2 scorecard.  
    Файлы: `evals/datasets/sentry-severity-alpha.json`, `scripts/run-ai-eval.js`  
-   Done: eval-alpha стабильно проходит и публикует отчёт.
+   Done: dataset `150` кейсов, eval-alpha и eval-v2 публикуют отчёты.
 5. `[P1]` Добавить минимальный cost report по LLM/API usage.  
    Файлы: `scripts/` (новый отчёт), `docs/observability.md`  
    Done: weekly/monthly cost summary доступен в evidence цикле.
@@ -242,6 +242,8 @@ Evidence:
 Evidence:
 - [docs/project-audit-and-roadmap.md](/var/home/user/Projects/AIPipeline/docs/project-audit-and-roadmap.md)
 - [docs/NEXT-STEPS.md](/var/home/user/Projects/AIPipeline/docs/NEXT-STEPS.md)
+- [scripts/run-ai-eval-v2.js](/var/home/user/Projects/AIPipeline/scripts/run-ai-eval-v2.js)
+- [scripts/seed-ai-telemetry-from-eval.js](/var/home/user/Projects/AIPipeline/scripts/seed-ai-telemetry-from-eval.js)
 
 ---
 

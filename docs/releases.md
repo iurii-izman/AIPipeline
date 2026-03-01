@@ -46,6 +46,7 @@
    - Для release evidence рекомендуется запускать с `generate_scorecard=true`, `target_env=staging|production`, `version=vX.Y.Z`.
    - В GitHub-hosted runner Release Gate запускается с `--skip-dr-cadence`, так как локальные DR evidence (`.out/drills`) недоступны в CI.
    - После завершения скачать artifact `release-scorecard-v2` из run summary и приложить ссылку в Notion Sprint Log / release note.
+   - В репозитории фиксировать closure snapshot в `docs/archive/` с run URL и списком release artifacts (`release-scorecard-v2`, `release-supply-chain`, `release-ai-ops`).
    - Для локального стека перед релизом: `./scripts/release-quality-gate.sh --strict-parity`.
 
 7. **Deploy strict mode (staging/production)**
