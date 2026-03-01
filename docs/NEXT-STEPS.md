@@ -88,7 +88,7 @@
 
 ## Что остаётся до полного closure
 
-1. Включить и проверить новые env-параметры в runtime n8n/app: `STATUS_AUTH_TOKEN`, `HEALTH_RATE_LIMIT_MAX_REQUESTS`, `HEALTH_RATE_LIMIT_WINDOW_MS`, `MAX_REQUEST_BODY_BYTES`, `GITHUB_WEBHOOK_SECRET`, `SENTRY_WEBHOOK_SECRET`, `MODEL_CLASSIFIER_MODE`, `MODEL_KILL_SWITCH`.
+1. Поддерживать rotation/валидность hardening env в keyring и runtime (`STATUS_AUTH_TOKEN`, `GITHUB_WEBHOOK_SECRET`, `SENTRY_WEBHOOK_SECRET`, `MODEL_CLASSIFIER_MODE`, `MODEL_KILL_SWITCH`); bootstrap: `./scripts/bootstrap-hardening-env-keyring.sh`.
 2. При необходимости подключить branch protection rule для новых CI checks (`integration`, `e2e-fixtures`, `eval-alpha`, `security-audit`, `CodeQL`) в GitHub UI.
 3. Расширить eval dataset (>=50 кейсов) для реалистичного quality gate перед rollout `MODEL_CLASSIFIER_MODE=full_primary`.
 4. Запустить backup retention policy (например, cron/systemd timer + cleanup старше N дней) вокруг `scripts/backup-n8n.sh`.

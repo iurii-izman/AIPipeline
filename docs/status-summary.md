@@ -111,10 +111,11 @@
 - **Operational hardening block (2026-03-01):**
   - добавлены `scripts/backup-n8n.sh` и `scripts/restore-n8n.sh` для backup/restore Podman volume `n8n_data` (+ workflow API dump при наличии `N8N_API_KEY`);
   - добавлен `scripts/check-env-parity.sh` (parity-check критичных env app/n8n/deploy/model, `--strict`);
+  - добавлен `scripts/bootstrap-hardening-env-keyring.sh` для idempotent bootstrap hardening env в keyring (`STATUS_AUTH_TOKEN`, webhook secrets, model flags);
   - добавлен единый `scripts/release-quality-gate.sh` (lint/build/test/integration/e2e/eval/parity/alerts + optional backup);
   - `scripts/evidence-sync-cycle.sh` расширен флагом `--with-backup`;
   - обновлены runbook/docs: `docs/operations-profiles.md`, `docs/releases.md`.
-  - текущий parity snapshot (2026-03-01): в non-strict режиме pass, для strict parity не заведены в keyring `STATUS_AUTH_TOKEN`, `GITHUB_WEBHOOK_SECRET`, `SENTRY_WEBHOOK_SECRET`, `MODEL_CLASSIFIER_MODE`, `MODEL_KILL_SWITCH`.
+  - parity snapshot (2026-03-01): `./scripts/check-env-parity.sh --strict` pass (`Missing=0`) после bootstrap hardening env.
 - **Доки:** runbooks (в т.ч. [linear-phase3-runbook.md](linear-phase3-runbook.md), [n8n-workflows/README.md](n8n-workflows/README.md), [live-uat-telegram.md](live-uat-telegram.md)), гайды по Notion/Sentry/n8n (step-by-step), keyring, Linear, MCP, audit, и consolidated backlog [tz-remaining-work.md](tz-remaining-work.md).
 
 ---

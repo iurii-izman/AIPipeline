@@ -116,6 +116,12 @@ Restore из архива (требует остановить контейне�
 ./scripts/check-env-parity.sh --strict
 ```
 
+Bootstrap недостающих hardening env в keyring:
+
+```bash
+./scripts/bootstrap-hardening-env-keyring.sh
+```
+
 ## Unified release quality gate
 
 Единый gate перед релизом:
