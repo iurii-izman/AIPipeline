@@ -7,7 +7,7 @@
 - Release: `v0.1.0-alpha.2`
 - Branch model: `main` as canonical branch
 - Latest major execution: merged PR #24 (2026-03-01)
-- Docs inventory: `80` files in `docs/`
+- Docs inventory: `79` files in `docs/`
 
 ## Delivery State
 - Day-0 and Phases 2–4: completed
@@ -19,8 +19,8 @@
 - Tests: `66/66` passing
 - Coverage: branch `80.44%` (threshold `80%`) pass
 - CI required checks: green
-- Security checks: `npm audit` gate + CodeQL + SonarCloud workflow active (`.github/workflows/sonarcloud.yml`)
-- GitHub ruleset required checks include: `lint`, `build`, `typecheck`, `test`, `coverage`, `integration`, `e2e-fixtures`, `eval-alpha`, `eval-safety`, `eval-v2`, `sbom`, `iac-validate`, `cost-governance`, `workflow-governance`, `data-governance-policy`, `security-audit`, `analyze (javascript-typescript)`, `SonarCloud`
+- Security checks: `npm audit` gate + CodeQL
+- GitHub ruleset required checks include: `lint`, `build`, `typecheck`, `test`, `coverage`, `integration`, `e2e-fixtures`, `eval-alpha`, `eval-safety`, `eval-v2`, `sbom`, `iac-validate`, `cost-governance`, `workflow-governance`, `docs-links`, `data-governance-policy`, `security-audit`, `analyze (javascript-typescript)`
 
 ## Operational Baseline
 - Environment check: `./scripts/health-check-env.sh`
@@ -73,7 +73,7 @@
 ## Open Focus (high-level)
 1. Close remaining P0 production-baseline gaps from strategy v2: IaC rollout maturity + online AI telemetry sample growth.
 2. Keep backup retention and DR cadence healthy (`cleanup-backups`, timers, periodic DR drill evidence).
-3. Enforce CI/ruleset consistency and quality/security gates (including `SonarCloud` + provenance attestations).
+3. Enforce CI/ruleset consistency and quality/security gates (including CodeQL + provenance attestations).
 4. Keep periodic closure audits and evidence sync cycles running.
 5. Start 90-day execution slice tracking (strategy v2) in `NEXT-STEPS.md`.
 6. Keep SBOM/provenance + safety/eval-v2 gates green after CI/ruleset evolution.

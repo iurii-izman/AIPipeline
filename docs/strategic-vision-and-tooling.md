@@ -17,10 +17,10 @@ AIPipeline находится на стадии `late-alpha / early-MVP` и уж
 - `P2`: расширения масштаба (queue mode, расширенный RBAC, advanced optimization, managed telemetry).
 
 Evidence:
-- [docs/status-summary.md](/var/home/user/Projects/AIPipeline/docs/status-summary.md)
-- [docs/NEXT-STEPS.md](/var/home/user/Projects/AIPipeline/docs/NEXT-STEPS.md)
-- [docs/project-audit-and-roadmap.md](/var/home/user/Projects/AIPipeline/docs/project-audit-and-roadmap.md)
-- [.github/workflows/ci.yml](/var/home/user/Projects/AIPipeline/.github/workflows/ci.yml)
+- [docs/status-summary.md](status-summary.md)
+- [docs/NEXT-STEPS.md](NEXT-STEPS.md)
+- [docs/project-audit-and-roadmap.md](project-audit-and-roadmap.md)
+- [.github/workflows/ci.yml](../.github/workflows/ci.yml)
 
 ---
 
@@ -37,12 +37,12 @@ Evidence:
 | Runtime/API | `/health`, `/status`, typed clients + resilience primitives | Хорошая база для production hardening и telemetry |
 
 Evidence:
-- [docs/status-summary.md](/var/home/user/Projects/AIPipeline/docs/status-summary.md)
-- [docs/NEXT-STEPS.md](/var/home/user/Projects/AIPipeline/docs/NEXT-STEPS.md)
-- [scripts/health-check-env.sh](/var/home/user/Projects/AIPipeline/scripts/health-check-env.sh)
-- [src/healthServer.js](/var/home/user/Projects/AIPipeline/src/healthServer.js)
-- [src/modules/linear-client/index.ts](/var/home/user/Projects/AIPipeline/src/modules/linear-client/index.ts)
-- [docs/n8n-workflows/wf-7-dlq-parking.json](/var/home/user/Projects/AIPipeline/docs/n8n-workflows/wf-7-dlq-parking.json)
+- [docs/status-summary.md](status-summary.md)
+- [docs/NEXT-STEPS.md](NEXT-STEPS.md)
+- [scripts/health-check-env.sh](../scripts/health-check-env.sh)
+- [src/healthServer.js](../src/healthServer.js)
+- [src/modules/linear-client/index.ts](../src/modules/linear-client/index.ts)
+- [docs/n8n-workflows/wf-7-dlq-parking.json](n8n-workflows/wf-7-dlq-parking.json)
 
 ### 2.2 Где есть пробелы, требующие подтверждения
 
@@ -51,9 +51,9 @@ Evidence:
 - Не хватает полного release evidence цикла на каждый релиз -> как получить: обязательная фиксация ссылок на artifacts (scorecard + supply-chain + ai-ops) в archive/history.
 
 Evidence:
-- [docs/project-audit-and-roadmap.md](/var/home/user/Projects/AIPipeline/docs/project-audit-and-roadmap.md)
-- [docs/observability-stack-grafana-loki.md](/var/home/user/Projects/AIPipeline/docs/observability-stack-grafana-loki.md)
-- [.github/workflows/deploy-production.yml](/var/home/user/Projects/AIPipeline/.github/workflows/deploy-production.yml)
+- [docs/project-audit-and-roadmap.md](project-audit-and-roadmap.md)
+- [docs/observability-stack-grafana-loki.md](observability-stack-grafana-loki.md)
+- [.github/workflows/deploy-production.yml](../.github/workflows/deploy-production.yml)
 
 ---
 
@@ -76,9 +76,9 @@ Evidence:
 - Безопасность: секреты только в keyring/env, без хранения в repo.
 
 Evidence:
-- [AGENTS.md](/var/home/user/Projects/AIPipeline/AGENTS.md)
-- [docs/README.md](/var/home/user/Projects/AIPipeline/docs/README.md)
-- [docs/status-summary.md](/var/home/user/Projects/AIPipeline/docs/status-summary.md)
+- [AGENTS.md](../AGENTS.md)
+- [docs/README.md](README.md)
+- [docs/status-summary.md](status-summary.md)
 
 ---
 
@@ -99,10 +99,10 @@ Evidence:
 | Policy engine | OPA/policy checks (точечно) | Watchlist | Возможен рост governance-политик | Начать с простых shell/CI policy checks, OPA позже | M | Сложность внедрения для solo | Переход только при >=3 повторяющихся policy-классах |
 
 Evidence:
-- [docs/project-audit-and-roadmap.md](/var/home/user/Projects/AIPipeline/docs/project-audit-and-roadmap.md)
-- [.github/workflows/ci.yml](/var/home/user/Projects/AIPipeline/.github/workflows/ci.yml)
-- [.github/workflows/sonarcloud.yml](/var/home/user/Projects/AIPipeline/.github/workflows/sonarcloud.yml)
-- [docs/NEXT-STEPS.md](/var/home/user/Projects/AIPipeline/docs/NEXT-STEPS.md)
+- [docs/project-audit-and-roadmap.md](project-audit-and-roadmap.md)
+- [.github/workflows/ci.yml](../.github/workflows/ci.yml)
+- [.github/workflows/codeql.yml](../.github/workflows/codeql.yml)
+- [docs/NEXT-STEPS.md](NEXT-STEPS.md)
 
 ---
 
@@ -134,8 +134,8 @@ Evidence:
 | 20 | Telegram RBAC внедрен, нужна policy maturity | P2 | Support allowlist checks + denied-op evidence | Role/operation policy + audit | C-20 |
 
 Evidence:
-- [docs/project-audit-and-roadmap.md](/var/home/user/Projects/AIPipeline/docs/project-audit-and-roadmap.md)
-- [docs/status-summary.md](/var/home/user/Projects/AIPipeline/docs/status-summary.md)
+- [docs/project-audit-and-roadmap.md](project-audit-and-roadmap.md)
+- [docs/status-summary.md](status-summary.md)
 
 ---
 
@@ -151,12 +151,12 @@ Evidence:
 | Cost control | Бюджетирование и эффективность LLM/API | Cost report + alert thresholds + batching policy для non-critical paths | Cost variance в пределах бюджета |
 
 Evidence:
-- [docs/NEXT-STEPS.md](/var/home/user/Projects/AIPipeline/docs/NEXT-STEPS.md)
-- [docs/observability.md](/var/home/user/Projects/AIPipeline/docs/observability.md)
-- [docs/adr-001-full-primary-rollout.md](/var/home/user/Projects/AIPipeline/docs/adr-001-full-primary-rollout.md)
-- [docs/releases.md](/var/home/user/Projects/AIPipeline/docs/releases.md)
-- [scripts/generate-release-scorecard-v2.sh](/var/home/user/Projects/AIPipeline/scripts/generate-release-scorecard-v2.sh)
-- [docs/templates/release-scorecard-v2.md](/var/home/user/Projects/AIPipeline/docs/templates/release-scorecard-v2.md)
+- [docs/NEXT-STEPS.md](NEXT-STEPS.md)
+- [docs/observability.md](observability.md)
+- [docs/adr-001-full-primary-rollout.md](adr-001-full-primary-rollout.md)
+- [docs/releases.md](releases.md)
+- [scripts/generate-release-scorecard-v2.sh](../scripts/generate-release-scorecard-v2.sh)
+- [docs/templates/release-scorecard-v2.md](templates/release-scorecard-v2.md)
 
 ---
 
@@ -190,8 +190,8 @@ Primary links:
 - OpenAI evals cookbook: https://cookbook.openai.com/
 
 Evidence:
-- [docs/project-audit-and-roadmap.md](/var/home/user/Projects/AIPipeline/docs/project-audit-and-roadmap.md)
-- [.github/workflows/ci.yml](/var/home/user/Projects/AIPipeline/.github/workflows/ci.yml)
+- [docs/project-audit-and-roadmap.md](project-audit-and-roadmap.md)
+- [.github/workflows/ci.yml](../.github/workflows/ci.yml)
 
 ---
 
@@ -214,10 +214,10 @@ Evidence:
 | 12+ месяцев | Productized + scale-ready | IaC + provenance + data governance включены в release decision |
 
 Evidence:
-- [docs/NEXT-STEPS.md](/var/home/user/Projects/AIPipeline/docs/NEXT-STEPS.md)
-- [docs/project-audit-and-roadmap.md](/var/home/user/Projects/AIPipeline/docs/project-audit-and-roadmap.md)
-- [docs/releases.md](/var/home/user/Projects/AIPipeline/docs/releases.md)
-- [.github/workflows/release-gate.yml](/var/home/user/Projects/AIPipeline/.github/workflows/release-gate.yml)
+- [docs/NEXT-STEPS.md](NEXT-STEPS.md)
+- [docs/project-audit-and-roadmap.md](project-audit-and-roadmap.md)
+- [docs/releases.md](releases.md)
+- [.github/workflows/release-gate.yml](../.github/workflows/release-gate.yml)
 
 ---
 
@@ -226,9 +226,9 @@ Evidence:
 1. `[P0]` Убрать silent dry-run в deploy workflows.  
    Файлы: `.github/workflows/deploy-staging.yml`, `.github/workflows/deploy-production.yml`  
    Done: deploy job не может быть green без фактического deploy path.
-2. `[P1]` Перевести SonarCloud в hard gate на protected branches.  
-   Файл: `.github/workflows/sonarcloud.yml`  
-   Done: merge в `main` блокируется при отсутствии реального scan.
+2. `[P1]` Добавить hard gate для целостности документации.  
+   Файлы: `scripts/check-doc-links.js`, `.github/workflows/ci.yml`  
+   Done: `docs-links` job блокирует merge при битых/невалидных ссылках.
 3. `[P1]` Добавить backup-retention статус в unified health report.  
    Файл: `scripts/stack-health-report.sh`  
    Done: отчет явно показывает состояние timer/retention.
@@ -240,10 +240,10 @@ Evidence:
    Done: weekly/monthly cost summary доступен в evidence цикле.
 
 Evidence:
-- [docs/project-audit-and-roadmap.md](/var/home/user/Projects/AIPipeline/docs/project-audit-and-roadmap.md)
-- [docs/NEXT-STEPS.md](/var/home/user/Projects/AIPipeline/docs/NEXT-STEPS.md)
-- [scripts/run-ai-eval-v2.js](/var/home/user/Projects/AIPipeline/scripts/run-ai-eval-v2.js)
-- [scripts/seed-ai-telemetry-from-eval.js](/var/home/user/Projects/AIPipeline/scripts/seed-ai-telemetry-from-eval.js)
+- [docs/project-audit-and-roadmap.md](project-audit-and-roadmap.md)
+- [docs/NEXT-STEPS.md](NEXT-STEPS.md)
+- [scripts/run-ai-eval-v2.js](../scripts/run-ai-eval-v2.js)
+- [scripts/seed-ai-telemetry-from-eval.js](../scripts/seed-ai-telemetry-from-eval.js)
 
 ---
 
@@ -258,8 +258,8 @@ Evidence:
 Почему: это создаёт операционный шум и снижает пропускную способность в solo-модели.
 
 Evidence:
-- [docs/status-summary.md](/var/home/user/Projects/AIPipeline/docs/status-summary.md)
-- [docs/NEXT-STEPS.md](/var/home/user/Projects/AIPipeline/docs/NEXT-STEPS.md)
+- [docs/status-summary.md](status-summary.md)
+- [docs/NEXT-STEPS.md](NEXT-STEPS.md)
 
 ---
 
@@ -277,9 +277,9 @@ Trigger for implementation:
 - или блокирующая необходимость для release scorecard v2.
 
 Evidence:
-- [src/lib/resilience](/var/home/user/Projects/AIPipeline/src/lib/resilience)
-- [src/healthServer.js](/var/home/user/Projects/AIPipeline/src/healthServer.js)
-- [src/evals](/var/home/user/Projects/AIPipeline/src/evals)
+- [src/lib/resilience](../src/lib/resilience)
+- [src/healthServer.js](../src/healthServer.js)
+- [src/evals](../src/evals)
 
 ---
 
@@ -293,8 +293,8 @@ Evidence:
 
 ### 12.2 Minimal sync (только при расхождениях)
 
-- [docs/README.md](/var/home/user/Projects/AIPipeline/docs/README.md): обновить краткую аннотацию стратегии, если изменилась структура/назначение.
-- [docs/NEXT-STEPS.md](/var/home/user/Projects/AIPipeline/docs/NEXT-STEPS.md): синхронизировать 1-3 приоритета, если сместились P0/P1.
+- [docs/README.md](README.md): обновить краткую аннотацию стратегии, если изменилась структура/назначение.
+- [docs/NEXT-STEPS.md](NEXT-STEPS.md): синхронизировать 1-3 приоритета, если сместились P0/P1.
 - `status-summary.md` обновлять только при фактическом изменении состояния системы, не для редакторских правок стратегии.
 
 ### 12.3 Rule of truth
@@ -304,9 +304,9 @@ Evidence:
 - NEXT-STEPS = оперативная очередь.
 
 Evidence:
-- [docs/README.md](/var/home/user/Projects/AIPipeline/docs/README.md)
-- [docs/NEXT-STEPS.md](/var/home/user/Projects/AIPipeline/docs/NEXT-STEPS.md)
-- [docs/project-audit-and-roadmap.md](/var/home/user/Projects/AIPipeline/docs/project-audit-and-roadmap.md)
+- [docs/README.md](README.md)
+- [docs/NEXT-STEPS.md](NEXT-STEPS.md)
+- [docs/project-audit-and-roadmap.md](project-audit-and-roadmap.md)
 
 ---
 

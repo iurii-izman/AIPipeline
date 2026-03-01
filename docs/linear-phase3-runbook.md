@@ -1,13 +1,13 @@
 # Linear — Фаза 3: вести задачи по workflow и labels
 
 **Цель:** единообразно вести задачи в Linear: статусы (workflow), приоритет, labels, шаблон «Agent-Ready».
-**Ссылки:** [linear-setup.md](linear-setup.md), [PIPELINE.md](../PIPELINE.md) Фаза 3, [definition-of-done.md](definition-of-done.md).
+**Ссылки:** [PIPELINE.md](../PIPELINE.md) Фаза 3, [definition-of-done.md](definition-of-done.md), [archive/linear-setup.md](archive/linear-setup.md) (исторический snapshot).
 
 ---
 
 ## Workflow: соответствие PIPELINE ↔ Linear
 
-В Linear уже настроены состояния (см. [linear-setup.md](linear-setup.md)):
+В Linear уже настроены состояния:
 
 | PIPELINE (Фаза 3) | Linear (факт) | Когда использовать |
 |-------------------|---------------|--------------------|
@@ -27,7 +27,7 @@
 
 ## Labels (текущие в Linear)
 
-Используй существующие 13 labels — [linear-setup.md](linear-setup.md):
+Используй существующие 13 labels:
 
 | Категория   | Labels |
 |------------|--------|

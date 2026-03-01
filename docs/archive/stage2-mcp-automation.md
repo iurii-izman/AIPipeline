@@ -13,7 +13,7 @@
 
 - Получить список workspace, команд, проектов.
 - **Создать/проверить workflow states:** Triage → Backlog → Ready → In Progress → In Review → Blocked → Done → Cancelled (если API позволяет).
-- **Создать labels:** технические (`integration`, `bugfix`, `feature`, `docs`, …), приоритет (`P0-Critical`, …), AI (`agent-ready`, `needs-human`, `needs-review`). См. [../linear-setup.md](../linear-setup.md), PIPELINE Фаза 3.
+- **Создать labels:** технические (`integration`, `bugfix`, `feature`, `docs`, …), приоритет (`P0-Critical`, …), AI (`agent-ready`, `needs-human`, `needs-review`). См. [linear-setup.md](linear-setup.md), PIPELINE Фаза 3.
 - **Создать проект** для AIPipeline, если ещё нет.
 - **Интеграция GitHub:** делается в UI Linear (Settings → Integrations → GitHub); после подключения — проверить через MCP, что issue линкуются с PR.
 
@@ -22,8 +22,8 @@
 ## Notion (через Notion MCP)
 
 - **Найти или создать** корневую страницу Delivery Hub.
-- **Создать базы** (если MCP/API позволяет): Meetings, Specs, Decisions, Integrations и т.д. Свойства по [../notion-delivery-hub.md](../notion-delivery-hub.md).
-- **Создать страницы-шаблоны** из [../notion-templates.md](../notion-templates.md): Meeting, Spec (RFC), Integration Mapping, Runbook, ADR.
+- **Создать базы** (если MCP/API позволяет): Meetings, Specs, Decisions, Integrations и т.д. Свойства по [notion-delivery-hub.md](notion-delivery-hub.md).
+- **Создать страницы-шаблоны** из [notion-templates.md](notion-templates.md): Meeting, Spec (RFC), Integration Mapping, Runbook, ADR.
 - **Quick Links:** страница со ссылками на Linear, GitHub repo, n8n, Sentry, Telegram (URL подставить после того как они появятся).
 - Убедиться, что интеграция (Internal Integration) имеет доступ ко всем нужным страницам/базам (Share → Connect to integration).
 

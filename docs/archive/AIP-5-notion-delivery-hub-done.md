@@ -11,5 +11,5 @@ Checklist for **Notion: create Delivery Hub root page, share with integration** 
 
 ## References
 
-- [notion-delivery-hub.md](../notion-delivery-hub.md), [notion-setup-step-by-step.md](../notion-setup-step-by-step.md)
+- [notion-delivery-hub.md](notion-delivery-hub.md), [notion-setup-step-by-step.md](../notion-setup-step-by-step.md)
 - [keyring-credentials.md](../keyring-credentials.md)

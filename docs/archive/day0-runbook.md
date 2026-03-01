@@ -23,7 +23,7 @@ Checklist to bring the pipeline online. **Day-0 завершён** — конв�
 - [ ] Settings → Connections → New integration (Internal); copy token → **keyring** (server: notion.so, user: aipipeline).
 - [ ] Create **root page** "AIPipeline — Delivery Hub"; share it with the integration (… → Connections).
 - [ ] Run `NOTION_DELIVERY_HUB_PAGE_ID=<uuid> ./scripts/notion-create-delivery-hub-structure.sh` to create sub-pages (Specs, Meetings, Runbooks, etc.). UUID = page ID from the Notion URL.
-- [ ] (Optional) Add databases and templates per [../notion-delivery-hub.md](../notion-delivery-hub.md), [../notion-templates.md](../notion-templates.md).
+- [ ] (Optional) Add databases and templates per [notion-delivery-hub.md](notion-delivery-hub.md), [notion-templates.md](notion-templates.md).
 
 ## 4. Cursor
 

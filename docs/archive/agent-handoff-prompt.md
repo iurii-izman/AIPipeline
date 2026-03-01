@@ -14,7 +14,7 @@
 
 Твоя задача (автопилот, по максимуму):
 1. Прочитай PIPELINE.md (обзор), docs/current-phase.md, docs/stage2-mcp-automation.md.
-2. Если у тебя есть доступ к MCP (Notion, GitHub, Linear) — выполни всё из stage2-mcp-automation.md: GitHub — labels, branch protection; Linear — проект, workflow states, labels (технические, приоритет, agent-ready); Notion — Delivery Hub, базы (Meetings, Specs, Decisions, Integrations, Risks, Access Matrix, Sprint Log), шаблоны из docs/notion-templates.md, Quick Links. Всё по современным практикам и заточка под AI (единые имена, agent-ready labels).
+2. Если у тебя есть доступ к MCP (Notion, GitHub, Linear) — выполни всё из stage2-mcp-automation.md: GitHub — labels, branch protection; Linear — проект, workflow states, labels (технические, приоритет, agent-ready); Notion — Delivery Hub, базы (Meetings, Specs, Decisions, Integrations, Risks, Access Matrix, Sprint Log), шаблоны из docs/archive/notion-templates.md, Quick Links. Всё по современным практикам и заточка под AI (единые имена, agent-ready labels).
 3. Обнови docs/current-phase.md — что сделано по пунктам выше; при необходимости docs/keyring-credentials.md (инвентарь).
 4. Что нельзя сделать через MCP (OAuth в браузере, создание репо, Telegram/Sentry/n8n) — оформи как короткий чек-лист "осталось вручную" в current-phase или в комментарии пользователю.
 

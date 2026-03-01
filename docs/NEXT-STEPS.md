@@ -7,7 +7,7 @@
 ## Сейчас в фокусе
 
 - Приоритетная очередь на 90 дней (из `docs/strategic-vision-and-tooling.md`):
-  - `P0` Stabilize: deploy strict mode (без silent dry-run), Sonar hard gate, eval dataset >=150, backup timer probe.
+  - `P0` Stabilize: deploy strict mode (без silent dry-run), security gates (CodeQL + npm audit), eval dataset >=150, backup timer probe.
   - `P1` Harden: DR cadence automation, release scorecard v2, data governance policy checks, safety eval CI job, SBOM generation, SLO-lite policy.
   - `P1/P2` Scale baseline: managed OTel exporter + trace/SLO alerts cadence, cost reporting/alerts cadence, durable DLQ primary store, online eval-v2 telemetry cadence.
   - Анти-фокус: не запускать queue-mode n8n и альтернативные оркестраторы до закрытия P0/P1 baseline.
@@ -71,6 +71,8 @@
   - `./scripts/synthetic-health-status-check.sh`
 - Локальная валидация проекта:
   - `npm run lint && npm run build && npm test`
+- Проверка целостности docs-ссылок:
+  - `npm run docs:check-links`
 - Проверка stable endpoint:
   - `./scripts/check-stable-endpoint.sh`
 - Проверка observability stack:
@@ -102,9 +104,7 @@
    - фиксировать ссылки на artifacts (`release-scorecard-v2`, `release-supply-chain`, `release-ai-ops`) в архивном closure snapshot.
    - учитывать, что в GitHub-hosted runner gate использует `--skip-dr-cadence` (локальный DR cadence остается обязательным в ops цикле).
 1. Поддерживать rotation/валидность hardening env в keyring и runtime (`STATUS_AUTH_TOKEN`, `GITHUB_WEBHOOK_SECRET`, `SENTRY_WEBHOOK_SECRET`, `MODEL_CLASSIFIER_MODE`, `MODEL_KILL_SWITCH`); bootstrap: `./scripts/bootstrap-hardening-env-keyring.sh`.
-2. Поддерживать актуальность repository ruleset/checks в GitHub (включая `build`, `integration`, `e2e-fixtures`, `eval-alpha`, `eval-safety`, `eval-v2`, `sbom`, `iac-validate`, `cost-governance`, `security-audit`, `CodeQL`, `SonarCloud`) при изменениях CI.
-   - SonarCloud workflow в репо: `.github/workflows/sonarcloud.yml`; repo vars: `SONAR_PROJECT_KEY`, `SONAR_ORGANIZATION`.
-   - Для прохождения обязательного SonarCloud scan должен быть задан repo secret `SONAR_TOKEN` (иначе workflow fail-fast).
+2. Поддерживать актуальность repository ruleset/checks в GitHub (включая `build`, `integration`, `e2e-fixtures`, `eval-alpha`, `eval-safety`, `eval-v2`, `sbom`, `iac-validate`, `cost-governance`, `workflow-governance`, `docs-links`, `data-governance-policy`, `security-audit`, `CodeQL`) при изменениях CI.
    - Быстрая синхронизация vars/secrets из keyring: `./scripts/sync-github-repo-controls.sh`.
    - Автоподготовка deploy webhook secrets (из `CLOUDFLARE_PUBLIC_BASE_URL`): `./scripts/bootstrap-deploy-webhooks.sh`.
 3. Поддерживать и расширять eval dataset (текущая база: 150 кейсов) + online telemetry sample перед rollout-изменениями `MODEL_CLASSIFIER_MODE=full_primary`.

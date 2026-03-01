@@ -84,4 +84,4 @@
 | 5 | Cursor → MCP → Add remote `https://mcp.sentry.dev/mcp` → OAuth в браузере |
 | 6 | (Опц.) Sentry Alert → Webhook → URL n8n workflow |
 
-Ссылки: [sentry-setup.md](sentry-setup.md), [keyring-credentials.md](keyring-credentials.md), [archive/day0-runbook.md](archive/day0-runbook.md).
+Ссылки: [keyring-credentials.md](keyring-credentials.md), [archive/sentry-setup.md](archive/sentry-setup.md), [archive/day0-runbook.md](archive/day0-runbook.md).

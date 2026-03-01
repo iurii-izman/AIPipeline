@@ -12,4 +12,4 @@ Checklist for **Get familiar with Linear** (Linear AIP-1).
 
 ## References
 
-- [linear-setup.md](../linear-setup.md), [definition-of-done.md](../definition-of-done.md)
+- [linear-setup.md](linear-setup.md), [definition-of-done.md](../definition-of-done.md)

@@ -1,8 +1,8 @@
 # Notion — Delivery Hub setup
 
-Create the Delivery Hub in Notion as below. Full structure in [PIPELINE.md](../PIPELINE.md) Phase 2.
+Create the Delivery Hub in Notion as below. Full structure in [PIPELINE.md](../../PIPELINE.md) Phase 2.
 
-**Пошаговый гайд (куда жмять, что вводить):** [notion-setup-step-by-step.md](notion-setup-step-by-step.md)
+**Пошаговый гайд (куда жмять, что вводить):** [../notion-setup-step-by-step.md](../notion-setup-step-by-step.md)
 
 ## Structure
 
@@ -41,5 +41,5 @@ Create the Delivery Hub in Notion as below. Full structure in [PIPELINE.md](../P
 
 ## References
 
-- [PIPELINE.md](../PIPELINE.md) — Фаза 2 (templates text).
-- [archive/day0-runbook.md](archive/day0-runbook.md) — step 3.
+- [PIPELINE.md](../../PIPELINE.md) — Фаза 2 (templates text).
+- [day0-runbook.md](day0-runbook.md) — step 3.

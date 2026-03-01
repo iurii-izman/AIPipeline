@@ -11,4 +11,4 @@ Checklist for **Set up your teams** (Linear AIP-2).
 
 ## References
 
-- [linear-setup.md](../linear-setup.md), [linear-phase3-runbook.md](../linear-phase3-runbook.md)
+- [linear-setup.md](linear-setup.md), [linear-phase3-runbook.md](../linear-phase3-runbook.md)

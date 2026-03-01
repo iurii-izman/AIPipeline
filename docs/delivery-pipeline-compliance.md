@@ -11,7 +11,7 @@
 | Фаза 0 | ⚪ Ручное | Интервью — разовое, не автоматизируем |
 | Фаза 0.5 | ✅ | system-check + Ready/Setup/Blockers в system-check.sh |
 | Фаза 1 (Day-0) | ✅ | Все пункты 1.1–1.7 выполнены |
-| Фаза 2 (Notion) | ✅ | Все страницы в скрипте; Onboarding — onboarding-guide.md |
+| Фаза 2 (Notion) | ✅ | Все страницы в скрипте; onboarding snapshot в `archive/onboarding-guide.md` |
 | Фаза 3 (Linear) | ✅ | Workflow, labels, Agent-Ready |
 | Фаза 4 (GitHub scaffold) | ✅ | deploy-staging/production реализованы как validate + webhook deploy (с dry-run fallback) |
 | Фаза 5 (NotebookLM) | 🟡 Частично автоматизировано | WF-6 reminder + source-bundle automation; UI upload в NotebookLM остаётся ручным |
@@ -50,9 +50,9 @@
 | Risks & Issues | ✅ | Добавлено в notion-create-delivery-hub-structure.sh |
 | Access Matrix | ✅ | Добавлено в notion-create-delivery-hub-structure.sh |
 | Sprint Log | ✅ | Добавлено в notion-create-delivery-hub-structure.sh |
-| Templates (Meeting, Spec, ADR, Runbook, Integration Mapping) | ✅ | notion-templates.md |
+| Templates (Meeting, Spec, ADR, Runbook, Integration Mapping) | ✅ | [archive/notion-templates.md](archive/notion-templates.md) |
 | Guides: MCP Setup, n8n, Telegram | ✅ | mcp-enable-howto, n8n-workflows, keyring-credentials |
-| Guides: Onboarding | ✅ | [onboarding-guide.md](onboarding-guide.md) |
+| Guides: Onboarding | ✅ | [archive/onboarding-guide.md](archive/onboarding-guide.md) |
 
 ### Слой 3: n8n Workflows
 

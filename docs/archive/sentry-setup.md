@@ -2,7 +2,7 @@
 
 Error tracking and (optionally) MCP. Free tier: 5K errors/month.
 
-**Пошаговый гайд (куда жмять, что вводить):** [sentry-setup-step-by-step.md](sentry-setup-step-by-step.md)
+**Пошаговый гайд (куда жмять, что вводить):** [../sentry-setup-step-by-step.md](../sentry-setup-step-by-step.md)
 
 ## Create project
 
@@ -31,9 +31,9 @@ Sentry is a **remote MCP** (OAuth). In Cursor: Settings → MCP → add server, 
 ## Alerts → n8n → Telegram
 
 1. Sentry project → Settings → Alerts → Create rule (e.g. on new issue).
-2. Add action: Webhook → URL = n8n webhook (workflow that forwards to Telegram + creates Linear issue). See [PIPELINE.md](../PIPELINE.md) WF-3.
+2. Add action: Webhook → URL = n8n webhook (workflow that forwards to Telegram + creates Linear issue). See [PIPELINE.md](../../PIPELINE.md) WF-3.
 
 ## References
 
-- [PIPELINE.md](../PIPELINE.md) — Фаза 1.7, Слой 3 WF-3.
-- [archive/day0-runbook.md](archive/day0-runbook.md) — step 6.
+- [PIPELINE.md](../../PIPELINE.md) — Фаза 1.7, Слой 3 WF-3.
+- [day0-runbook.md](day0-runbook.md) — step 6.

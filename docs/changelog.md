@@ -4,6 +4,34 @@
 
 ## 2026-03-01 (Autopilot Blocks 1-8)
 
+### Autopilot Block 12: Full docs audit + archive consolidation + link integrity gate
+- Completed full docs/code reality audit and cleaned docs IA for beta readiness:
+  - archived legacy setup/docs snapshots:
+    - `docs/archive/linear-setup.md`
+    - `docs/archive/sentry-setup.md`
+    - `docs/archive/notion-delivery-hub.md`
+    - `docs/archive/notion-templates.md`
+    - `docs/archive/onboarding-guide.md`
+    - `docs/archive/audit-and-history.md`
+  - updated active indexes/navigation:
+    - `README.md`
+    - `docs/README.md`
+    - `docs/runbook.md`
+    - `docs/linear-phase3-runbook.md`
+    - `docs/notion-setup-step-by-step.md`
+    - `docs/sentry-setup-step-by-step.md`
+    - `docs/delivery-pipeline-compliance.md`
+    - `docs/archive/README.md`.
+- Added executable docs integrity controls:
+  - `scripts/check-doc-links.js`;
+  - npm script `docs:check-links`;
+  - CI job `docs-links` in `.github/workflows/ci.yml`;
+  - release gate now runs docs-link integrity check (`scripts/release-quality-gate.sh`).
+- Normalized strategy and SSoT references to real repo state:
+  - fixed absolute local links in `docs/strategic-vision-and-tooling.md`;
+  - removed stale Sonar workflow references from active SSoT docs where repo no longer has `.github/workflows/sonarcloud.yml`;
+  - synced docs inventory count and required checks list in `docs/status-summary.md`.
+
 ### Autopilot Block 11: Workflow governance gate + readiness progress automation
 - Added workflow governance invariant checker:
   - `scripts/check-workflow-governance.sh`

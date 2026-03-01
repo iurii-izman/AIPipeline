@@ -54,9 +54,9 @@
    - Silent dry-run отключён: если webhook не задан, job завершится `failed`.
    - Допускается только явный dry-run через `workflow_dispatch` input `allow_dry_run=true` (для ручной проверки пайплайна).
 
-8. **SonarCloud hard gate**
-   - SonarCloud workflow (`.github/workflows/sonarcloud.yml`) fail-fast при отсутствии `SONAR_TOKEN`, `SONAR_PROJECT_KEY`, `SONAR_ORGANIZATION`.
-   - Перед релизом убедиться, что эти настройки заданы и check `SonarCloud` в required checks зелёный.
+8. **Security gates**
+   - Перед релизом убедиться, что checks `security-audit` и `analyze (javascript-typescript)` (CodeQL) зелёные.
+   - Для supply-chain maturity дополнительно проверить `sbom` + attestation artifacts.
 
 9. **Data governance + DR cadence gates**
    - Data governance policy check обязателен: `npm run policy:data-governance`.

@@ -42,8 +42,6 @@
 - [../infra/terraform/README.md](../infra/terraform/README.md)
 - [delivery-pipeline-compliance.md](delivery-pipeline-compliance.md)
 - [charter.md](charter.md)
-- [audit-and-history.md](audit-and-history.md)
-- [onboarding-guide.md](onboarding-guide.md)
 - [templates/release-scorecard-v2.md](templates/release-scorecard-v2.md)
 
 ## 5) Optional/Advanced
@@ -59,6 +57,12 @@
 ## 7) Archived
 - [archive/README.md](archive/README.md)
 - Legacy moved:
+  - [archive/linear-setup.md](archive/linear-setup.md)
+  - [archive/sentry-setup.md](archive/sentry-setup.md)
+  - [archive/notion-delivery-hub.md](archive/notion-delivery-hub.md)
+  - [archive/notion-templates.md](archive/notion-templates.md)
+  - [archive/onboarding-guide.md](archive/onboarding-guide.md)
+  - [archive/audit-and-history.md](archive/audit-and-history.md)
   - [archive/next-steps-step-by-step.md](archive/next-steps-step-by-step.md)
   - [archive/tz-remaining-work.md](archive/tz-remaining-work.md)
 

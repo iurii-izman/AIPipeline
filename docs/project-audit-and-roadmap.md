@@ -115,7 +115,7 @@ Bullet-diagram:
 
 CI/CD:
 - CI: lint/build/typecheck/test/coverage/integration/e2e/eval/security-audit (`.github/workflows/ci.yml`)
-- Security scans: CodeQL (`.github/workflows/codeql.yml`), SonarCloud workflow (`.github/workflows/sonarcloud.yml`)
+- Security scans: CodeQL (`.github/workflows/codeql.yml`), `npm audit` gate (`.github/workflows/ci.yml`)
 - Deploy workflows: `deploy-staging.yml`, `deploy-production.yml` (webhook-based deploy path)
 
 Не хватает production доказательств:
@@ -168,7 +168,7 @@ Quality gates в CI:
 | 11 | DR drill не встроен в регулярный цикл | `dr-restore-drill.sh` manual запуск | High | Medium | P1 | Добавить weekly reminder/check | Автоматизировать monthly DR drill with signed evidence | Последние 30 дней есть успешный DR drill report |
 | 12 | Observability stack локально optional | `docs/observability-stack-grafana-loki.md` optional local layer | High | Medium | P1 | Добавить production telemetry requirements | Внедрить managed logs/metrics/traces stack | Production incidents имеют trace+logs+metrics correlation |
 | 13 | OpenTelemetry managed baseline не закреплён end-to-end | OTel SDK+trace propagation и managed/exporter checks есть, но не подтвержден стабильный managed backend coverage в prod | Medium | Medium | P1 | Зафиксировать managed exporter policy + trace/SLO checks | Интегрировать managed telemetry backend + alert routing | >=90% critical paths имеют trace spans |
-| 14 | SonarCloud может soft-pass | `.github/workflows/sonarcloud.yml`: skip when token missing | Medium | Medium | P1 | Сделать hard-fail для protected branches | Governance: secret presence check in repo policy | Sonar scan обязателен на main/protected PR |
+| 14 | Security static analysis coverage может деградировать без отдельного Sonar gate | Сейчас репозиторий опирается на CodeQL + npm audit (отдельного Sonar workflow нет) | Medium | Medium | P1 | Зафиксировать обязательные security checks в ruleset | При необходимости вернуть Sonar как отдельный required check | Security scan coverage не ниже текущего baseline на protected branches |
 | 15 | Supply-chain verification частично закрыта | SBOM/provenance artifacts и attestation есть, dependency policy gate ещё базовый | High | Low | P1 | Поддерживать strict verify в CI/release gate | Усилить dependency policy + attestation verification maturity | Каждый release содержит SBOM + provenance attestation |
 | 16 | AI eval ограничен offline dataset 150 | `evals/datasets/sentry-severity-alpha.json`, `run-ai-eval.js` | High | Medium | P1 | Добавить online drift/fallback telemetry | Создать eval harness v2 (offline+online scorecards) | Регрессии ловятся до merge/release, FN critical <= target |
 | 17 | Нет red-team/prompt-injection eval suite | Нет dedicated adversarial tests | High | Medium | P1 | Добавить базовые attack cases в eval dataset | Отдельный AI safety regression job в CI | Safety suite pass обязательна для model mode change |
@@ -277,9 +277,9 @@ Quality gates в CI:
    Файлы: `.github/workflows/deploy-staging.yml`, `.github/workflows/deploy-production.yml`, `docs/releases.md`  
    Готово: production deploy job не может завершиться success без deploy execution + post-check.
 
-2. **[P0] Sonar hard gate** — перевести Sonar workflow на required mode для protected branches.  
-   Файлы: `.github/workflows/sonarcloud.yml`, `docs/status-summary.md`  
-   Готово: PR в main блокируется без Sonar scan.
+2. **[P1] Docs integrity hard gate** — добавить проверку ссылок/якорей docs как required check.  
+   Файлы: `scripts/check-doc-links.js`, `.github/workflows/ci.yml`, `docs/status-summary.md`  
+   Готово: PR в main блокируется при битых docs-ссылках.
 
 3. **[P1] Backup timer health probe** — добавить проверку наличия/состояния retention timer в `stack-health-report.sh`.  
    Файлы: `scripts/stack-health-report.sh`, `docs/operations-profiles.md`  

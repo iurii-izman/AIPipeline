@@ -27,9 +27,9 @@ AI-native delivery pipeline for solo development: Linear, Notion, GitHub, Cursor
 | [docs/runbook.md](docs/runbook.md) | Code review, MCP, n8n, health |
 | [docs/definition-of-done.md](docs/definition-of-done.md) | DoD для PR и задач |
 | [docs/runbook-n8n.md](docs/runbook-n8n.md) | n8n на Podman |
-| [docs/notion-delivery-hub.md](docs/notion-delivery-hub.md) | Структура Notion Delivery Hub |
-| [docs/linear-setup.md](docs/linear-setup.md) | Linear: workflow, labels, GitHub |
-| [docs/sentry-setup.md](docs/sentry-setup.md) | Sentry: проект, SDK, MCP |
+| [docs/notion-setup-step-by-step.md](docs/notion-setup-step-by-step.md) | Notion setup (актуальный пошаговый гайд) |
+| [docs/linear-phase3-runbook.md](docs/linear-phase3-runbook.md) | Linear workflow/labels и агентный процесс |
+| [docs/sentry-setup-step-by-step.md](docs/sentry-setup-step-by-step.md) | Sentry setup + MCP/OAuth |
 
 Telegram (бот, Chat ID) и MCP — в [docs/keyring-credentials.md](docs/keyring-credentials.md) и [docs/mcp-enable-howto.md](docs/mcp-enable-howto.md). Архив пройденных гайдов — [docs/archive/README.md](docs/archive/README.md).
 

@@ -63,7 +63,7 @@
 
 ## Шаг 6. Проверить в Notion
 
-Открой снова **AIPipeline — Delivery Hub** в Notion. Внутри должны появиться подстраницы: **Specs**, **Meetings**, **Runbooks**, **Integration Mapping**, **Decision Records**, **Quick Links**. Дальше базы и шаблоны — по [notion-delivery-hub.md](notion-delivery-hub.md) и [notion-templates.md](notion-templates.md).
+Открой снова **AIPipeline — Delivery Hub** в Notion. Внутри должны появиться подстраницы: **Specs**, **Meetings**, **Runbooks**, **Integration Mapping**, **Decision Records**, **Quick Links**. Исторические примеры структуры и шаблонов: [archive/notion-delivery-hub.md](archive/notion-delivery-hub.md), [archive/notion-templates.md](archive/notion-templates.md).
 
 ---
 
@@ -80,4 +80,4 @@
 
 ---
 
-Ссылки: [notion-delivery-hub.md](notion-delivery-hub.md), [keyring-credentials.md](keyring-credentials.md).
+Ссылки: [keyring-credentials.md](keyring-credentials.md), [archive/notion-delivery-hub.md](archive/notion-delivery-hub.md).

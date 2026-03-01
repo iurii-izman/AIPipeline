@@ -45,10 +45,10 @@ Loaded via `scripts/load-env-from-keyring.sh` → `LINEAR_API_KEY`.
 
 ## Issue template (Agent-Ready)
 
-В описании задачи использовать: Problem, Context (Notion spec, related issues, Sentry), Definition of Done, Acceptance Criteria, Test Instructions, Risk Notes. Полный шаблон и процесс по workflow/labels: **[linear-phase3-runbook.md](linear-phase3-runbook.md)**.
+В описании задачи использовать: Problem, Context (Notion spec, related issues, Sentry), Definition of Done, Acceptance Criteria, Test Instructions, Risk Notes. Полный шаблон и процесс по workflow/labels: **[../linear-phase3-runbook.md](../linear-phase3-runbook.md)**.
 
 ## References
 
-- [linear-phase3-runbook.md](linear-phase3-runbook.md) — Фаза 3: workflow, labels, процесс.
-- [PIPELINE.md](../PIPELINE.md) — Фаза 3.
-- [archive/day0-runbook.md](archive/day0-runbook.md) — step 2.
+- [../linear-phase3-runbook.md](../linear-phase3-runbook.md) — Фаза 3: workflow, labels, процесс.
+- [../../PIPELINE.md](../../PIPELINE.md) — Фаза 3.
+- [day0-runbook.md](day0-runbook.md) — step 2.

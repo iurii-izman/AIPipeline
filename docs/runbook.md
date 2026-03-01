@@ -52,7 +52,9 @@ See [runbook-n8n.md](runbook-n8n.md) for deploy and credentials.
 ## 4. Setup guides (Day-0)
 
 - [archive/day0-runbook.md](archive/day0-runbook.md) — Day-0 чек-лист (архив).
-- [notion-delivery-hub.md](notion-delivery-hub.md), [linear-setup.md](linear-setup.md), [sentry-setup.md](sentry-setup.md); Telegram — [keyring-credentials.md](keyring-credentials.md), [mcp-enable-howto.md](mcp-enable-howto.md).
+- Актуальные setup-гайды: [notion-setup-step-by-step.md](notion-setup-step-by-step.md), [linear-phase3-runbook.md](linear-phase3-runbook.md), [sentry-setup-step-by-step.md](sentry-setup-step-by-step.md).
+- Legacy setup snapshots: [archive/notion-delivery-hub.md](archive/notion-delivery-hub.md), [archive/linear-setup.md](archive/linear-setup.md), [archive/sentry-setup.md](archive/sentry-setup.md).
+- Telegram и MCP: [keyring-credentials.md](keyring-credentials.md), [mcp-enable-howto.md](mcp-enable-howto.md).
 
 ---
 

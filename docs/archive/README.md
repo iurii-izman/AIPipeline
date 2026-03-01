@@ -9,6 +9,12 @@
 | [github-branch-protection.md](github-branch-protection.md) | Branch protection и labels уже настроены через ruleset. Справка при необходимости изменить правила. |
 | [mcp-setup.md](mcp-setup.md) | Актуальный гайд: [../mcp-enable-howto.md](../mcp-enable-howto.md). Переменные и keyring — [../keyring-credentials.md](../keyring-credentials.md). |
 | [telegram-bot-setup.md](telegram-bot-setup.md) | Настройка Telegram (бот, Chat ID) описана в [../keyring-credentials.md](../keyring-credentials.md) и [../mcp-enable-howto.md](../mcp-enable-howto.md). |
+| [linear-setup.md](linear-setup.md) | Legacy snapshot по workflow/labels Linear; актуальный процесс ведётся в [../linear-phase3-runbook.md](../linear-phase3-runbook.md). |
+| [sentry-setup.md](sentry-setup.md) | Legacy overview по Sentry; актуальный setup-гайд — [../sentry-setup-step-by-step.md](../sentry-setup-step-by-step.md). |
+| [notion-delivery-hub.md](notion-delivery-hub.md) | Legacy структура Delivery Hub; актуальный setup — [../notion-setup-step-by-step.md](../notion-setup-step-by-step.md). |
+| [notion-templates.md](notion-templates.md) | Исторические шаблоны Notion для справки и миграций. |
+| [onboarding-guide.md](onboarding-guide.md) | Дублировал docs index/SSoT; заменён [../README.md](../README.md). |
+| [audit-and-history.md](audit-and-history.md) | Исторический policy snapshot; актуальный статус/история в `status-summary.md` и `changelog.md`. |
 | [day0-runbook.md](day0-runbook.md) | Day-0 чек-лист (Phase 1); фаза завершена, для справки. |
 | [AIP-8-n8n-deploy-done.md](AIP-8-n8n-deploy-done.md) | AIP-8: n8n deploy via Podman, webhooks — чек-лист; PR #12 merged. |
 | [AIP-7-github-sync-done.md](AIP-7-github-sync-done.md) | AIP-7: Linear ↔ GitHub sync, branch/PR format — чек-лист; PR #13 merged. |
