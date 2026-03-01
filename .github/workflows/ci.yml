@@ -238,6 +238,13 @@ jobs:
         with:
           name: cost-report
           path: .out/cost/*
+
+  workflow-governance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify workflow governance invariants
+        run: npm run workflow:governance
           if-no-files-found: error
 
   data-governance-policy:

@@ -113,7 +113,10 @@ npm run provenance:generate
 echo "[16/20] supply-chain evidence verify"
 npm run supply-chain:verify
 
-echo "[17/20] env parity"
+echo "[17/21] workflow governance invariants"
+npm run workflow:governance
+
+echo "[18/21] env parity"
 if [[ "$strict_parity" == true ]]; then
   "$SCRIPT_DIR/check-env-parity.sh" --strict
 else
@@ -121,15 +124,15 @@ else
 fi
 
 if [[ "$skip_observability" == true ]]; then
-  echo "[18/20] otel trace coverage (skipped)"
-  echo "[19/20] otel managed exporter (skipped)"
-  echo "[20/20] observability alerts probe (skipped)"
+  echo "[19/21] otel trace coverage (skipped)"
+  echo "[20/21] otel managed exporter (skipped)"
+  echo "[21/21] observability alerts probe (skipped)"
 else
-  echo "[18/20] otel trace coverage"
+  echo "[19/21] otel trace coverage"
   npm run otel:check-coverage
-  echo "[19/20] otel managed exporter"
+  echo "[20/21] otel managed exporter"
   npm run otel:check-managed
-  echo "[20/20] observability alerts probe"
+  echo "[21/21] observability alerts probe"
   "$SCRIPT_DIR/check-observability-alerts.sh"
 fi
 

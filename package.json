@@ -29,6 +29,8 @@
     "iac:validate": "./scripts/check-iac-baseline.sh",
     "dr:check-cadence": "./scripts/check-dr-cadence.sh --strict",
     "policy:data-governance": "./scripts/check-data-governance-policy.sh --strict",
+    "workflow:governance": "./scripts/check-workflow-governance.sh --strict",
+    "readiness:progress": "./scripts/readiness-progress.sh --run-checks",
     "release:scorecard:v2": "./scripts/generate-release-scorecard-v2.sh",
     "ops:backup-n8n": "./scripts/backup-n8n.sh",
     "ops:parity-check": "./scripts/check-env-parity.sh",

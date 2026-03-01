@@ -20,7 +20,7 @@
 - Coverage: branch `80.44%` (threshold `80%`) pass
 - CI required checks: green
 - Security checks: `npm audit` gate + CodeQL + SonarCloud workflow active (`.github/workflows/sonarcloud.yml`)
-- GitHub ruleset required checks include: `lint`, `build`, `typecheck`, `test`, `coverage`, `integration`, `e2e-fixtures`, `eval-alpha`, `eval-safety`, `eval-v2`, `sbom`, `iac-validate`, `cost-governance`, `data-governance-policy`, `security-audit`, `analyze (javascript-typescript)`, `SonarCloud`
+- GitHub ruleset required checks include: `lint`, `build`, `typecheck`, `test`, `coverage`, `integration`, `e2e-fixtures`, `eval-alpha`, `eval-safety`, `eval-v2`, `sbom`, `iac-validate`, `cost-governance`, `workflow-governance`, `data-governance-policy`, `security-audit`, `analyze (javascript-typescript)`, `SonarCloud`
 
 ## Operational Baseline
 - Environment check: `./scripts/health-check-env.sh`
@@ -67,6 +67,8 @@
 - Supply-chain baseline extended with provenance pilot (`scripts/generate-provenance-pilot.sh`) and SBOM attestation step in CI
 - Supply-chain strict verification added (`scripts/verify-supply-chain-evidence.sh`, CI + release gate)
 - Online telemetry governance added (`telemetry:check-volume`, `telemetry:report`, daily timer evidence)
+- Workflow governance invariants added (`scripts/check-workflow-governance.sh`) and enforced in CI/release gate
+- Readiness progress automation added (`scripts/readiness-progress.sh`) for beta/release % tracking
 
 ## Open Focus (high-level)
 1. Close remaining P0 production-baseline gaps from strategy v2: IaC rollout maturity + online AI telemetry sample growth.

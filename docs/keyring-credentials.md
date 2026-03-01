@@ -50,6 +50,14 @@
 | Sentry Webhook Secret (hardening) | `AIPipeline — Sentry Webhook Secret` | `aipipeline-webhook-secret` | `sentry.io` | Signature verify для WF-3 webhook | ☑ |
 | Model Classifier Mode (hardening) | `AIPipeline — Model Classifier Mode` | `aipipeline-classifier-mode` | `openai.com` | `full_primary|shadow|heuristic_only` для WF-3 | ☑ |
 | Model Kill Switch (hardening) | `AIPipeline — Model Kill Switch` | `aipipeline-kill-switch` | `openai.com` | `true|false` kill switch для WF-3 | ☑ |
+| OTel Enabled (managed) | `AIPipeline — OTel Enabled` | `enabled` | `otel.aipipeline` | `true|false` включение OTel runtime | ☐ |
+| OTel Exporter Mode (managed) | `AIPipeline — OTel Exporter Mode` | `exporter-mode` | `otel.aipipeline` | `managed|pilot` | ☐ |
+| OTel OTLP Endpoint (managed) | `AIPipeline — OTel OTLP Endpoint` | `otlp-endpoint` | `otel.aipipeline` | managed OTLP HTTP endpoint | ☐ |
+| OTel OTLP Headers (managed, опц.) | `AIPipeline — OTel OTLP Headers` | `otlp-headers` | `otel.aipipeline` | `key=value,key2=value2` для exporter auth | ☐ |
+| WF-5 RBAC Allowed Chat IDs | `AIPipeline — WF5 RBAC Allowed Chat IDs` | `aipipeline-allowed-chat-ids` | `telegram.rbac` | comma-separated chat ids для privileged команд | ☐ |
+| WF-5 RBAC Allowed User IDs | `AIPipeline — WF5 RBAC Allowed User IDs` | `aipipeline-allowed-user-ids` | `telegram.rbac` | comma-separated user ids для privileged команд | ☐ |
+| WF-5 RBAC Allowed Usernames | `AIPipeline — WF5 RBAC Allowed Usernames` | `aipipeline-allowed-usernames` | `telegram.rbac` | comma-separated usernames без `@` | ☐ |
+| WF-5 Privileged Commands (опц.) | `AIPipeline — WF5 Privileged Commands` | `aipipeline-privileged-commands` | `telegram.rbac` | override списка privileged команд (`/deploy,/create`) | ☐ |
 | ngrok authtoken (опц.) | `AIPipeline — ngrok` | `aipipeline` | `ngrok.com` | [dashboard.ngrok.com](https://dashboard.ngrok.com/get-started/your-authtoken) — для скрипта `run-n8n-with-ngrok.sh` (Telegram webhook по HTTPS) | ☑ |
 
 **Примечание:** Sentry MCP использует OAuth (логин в браузере), в keyring его хранить не обязательно. В keyring — DSN для SDK в коде и для n8n, если нужен. **Sentry Auth Token** — только для автоматической регистрации webhook (WF-3) через API.
@@ -117,6 +125,18 @@ secret-tool store --label="AIPipeline — Sentry Webhook Secret" server sentry.i
 # Model feature flags
 secret-tool store --label="AIPipeline — Model Classifier Mode" server openai.com user aipipeline-classifier-mode
 secret-tool store --label="AIPipeline — Model Kill Switch" server openai.com user aipipeline-kill-switch
+
+# OTel managed exporter controls
+secret-tool store --label="AIPipeline — OTel Enabled" server otel.aipipeline user enabled
+secret-tool store --label="AIPipeline — OTel Exporter Mode" server otel.aipipeline user exporter-mode
+secret-tool store --label="AIPipeline — OTel OTLP Endpoint" server otel.aipipeline user otlp-endpoint
+secret-tool store --label="AIPipeline — OTel OTLP Headers" server otel.aipipeline user otlp-headers
+
+# WF-5 RBAC allowlists
+secret-tool store --label="AIPipeline — WF5 RBAC Allowed Chat IDs" server telegram.rbac user aipipeline-allowed-chat-ids
+secret-tool store --label="AIPipeline — WF5 RBAC Allowed User IDs" server telegram.rbac user aipipeline-allowed-user-ids
+secret-tool store --label="AIPipeline — WF5 RBAC Allowed Usernames" server telegram.rbac user aipipeline-allowed-usernames
+secret-tool store --label="AIPipeline — WF5 Privileged Commands" server telegram.rbac user aipipeline-privileged-commands
 ```
 
 > **Важно:** CLI-шаблоны выше используют `server` (не `service`), чтобы быть совместимыми с GUI-записями. Если ранее ключи создавались с `service`, скрипт всё равно их найдёт (fallback).

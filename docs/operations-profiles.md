@@ -191,6 +191,12 @@ Data governance policy gate:
 ./scripts/check-data-governance-policy.sh --strict
 ```
 
+Workflow governance invariants (DLQ durable endpoints + RBAC nodes/env refs):
+
+```bash
+./scripts/check-workflow-governance.sh --strict
+```
+
 AI online telemetry + cost governance:
 
 ```bash

@@ -4,6 +4,18 @@
 
 ## 2026-03-01 (Autopilot Blocks 1-8)
 
+### Autopilot Block 11: Workflow governance gate + readiness progress automation
+- Added workflow governance invariant checker:
+  - `scripts/check-workflow-governance.sh`
+  - verifies durable DLQ endpoints/auth headers for WF-2..WF-5, WF-7 durable replay API usage, no staticData dependency, and WF-5 RBAC nodes/env references.
+- Added readiness progress reporter:
+  - `scripts/readiness-progress.sh` (`--run-checks`, `--json`);
+  - computes current `%` for beta/release readiness from executable checks + remote release/CI evidence.
+- Integrated governance gate into quality paths:
+  - npm script `workflow:governance`;
+  - `scripts/release-quality-gate.sh` now runs workflow governance invariants;
+  - CI job `workflow-governance` added to `.github/workflows/ci.yml`.
+
 ### Autopilot Block 10: WF-7 staticData removal + WF-5 RBAC + OTel managed checks
 - WF-7 replay path полностью переведен на app durable API:
   - `scripts/update-wf7-dlq-parking.js` больше не использует `getWorkflowStaticData`;

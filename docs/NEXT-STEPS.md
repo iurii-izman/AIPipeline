@@ -18,6 +18,7 @@
 - Runtime ↔ repo синхронизированы через `./scripts/export-n8n-workflows.sh` (включая `wf-7-dlq-parking.json`).
 - WF-7 replay orchestration переведен на app durable replay API (без `workflow staticData`).
 - WF-5 privileged commands (`/deploy`, `/create`) защищены RBAC allowlist checks.
+- Workflow governance invariants автоматизированы: `npm run workflow:governance` (CI + release gate).
 - Доки обновлены: observability, DLQ replay runbook, least-privilege token scopes.
 - Engineering baseline внедрён:
   - TypeScript strict scaffold + coexistence JS/TS;

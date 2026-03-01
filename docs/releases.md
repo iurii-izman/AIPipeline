@@ -92,6 +92,10 @@
    - strict verify:
      - `npm run supply-chain:verify`
 
+13. **Workflow governance invariants**
+   - Проверка durable DLQ + RBAC workflow-инвариантов:
+     - `npm run workflow:governance`
+
 ---
 
 ## Именование тегов
