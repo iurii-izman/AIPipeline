@@ -1,7 +1,7 @@
 # AIPipeline — Актуализированный Principal Engineer Audit & Roadmap
 
-Дата актуализации: 2026-03-01  
-Ветка: `claude/analyze-ai-project-Yc1iR`  
+Дата актуализации: 2026-03-01
+Ветка: `claude/analyze-ai-project-Yc1iR`
 Статус: late-alpha / early-MVP, активный этап hardening
 
 ---
@@ -261,6 +261,6 @@ npm run test:e2e
 
 ## Final Assessment
 
-Проект заметно продвинулся от «инфраструктурного прототипа» к **управляемому alpha delivery platform**.  
-Критический security/reliability долг, отмеченный в предыдущей ревизии, в основном закрыт.  
+Проект заметно продвинулся от «инфраструктурного прототипа» к **управляемому alpha delivery platform**.
+Критический security/reliability долг, отмеченный в предыдущей ревизии, в основном закрыт.
 Главный оставшийся риск — не базовая инженерная дисциплина, а **переход от strong-alpha к production parity** (infra parity, DR rigor, AI eval maturity).
