@@ -93,6 +93,13 @@
   - `scripts/update-wf2-github-pr-linear.js`: добавлена проверка GitHub webhook подписи (`GITHUB_WEBHOOK_SECRET`) перед обработкой payload;
   - `scripts/update-wf3-sentry-telegram.js`: добавлена проверка Sentry webhook подписи (`SENTRY_WEBHOOK_SECRET`) + feature flags `MODEL_CLASSIFIER_MODE` и `MODEL_KILL_SWITCH` для управляемого режима классификации;
   - тесты расширены (`tests/health-server.test.ts`, `tests/*client.test.ts`), baseline теперь `48/48` passed.
+- **CI/security + integration harness iteration (2026-03-01):**
+  - добавлен integration suite `tests/integration/clients-http.integration.test.ts` (реальные HTTP вызовы через локальный сервер + `fetch`, без synthetic response mocks);
+  - добавлен npm script `test:integration` в `package.json`;
+  - CI (`.github/workflows/ci.yml`) расширен job-ами `integration` и `security-audit` (`npm audit --audit-level=high`);
+  - добавлен отдельный SAST workflow `.github/workflows/codeql.yml`;
+  - deploy workflows (`deploy-staging.yml`, `deploy-production.yml`) усилены retry/timeout параметрами `curl`;
+  - общий baseline тестов теперь `51/51` passed + отдельный `npm run test:integration` (`3/3`).
 - **Доки:** runbooks (в т.ч. [linear-phase3-runbook.md](linear-phase3-runbook.md), [n8n-workflows/README.md](n8n-workflows/README.md), [live-uat-telegram.md](live-uat-telegram.md)), гайды по Notion/Sentry/n8n (step-by-step), keyring, Linear, MCP, audit, и consolidated backlog [tz-remaining-work.md](tz-remaining-work.md).
 
 ---

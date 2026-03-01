@@ -39,6 +39,11 @@
   - timeout/abort transport layer для typed TS clients;
   - webhook signature verification для WF-2 (GitHub) и WF-3 (Sentry);
   - model feature flags для WF-3 (`MODEL_CLASSIFIER_MODE`, `MODEL_KILL_SWITCH`).
+- CI/security + integration harness (итерация 2026-03-01) внедрён:
+  - integration tests `tests/integration/clients-http.integration.test.ts` + script `npm run test:integration`;
+  - CI jobs `integration` + `security-audit` (`npm audit --audit-level=high`);
+  - CodeQL workflow добавлен (`.github/workflows/codeql.yml`);
+  - deploy webhook curl в staging/production усилен retry+timeout policy.
 
 ## Операционные проверки
 
@@ -74,9 +79,10 @@
 ## Что остаётся до полного closure
 
 1. Включить и проверить новые env-параметры в runtime n8n/app: `STATUS_AUTH_TOKEN`, `HEALTH_RATE_LIMIT_MAX_REQUESTS`, `HEALTH_RATE_LIMIT_WINDOW_MS`, `MAX_REQUEST_BODY_BYTES`, `GITHUB_WEBHOOK_SECRET`, `SENTRY_WEBHOOK_SECRET`, `MODEL_CLASSIFIER_MODE`, `MODEL_KILL_SWITCH`.
-2. Поддерживать регулярный цикл evidence-sync в Notion Sprint Log/Runbook.
-3. Поддерживать closure audit (`audit-linear-github-closure.js`) в регулярном цикле.
-4. NotebookLM: weekly UI upload source-bundle (manual-only), подготовка через `./scripts/notebooklm-weekly-refresh.sh`.
+2. При необходимости подключить branch protection rule для новых CI checks (`integration`, `security-audit`, `CodeQL`) в GitHub UI.
+3. Поддерживать регулярный цикл evidence-sync в Notion Sprint Log/Runbook.
+4. Поддерживать closure audit (`audit-linear-github-closure.js`) в регулярном цикле.
+5. NotebookLM: weekly UI upload source-bundle (manual-only), подготовка через `./scripts/notebooklm-weekly-refresh.sh`.
 
 ## Рабочий цикл дальше
 
