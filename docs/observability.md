@@ -31,17 +31,24 @@
 - webhooks:
   - `POST /webhook/wf-dlq-park`
   - `POST /webhook/wf-dlq-replay`
-- хранение parked событий в workflow static data + Telegram alerts
+- replay path полностью через app durable API (`/dlq/replay`) без `workflow staticData`
+- Telegram alerts на park/replay result
 
 6. Audit stream для критических операций:
 - файл `.runtime-logs/audit.log` (JSONL, `eventType=audit`)
 - источники: `stack-control.sh`, `configure-github-webhook-wf2.js`, `register-sentry-webhook.js`
 - назначение: trace операций `/deploy`-related control plane и webhook reconfiguration
 
-7. OTel pilot + correlation baseline:
-- runtime OTel pilot включается флагом `OTEL_PILOT_ENABLED=true`
+7. OTel managed-ready + correlation baseline:
+- runtime OTel включается флагом `OTEL_ENABLED=true` (backward-compatible с `OTEL_PILOT_ENABLED=true`)
 - trace/span fields автоматически добавляются в structured logs (`traceId`, `spanId`)
 - outbound HTTP clients инжектят trace context (`traceparent`) через `fetchWithTimeout`
+- exporter policy:
+  - managed mode: `OTEL_EXPORTER_MODE=managed` + `OTEL_EXPORTER_OTLP_ENDPOINT=https://.../v1/traces`
+  - optional headers: `OTEL_EXPORTER_OTLP_HEADERS=key=value,key2=value2`
+- checks:
+  - `./scripts/check-otel-trace-coverage.sh --strict`
+  - `./scripts/check-otel-managed-exporter.sh --strict --require-managed`
 
 8. AI online telemetry endpoints:
 - `POST /telemetry/ai-event` — ingest online classification events (fallback/mismatch/cost signals)
@@ -75,6 +82,7 @@
 | Critical ops audit event | Audit log stream | Trace operation owner + result |
 | WF-5 command failure | Telegram response + n8n execution | Return fallback message, inspect execution |
 | App unavailable | `/status` via WF-5 | Troubleshoot app/n8n/network |
+| Trace/SLO degradation | OTel managed exporter checks + observability alerts probe | Investigate exporter/coverage and SLO breach |
 
 Workflow failure alerting policy:
 - Если интеграция упала, но Telegram доставка прошла: оператор получает incident summary прямо в чате.
@@ -104,6 +112,7 @@ node scripts/update-wf7-dlq-parking.js
 ./scripts/synthetic-health-status-check.sh
 ./scripts/check-observability-stack.sh
 ./scripts/check-observability-alerts.sh
+./scripts/check-otel-managed-exporter.sh --strict --require-managed
 curl -i http://localhost:3000/health
 curl -i http://localhost:3000/status
 curl -i -H "Authorization: Bearer $STATUS_AUTH_TOKEN" "http://localhost:3000/telemetry/ai-summary?days=30"

@@ -7,7 +7,7 @@
 - Release: `v0.1.0-alpha.2`
 - Branch model: `main` as canonical branch
 - Latest major execution: merged PR #24 (2026-03-01)
-- Docs inventory: `78` files in `docs/`
+- Docs inventory: `80` files in `docs/`
 
 ## Delivery State
 - Day-0 and Phases 2–4: completed
@@ -16,7 +16,7 @@
 - Stable HTTPS mode: active (Cloudflare Tunnel path documented)
 
 ## Quality Baseline
-- Tests: `67/67` passing
+- Tests: `66/66` passing
 - Coverage: branch `80.44%` (threshold `80%`) pass
 - CI required checks: green
 - Security checks: `npm audit` gate + CodeQL + SonarCloud workflow active (`.github/workflows/sonarcloud.yml`)
@@ -42,9 +42,11 @@
   `https://github.com/iurii-izman/AIPipeline/actions/runs/22553233125`
 - Git sync state: local `main` and `origin/main` are synchronized
 - IaC baseline: `infra/terraform` + `scripts/check-iac-baseline.sh` + CI job `iac-validate`
-- OTel pilot baseline: `OTEL_PILOT_ENABLED=true` + trace/span correlation in runtime logs
+- OTel baseline: `OTEL_ENABLED=true` (или `OTEL_PILOT_ENABLED=true`) + managed exporter policy checks (`otel:check-managed`, `otel:check-coverage`)
 - AI online telemetry endpoints: `/telemetry/ai-event`, `/telemetry/ai-summary` with JSONL store in `.runtime-logs/ai-online-telemetry.jsonl`
 - Durable DLQ primary store: app endpoints `/dlq/park`, `/dlq/mark`, `/dlq/events`, `/dlq/replay` + JSONL store `.runtime-logs/dlq-events.jsonl`
+- WF-7 replay path: без `workflow staticData`, orchestration через app durable replay API
+- WF-5 privileged commands: RBAC allowlist (`WF5_RBAC_ALLOWED_CHAT_IDS`, `WF5_RBAC_ALLOWED_USER_IDS`, `WF5_RBAC_ALLOWED_USERNAMES`)
 
 ## Hardening Completed
 - `/status` protected with bearer auth + rate-limit + request-size guard

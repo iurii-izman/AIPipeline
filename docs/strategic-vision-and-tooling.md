@@ -119,19 +119,19 @@ Evidence:
 | 5 | `/status` auth опционален | P2 | Mandatory token в prod profile | Централизованная auth strategy | C-5 |
 | 6 | Rate limit in-memory | P2 | Conservative defaults + doc guardrail | Shared rate-limit layer | C-6 |
 | 7 | Circuit breaker volatile | P2 | Зафиксировать ограничения | Shared resilience state | C-7 |
-| 8 | Idempotency in-memory | P2 | TTL dedupe cache | Persistent idempotency store | C-8 |
-| 9 | DLQ в n8n static data | P1 | Export/backup checks | Durable DLQ storage | C-9 |
+| 8 | Idempotency покрыта не для всех critical mutations | P2 | Расширить persistent idempotency за пределы GitHub dispatch | Unified durable idempotency policy | C-8 |
+| 9 | DLQ replay path migrated, нужно расширение coverage | P1 | Поддерживать replay через app API (без staticData) | Durable DLQ storage для всех recovery сценариев | C-9 |
 | 10 | Retention automation не enforced | P2 | Timer presence probe | Scheduled retention policy | C-10 |
 | 11 | DR drill не цикличен | P1 | Weekly reminder + evidence check | Monthly automated drill | C-11 |
 | 12 | Observability локально optional | P1 | Production telemetry requirements | Managed telemetry layer | C-12 |
-| 13 | Нет OTel tracing | P1 | Trace propagation spec | OTel SDK + exporter | C-13 |
+| 13 | OTel managed coverage не подтверждён в prod полностью | P1 | Enforce managed exporter + trace/SLO checks | Managed telemetry backend + alert routing | C-13 |
 | 14 | Sonar soft-pass сценарий | P1 | Hard gate на protected branches | Secret governance check | C-14 |
 | 15 | Нет SBOM/provenance pipeline | P1 | SBOM generation в CI | SLSA provenance enforcement | C-15 |
 | 16 | Eval dataset ограничен | P1 | Расширить до >=80 и затем >=150 | Eval harness v2 + online scorecards | C-16 |
 | 17 | Нет safety/red-team suite | P1 | Adversarial набор в eval | Dedicated AI safety CI job | C-17 |
 | 18 | Data governance не формализован | P1 | Policy doc + data inventory | Retention/PII checks | C-18 |
 | 19 | Cost controls ограничены | P1 | Usage logging + budget caps | Cost dashboards + anomaly alerts | C-19 |
-| 20 | Telegram без RBAC | P2 | Allowlist checks | Role/operation policy + audit | C-20 |
+| 20 | Telegram RBAC внедрен, нужна policy maturity | P2 | Support allowlist checks + denied-op evidence | Role/operation policy + audit | C-20 |
 
 Evidence:
 - [docs/project-audit-and-roadmap.md](/var/home/user/Projects/AIPipeline/docs/project-audit-and-roadmap.md)

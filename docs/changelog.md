@@ -4,6 +4,23 @@
 
 ## 2026-03-01 (Autopilot Blocks 1-8)
 
+### Autopilot Block 10: WF-7 staticData removal + WF-5 RBAC + OTel managed checks
+- WF-7 replay path полностью переведен на app durable API:
+  - `scripts/update-wf7-dlq-parking.js` больше не использует `getWorkflowStaticData`;
+  - replay webhook делегирует на `POST /dlq/replay`, park path пишет в `POST /dlq/park`;
+  - runtime экспорт синхронизирован в `docs/n8n-workflows/wf-7-dlq-parking.json`.
+- WF-5 privileged command RBAC hardening:
+  - allowlist checks для `/deploy` и `/create` в `scripts/update-wf5-status-workflow.js`;
+  - новые env: `WF5_PRIVILEGED_COMMANDS`, `WF5_RBAC_ALLOWED_CHAT_IDS`, `WF5_RBAC_ALLOWED_USER_IDS`, `WF5_RBAC_ALLOWED_USERNAMES`;
+  - runtime экспорт синхронизирован в `docs/n8n-workflows/wf-5-status.json`.
+- OTel managed exporter governance:
+  - `scripts/check-otel-managed-exporter.sh`;
+  - `scripts/check-observability-alerts.sh` включает trace/SLO блок (`otel coverage + managed exporter`);
+  - release gate дополнен шагом `npm run otel:check-managed`.
+- Runtime/status observability updates:
+  - `src/instrument.js`: `OTEL_ENABLED` + `OTEL_EXPORTER_MODE` + optional `OTEL_EXPORTER_OTLP_HEADERS`;
+  - `src/healthServer.js`: `/status` возвращает `otelEnabled`, `otelManaged`, `otelExporterConfigured`.
+
 ### Autopilot Block 9: Durable primary DLQ + persistent idempotency + governance cadence
 - Switched durable DLQ routing defaults in workflow update scripts:
   - WF-2/WF-3/WF-4/WF-5 now default DLQ parking target to `http://host.containers.internal:3000/dlq/park`;

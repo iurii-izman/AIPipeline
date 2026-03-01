@@ -65,7 +65,7 @@
 | WF-5 | /status | Telegram Trigger → IF /status → GET /status → Telegram | ✅ |
 | WF-5 | /tasks, /errors, /deploy, /search, /create, /standup, /help | Реализовано в `update-wf5-status-workflow.js` (fallback + rate-limit handling + DLQ on Telegram send fail) | ✅ |
 | WF-6 | NotebookLM Resync Reminder | Cron Пн 10:00 → Notion search updated last 7 days → IF → Telegram | ✅ |
-| WF-7 | DLQ parking + replay | Webhooks `/webhook/wf-dlq-park`, `/webhook/wf-dlq-replay` + static storage + Telegram alerts | ✅ |
+| WF-7 | DLQ parking + replay | Webhooks `/webhook/wf-dlq-park`, `/webhook/wf-dlq-replay` + app durable replay API + Telegram alerts | ✅ |
 
 ### Telegram Command Center (полный список из ТЗ)
 

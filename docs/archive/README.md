@@ -23,6 +23,7 @@
 | [2026-03-01-scale-baseline-pack.md](2026-03-01-scale-baseline-pack.md) | Scale baseline closure: IaC + OTel + cost + durable DLQ mirror + eval-v2 + provenance pilot. |
 | [2026-03-01-p1-harden-2-operability-completion.md](2026-03-01-p1-harden-2-operability-completion.md) | Operability completion snapshot: local strict release gate pass, timer evidence, online eval-v2 operational loop. |
 | [2026-03-01-scale-governance-cadence-pack.md](2026-03-01-scale-governance-cadence-pack.md) | Scale governance closure: DLQ primary routing, persistent idempotency, stricter CI/release evidence checks, cadence timers. |
+| [2026-03-01-beta-block-wf7-otel-rbac.md](2026-03-01-beta-block-wf7-otel-rbac.md) | Beta block closure: WF-7 replay staticData removal, WF-5 RBAC allowlist, OTel managed exporter checks + SSoT sync. |
 | [next-steps-step-by-step.md](next-steps-step-by-step.md) | Пошаговый чек-лист заменён единым SSoT `NEXT-STEPS.md`. |
 | [tz-remaining-work.md](tz-remaining-work.md) | Исторический backlog заменён актуальными `project-audit-and-roadmap.md` + `NEXT-STEPS.md`. |
 

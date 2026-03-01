@@ -8,7 +8,6 @@ WF-7 централизует replay orchestration, а primary parking storage �
 - Replay endpoint: `POST /webhook/wf-dlq-replay`
 - Durable storage primary endpoints (app):
   - `POST /dlq/park`
-  - `POST /dlq/mark`
   - `GET /dlq/events`
   - `POST /dlq/replay`
 
@@ -63,10 +62,11 @@ curl -sS -X POST https://n8n.aipipeline.cc/webhook/wf-dlq-replay \
 
 1. Для `rateLimited=true` сначала выдержать паузу (min 60s), затем replay.
 2. Если `replayTarget` пустой, replay невозможен — событие требует ручного разбора.
-3. После успешного replay статус item в WF-7 меняется на `replayed`.
-4. При ошибке replay статус меняется на `replay_failed`.
-5. Primary DLQ store в `.runtime-logs/dlq-events.jsonl` обновляется через `/dlq/park` и `/dlq/mark`.
-6. Для app-level replay использовать `POST /dlq/replay` (с `DLQ_REPLAY_TOKEN`) и контролировать `GET /dlq/events`.
+3. WF-7 replay webhook делегирует replay в app durable endpoint `POST /dlq/replay`.
+4. После успешного replay статус item меняется на `replayed` в primary store.
+5. При ошибке replay статус меняется на `replay_failed`.
+6. Primary DLQ store в `.runtime-logs/dlq-events.jsonl` обновляется через `/dlq/park` и `/dlq/replay`.
+7. Для app-level replay использовать `POST /dlq/replay` (с `DLQ_REPLAY_TOKEN`) и контролировать `GET /dlq/events`.
 
 ## Troubleshooting
 

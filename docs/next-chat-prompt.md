@@ -37,7 +37,7 @@
    - зафиксировать evidence в status-summary / operations docs.
 3) Дальше по 90-day queue:
    - поддерживать dataset >=150 + добавить online drift/fallback telemetry;
-   - SBOM/provenance и OTel pilot;
+   - SBOM/provenance и OTel managed-ready checks;
    - cost reporting/alerts.
 
 Ограничения:

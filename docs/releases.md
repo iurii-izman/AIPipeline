@@ -80,8 +80,9 @@
    - Проверка online telemetry объема:
      - `npm run telemetry:check-volume`
      - `npm run telemetry:report`
-   - OTel coverage check (если `OTEL_PILOT_ENABLED=true`):
+   - OTel coverage + managed exporter checks (если `OTEL_ENABLED=true` или `OTEL_PILOT_ENABLED=true`):
      - `npm run otel:check-coverage`
+     - `npm run otel:check-managed`
 
 12. **IaC + provenance baseline checks**
    - IaC validation: `npm run iac:validate` (или CI job `iac-validate`).

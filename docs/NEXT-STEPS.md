@@ -9,13 +9,15 @@
 - Приоритетная очередь на 90 дней (из `docs/strategic-vision-and-tooling.md`):
   - `P0` Stabilize: deploy strict mode (без silent dry-run), Sonar hard gate, eval dataset >=150, backup timer probe.
   - `P1` Harden: DR cadence automation, release scorecard v2, data governance policy checks, safety eval CI job, SBOM generation, SLO-lite policy.
-  - `P1/P2` Scale baseline: OTel pilot + coverage checks, cost reporting/alerts cadence, durable DLQ primary store, online eval-v2 telemetry cadence.
+  - `P1/P2` Scale baseline: managed OTel exporter + trace/SLO alerts cadence, cost reporting/alerts cadence, durable DLQ primary store, online eval-v2 telemetry cadence.
   - Анти-фокус: не запускать queue-mode n8n и альтернативные оркестраторы до закрытия P0/P1 baseline.
 - Reliability hardening выполнен:
   - retry/backoff + rate-limit handling внедрены в WF-2/WF-3/WF-4/WF-5;
   - partial-failure policy формализована в workflow logic;
   - запущен centralized DLQ/replay workflow `WF-7`.
 - Runtime ↔ repo синхронизированы через `./scripts/export-n8n-workflows.sh` (включая `wf-7-dlq-parking.json`).
+- WF-7 replay orchestration переведен на app durable replay API (без `workflow staticData`).
+- WF-5 privileged commands (`/deploy`, `/create`) защищены RBAC allowlist checks.
 - Доки обновлены: observability, DLQ replay runbook, least-privilege token scopes.
 - Engineering baseline внедрён:
   - TypeScript strict scaffold + coexistence JS/TS;
@@ -120,6 +122,7 @@
    - `./scripts/release-quality-gate.sh --strict-parity --generate-scorecard --version vX.Y.Z --env staging`.
    - Через `.github/workflows/release-gate.yml` запускать `workflow_dispatch` с `generate_scorecard=true` и сохранять artifact `release-scorecard-v2` как release evidence.
    - Для локального strict gate нужен активный app endpoint на `localhost:3000` (`./scripts/stack-control.sh start core` или `PORT=3000 node src/index.js`), иначе synthetic probe будет fail.
+   - OTel managed проверка включена в gate (`npm run otel:check-managed`); при включенном OTel endpoint должен быть managed.
    - Проверять `release-supply-chain` (SBOM + provenance) и `release-ai-ops` (eval-v2 + cost report) artifacts.
    - Шаблон: `docs/templates/release-scorecard-v2.md`.
 6. Поддерживать data governance policy gate в CI/release:

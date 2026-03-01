@@ -207,6 +207,8 @@ npm run telemetry:check-volume
 npm run telemetry:report
 npm run cost:report
 npm run cost:budget
+npm run otel:check-coverage
+npm run otel:check-managed
 ```
 
 Durable DLQ operational endpoints:
@@ -235,6 +237,15 @@ Recurring governance timers:
 ./scripts/install-cost-governance-timer.sh --calendar daily --days 30 --budget 50
 ./scripts/install-online-telemetry-report-timer.sh --calendar daily --days 30 --min-events 40
 systemctl --user list-timers --all | rg 'aipipeline-(cost-governance|online-telemetry-report)'
+```
+
+WF-5 RBAC allowlist (privileged commands):
+
+```bash
+export WF5_PRIVILEGED_COMMANDS=\"/deploy,/create\"
+export WF5_RBAC_ALLOWED_CHAT_IDS=\"$TELEGRAM_CHAT_ID\"
+export WF5_RBAC_ALLOWED_USER_IDS=\"123456789\"
+export WF5_RBAC_ALLOWED_USERNAMES=\"your_username\"
 ```
 
 ## Рекомендованный режим
