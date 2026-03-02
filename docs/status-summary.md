@@ -94,6 +94,7 @@
 - Desktop dashboard browser autostart installer added: `scripts/install-dashboard-browser-autostart.sh` (`--disable` to remove)
 - User-level stack watchdog timer installer added: `scripts/install-stack-watchdog-timer.sh` (periodic `stack-control start`, self-heal on app drop)
 - Reboot/runtime triage note: WF-5 live executions confirm `/projects` arrives with `message_thread_id=3` in topic mode; delayed Telegram replies were correlated with post-reboot n8n availability/replay windows, not missing topic routing.
+- WF-5 live routing diagnostic helper added: `scripts/check-wf5-command-routing.sh` (shows recent commands, thread ids, and execution errors).
 - `stack-control` app bootstrap hardened: waits for `/health` readiness and prints last startup logs on failure.
 - `stack-control` app lifecycle hardened for mixed runtime modes: adopts external app PID when healthy and can stop adopted external process.
 - `load-env-from-keyring.sh` hardened with bounded secret lookups (`SECRET_LOOKUP_TIMEOUT_SEC`, default 2s) to avoid startup hangs when keyring backend is slow/locked.

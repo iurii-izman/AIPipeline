@@ -105,6 +105,8 @@
   - `./scripts/check-observability-stack.sh`
 - Проверка observability alerts:
   - `./scripts/check-observability-alerts.sh`
+- Диагностика routing Telegram topic/command в WF-5:
+  - `source scripts/load-env-from-keyring.sh && ./scripts/check-wf5-command-routing.sh --limit 15`
 - Сборка NotebookLM source-bundle:
   - `./scripts/notebooklm-build-source-bundle.sh`
 - Weekly NotebookLM refresh prep (bundle + checklist + evidence template):
