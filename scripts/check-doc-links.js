@@ -23,7 +23,6 @@ function walk(p) {
 
 for (const p of inputs) walk(path.join(repoRoot, p));
 
-const mdLinkRegex = /\[[^\]]+\]\(([^)]+)\)/g;
 const errors = [];
 
 function githubSlug(text) {
@@ -40,11 +39,36 @@ function collectAnchors(mdPath) {
   const txt = fs.readFileSync(mdPath, 'utf8');
   const anchors = new Set();
   for (const line of txt.split(/\r?\n/)) {
-    const m = line.match(/^#{1,6}\s+(.+)$/);
-    if (!m) continue;
-    anchors.add(githubSlug(m[1]));
+    let i = 0;
+    while (i < line.length && line[i] === '#') i += 1;
+    if (i < 1 || i > 6) continue;
+    if (line[i] !== ' ') continue;
+    const title = line.slice(i + 1).trim();
+    if (!title) continue;
+    anchors.add(githubSlug(title));
   }
   return anchors;
+}
+
+function extractMarkdownLinks(text) {
+  const links = [];
+  let i = 0;
+  while (i < text.length) {
+    const openLabel = text.indexOf('[', i);
+    if (openLabel === -1) break;
+    const closeLabel = text.indexOf(']', openLabel + 1);
+    if (closeLabel === -1) break;
+    if (text[closeLabel + 1] !== '(') {
+      i = closeLabel + 1;
+      continue;
+    }
+    const closeTarget = text.indexOf(')', closeLabel + 2);
+    if (closeTarget === -1) break;
+    const target = text.slice(closeLabel + 2, closeTarget);
+    if (target) links.push(target);
+    i = closeTarget + 1;
+  }
+  return links;
 }
 
 const anchorCache = new Map();
@@ -59,9 +83,8 @@ function addError(file, link, msg) {
 
 for (const file of markdownFiles) {
   const text = fs.readFileSync(file, 'utf8');
-  let m;
-  while ((m = mdLinkRegex.exec(text))) {
-    let target = m[1].trim();
+  for (const rawTarget of extractMarkdownLinks(text)) {
+    let target = rawTarget.trim();
     if (!target) continue;
     target = target.split(/\s+/)[0];
 

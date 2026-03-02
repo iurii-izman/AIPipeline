@@ -84,12 +84,31 @@ function requestJson({ hostname, path: reqPath, method = "GET", headers = {}, bo
 function extractIssueIdentifiers(text) {
   if (!text) return [];
   const ids = new Set();
+  const isIssueId = (value) => {
+    const token = String(value || "").trim().toUpperCase();
+    const dash = token.indexOf("-");
+    if (dash <= 0 || dash >= token.length - 1) return false;
+    for (let i = 0; i < dash; i += 1) {
+      const ch = token.charCodeAt(i);
+      const isUpper = ch >= 65 && ch <= 90;
+      const isDigit = ch >= 48 && ch <= 57;
+      if (!isUpper && !isDigit) return false;
+    }
+    for (let i = dash + 1; i < token.length; i += 1) {
+      const ch = token.charCodeAt(i);
+      if (ch < 48 || ch > 57) return false;
+    }
+    return true;
+  };
   const closureRegex = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+((?:[A-Z]+-\d+)(?:\s*,\s*[A-Z]+-\d+)*)/gi;
   let match;
   while ((match = closureRegex.exec(text)) !== null) {
     const chunk = match[1] || "";
-    const issueMatches = chunk.match(/[A-Z]+-\d+/g) || [];
-    for (const id of issueMatches) ids.add(id.toUpperCase());
+    const candidates = chunk.split(",");
+    for (const candidate of candidates) {
+      if (!isIssueId(candidate)) continue;
+      ids.add(String(candidate).trim().toUpperCase());
+    }
   }
   return [...ids];
 }

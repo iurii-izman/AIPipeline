@@ -8,6 +8,7 @@ const http = require("http");
 const https = require("https");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 const { context: otelContext, trace, SpanStatusCode } = require("@opentelemetry/api");
 const { log, correlationIdFromRequest } = require("./logger.js");
 const {
@@ -280,10 +281,14 @@ function appendAuditEvent(action, status, details = {}) {
 }
 
 function safeFileSegment(value, fallback = "file") {
-  const cleaned = String(value || "")
-    .replace(/[^a-zA-Z0-9._-]/g, "_")
-    .replace(/_+/g, "_")
-    .replace(/^_+|_+$/g, "");
+  const raw = String(value || "");
+  const mapped = raw.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const compact = mapped.replace(/_+/g, "_");
+  let start = 0;
+  let end = compact.length;
+  while (start < end && compact[start] === "_") start += 1;
+  while (end > start && compact[end - 1] === "_") end -= 1;
+  const cleaned = compact.slice(start, end);
   return cleaned || fallback;
 }
 
@@ -305,7 +310,8 @@ async function ingestTelegramFile({ filePath, fileName, shortId, telegramBotToke
   const baseName = safeFileSegment(fileName || path.basename(filePath) || "file");
   const ext = path.extname(baseName) || path.extname(filePath) || "";
   const idPrefix = safeFileSegment(shortId || "intake");
-  const id = `${idPrefix}_${now.toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const randomSuffix = crypto.randomBytes(4).toString("hex");
+  const id = `${idPrefix}_${now.toString(36)}_${randomSuffix}`;
   const storedName = `${id}${ext}`;
   const storageDir = getIntakeStorageDir();
   fs.mkdirSync(storageDir, { recursive: true });
@@ -798,7 +804,7 @@ function requestHandler(req, res) {
         .then((payload) => {
           const item = {
             ...payload,
-            id: payload.id || `dlq_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
+            id: payload.id || `dlq_${Date.now().toString(36)}_${crypto.randomBytes(4).toString("hex")}`,
             status: payload.status || "parked",
             parkedAt: payload.parkedAt || new Date().toISOString(),
             persistedBy: "aipipeline-health-server",

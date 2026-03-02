@@ -5,7 +5,12 @@ const execFileAsync = promisify(execFile);
 
 function isLoopbackAddress(address) {
   const value = String(address || "").trim();
-  return value === "127.0.0.1" || value === "::1" || value === "::ffff:127.0.0.1";
+  if (value === "::1") return true;
+  if (value.startsWith("::ffff:")) {
+    const mapped = value.slice("::ffff:".length);
+    return mapped.startsWith("127.");
+  }
+  return value.startsWith("127.");
 }
 
 function dashboardPublicLocalEnabled() {

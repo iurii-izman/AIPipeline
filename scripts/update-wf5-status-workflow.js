@@ -14,7 +14,7 @@ const N8N_URL = process.env.N8N_URL || "http://localhost:5678";
 const N8N_API_KEY = process.env.N8N_API_KEY;
 const WF5_ID = "41jAGQw9qAMs52dN";
 const APP_STATUS_URL = process.env.APP_STATUS_URL || "http://host.containers.internal:3000/status"; // NOSONAR: local bridge endpoint in host-only runtime
-const DLQ_PARK_URL = process.env.DLQ_PARK_URL || "http://host.containers.internal:3000/dlq/park";
+const DLQ_PARK_URL = process.env.DLQ_PARK_URL || "http://host.containers.internal:3000/dlq/park"; // NOSONAR: local bridge endpoint in host-only runtime
 
 if (!N8N_API_KEY) {
   console.error("N8N_API_KEY not set.");
