@@ -96,6 +96,10 @@ const hasPhoto = Array.isArray(message.photo) && message.photo.length > 0;
 const textRaw = String(message.text || message.caption || '').trim();
 const [commandRawOriginal, ...rest] = textRaw.split(/\\s+/);
 let commandRaw = String(commandRawOriginal || '').toLowerCase();
+// Telegram group commands can arrive as /command@bot_username.
+if (commandRaw.startsWith('/') && commandRaw.includes('@')) {
+  commandRaw = commandRaw.replace(/@[^\\s:]+/g, '');
+}
 let args = rest.join(' ').trim();
 let callbackAction = '';
 let callbackShortId = '';
