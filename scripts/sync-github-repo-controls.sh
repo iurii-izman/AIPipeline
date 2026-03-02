@@ -105,35 +105,41 @@ ensure_required_checks() {
         rules: (.rules | map(
           if .type == "required_status_checks" then
             .parameters.required_status_checks as $checks
+            | ($checks // [] | map(select(.context != "SonarCloud"))) as $normalizedChecks
             | .parameters.strict_required_status_checks_policy = (if $strictFlag then true else (.parameters.strict_required_status_checks_policy // false) end)
             | .parameters.required_status_checks = (
-                (($checks // []) + [
+                ($normalizedChecks + [
+                  {
+                    context: "SonarCloud Code Analysis",
+                    integration_id: null
+                  },
                   {
                     context: "eval-safety",
-                    integration_id: (([$checks[]?.integration_id] | map(select(. != null)) | .[0]) // null)
+                    integration_id: null
                   },
                   {
                     context: "eval-v2",
-                    integration_id: (([$checks[]?.integration_id] | map(select(. != null)) | .[0]) // null)
+                    integration_id: null
                   },
                   {
                     context: "sbom",
-                    integration_id: (([$checks[]?.integration_id] | map(select(. != null)) | .[0]) // null)
+                    integration_id: null
                   },
                   {
                     context: "iac-validate",
-                    integration_id: (([$checks[]?.integration_id] | map(select(. != null)) | .[0]) // null)
+                    integration_id: null
                   },
                   {
                     context: "cost-governance",
-                    integration_id: (([$checks[]?.integration_id] | map(select(. != null)) | .[0]) // null)
+                    integration_id: null
                   },
                   {
                     context: "data-governance-policy",
-                    integration_id: (([$checks[]?.integration_id] | map(select(. != null)) | .[0]) // null)
+                    integration_id: null
                   }
                 ])
                 | unique_by(.context)
+                | map({ context: .context })
               )
           else .
           end
@@ -203,10 +209,10 @@ for name in SONAR_TOKEN DEPLOY_WEBHOOK_STAGING DEPLOY_WEBHOOK_PRODUCTION DEPLOY_
   echo "  secret $name: $(secret_exists "$name")"
 done
 
-if ruleset_has_context "SonarCloud"; then
-  echo "  ruleset required check SonarCloud: present"
+if ruleset_has_context "SonarCloud Code Analysis"; then
+  echo "  ruleset required check SonarCloud Code Analysis: present"
 else
-  echo "  ruleset required check SonarCloud: missing"
+  echo "  ruleset required check SonarCloud Code Analysis: missing"
 fi
 if ruleset_has_context "eval-safety"; then
   echo "  ruleset required check eval-safety: present"
