@@ -94,6 +94,13 @@ npm run telemetry:report
 echo "[11/20] data governance policy"
 npm run policy:data-governance
 
+echo "[11.5/20] sonar quality gate"
+if [[ -n "${SONAR_TOKEN:-}" ]]; then
+  npm run sonar:check
+else
+  echo "sonar gate: skipped (SONAR_TOKEN missing)"
+fi
+
 if [[ "$skip_dr_cadence" == true ]]; then
   echo "[12/20] DR cadence freshness (skipped)"
 else
@@ -113,13 +120,13 @@ npm run provenance:generate
 echo "[16/20] supply-chain evidence verify"
 npm run supply-chain:verify
 
-echo "[17/22] workflow governance invariants"
+echo "[17/23] workflow governance invariants"
 npm run workflow:governance
 
-echo "[18/22] docs link integrity"
+echo "[18/23] docs link integrity"
 npm run docs:check-links
 
-echo "[19/22] env parity"
+echo "[19/23] env parity"
 if [[ "$strict_parity" == true ]]; then
   "$SCRIPT_DIR/check-env-parity.sh" --strict
 else
@@ -127,16 +134,28 @@ else
 fi
 
 if [[ "$skip_observability" == true ]]; then
-  echo "[20/22] otel trace coverage (skipped)"
-  echo "[21/22] otel managed exporter (skipped)"
-  echo "[22/22] observability alerts probe (skipped)"
+  echo "[20/23] otel trace coverage (skipped)"
+  echo "[21/23] otel managed exporter (skipped)"
+  echo "[22/23] observability alerts probe (skipped)"
+  echo "[23/23] slo budget check (skipped)"
 else
-  echo "[20/22] otel trace coverage"
+  echo "[20/23] otel trace coverage"
   npm run otel:check-coverage
-  echo "[21/22] otel managed exporter"
+  echo "[21/23] otel managed exporter"
   npm run otel:check-managed
-  echo "[22/22] observability alerts probe"
+  echo "[22/23] observability alerts probe"
   "$SCRIPT_DIR/check-observability-alerts.sh"
+  echo "[23/23] slo budget check (if authenticated /status is reachable)"
+  status_auth_args=()
+  if [[ -n "${STATUS_AUTH_TOKEN:-}" ]]; then
+    status_auth_args=(-H "Authorization: Bearer ${STATUS_AUTH_TOKEN}")
+  fi
+  status_probe_code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 3 "${status_auth_args[@]}" "http://127.0.0.1:3000/status" || true)"
+  if [[ "$status_probe_code" == "200" ]]; then
+    npm run slo:check
+  else
+    echo "slo budget: skipped (/status probe returned ${status_probe_code:-000}; ensure app is running and token matches)"
+  fi
 fi
 
 if [[ "$include_backup" == true ]]; then

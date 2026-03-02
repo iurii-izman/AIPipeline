@@ -1,0 +1,54 @@
+{
+  "version": "1.0",
+  "lastReviewedAt": "2026-03-02",
+  "systems": [
+    {
+      "name": "GitHub",
+      "dataClasses": ["pr_metadata", "issue_references", "workflow_logs"],
+      "sensitivity": "internal",
+      "retentionDays": 90,
+      "piiRisk": "low"
+    },
+    {
+      "name": "Linear",
+      "dataClasses": ["task_metadata", "assignee_identity", "workflow_state"],
+      "sensitivity": "internal",
+      "retentionDays": 365,
+      "piiRisk": "low"
+    },
+    {
+      "name": "Notion",
+      "dataClasses": ["specs", "adr", "runbooks", "project_registry"],
+      "sensitivity": "internal",
+      "retentionDays": 365,
+      "piiRisk": "medium"
+    },
+    {
+      "name": "Sentry",
+      "dataClasses": ["error_payloads", "stack_traces", "tags"],
+      "sensitivity": "sensitive",
+      "retentionDays": 90,
+      "piiRisk": "high"
+    },
+    {
+      "name": "Telegram",
+      "dataClasses": ["chat_metadata", "commands", "attachments_metadata"],
+      "sensitivity": "sensitive",
+      "retentionDays": 90,
+      "piiRisk": "high"
+    },
+    {
+      "name": "n8n",
+      "dataClasses": ["workflow_state", "execution_logs", "dlq_events"],
+      "sensitivity": "sensitive",
+      "retentionDays": 90,
+      "piiRisk": "medium"
+    }
+  ],
+  "policies": {
+    "secretsInRepo": false,
+    "piiMaskingRequired": true,
+    "retentionEnforcedByAutomation": true,
+    "drCadenceDays": 30
+  }
+}

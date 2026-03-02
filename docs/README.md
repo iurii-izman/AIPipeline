@@ -16,6 +16,7 @@
 - [post-reboot-runbook.md](post-reboot-runbook.md) — запуск после перезагрузки
 - [operations-access-matrix.md](operations-access-matrix.md) — ownership/rotation/audit trail
 - [releases.md](releases.md) — release process и quality gates
+- [rollback-runbook.md](rollback-runbook.md) — rollback workflow + evidence checklist
 - [dlq-replay-runbook.md](dlq-replay-runbook.md) — DLQ parking/replay
 - [sentry-db-timeout-cascade-runbook.md](sentry-db-timeout-cascade-runbook.md) — критический incident runbook
 - [intake-dashboard-rollout-runbook.md](intake-dashboard-rollout-runbook.md) — rollout/rollback для WF-5 intake + `/dashboard`

@@ -209,14 +209,32 @@ jobs:
 
   iac-validate:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [staging, production]
     steps:
       - uses: actions/checkout@v4
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
         with:
           terraform_version: 1.8.5
-      - name: Validate IaC baseline
-        run: npm run iac:validate
+      - name: Validate IaC baseline + plan
+        run: ./scripts/check-iac-baseline.sh --strict --env "${{ matrix.environment }}" --report-file ".out/iac/iac-plan-report-${{ matrix.environment }}.json"
+      - name: Upload IaC plan report
+        uses: actions/upload-artifact@v4
+        with:
+          name: iac-plan-report-${{ matrix.environment }}
+          path: .out/iac/iac-plan-report-${{ matrix.environment }}.json
+          if-no-files-found: error
+
+  iac-validate-gate:
+    name: iac-validate
+    runs-on: ubuntu-latest
+    needs: [iac-validate]
+    steps:
+      - name: Confirm matrix IaC validation passed
+        run: echo "iac-validate matrix jobs passed"
 
   cost-governance:
     runs-on: ubuntu-latest
@@ -294,3 +312,64 @@ jobs:
         run: npm ci
       - name: npm audit (high+)
         run: npm audit --audit-level=high
+
+  sonar-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - name: Install
+        run: npm ci
+      - name: Sonar quality gate check
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
+          SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
+          GITHUB_OWNER: ${{ vars.AIP_GITHUB_OWNER }}
+          GITHUB_REPO: ${{ vars.AIP_GITHUB_REPO }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_HEAD_REF: ${{ github.head_ref }}
+        run: ./scripts/check-sonar-gate.sh --strict
+
+  slo-budget:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - name: Install
+        run: npm ci
+      - name: Start app for SLO probe
+        run: |
+          PORT=3000 node src/index.js > /tmp/aip-ci-app.log 2>&1 &
+          echo $! > /tmp/aip-ci-app.pid
+          for _ in $(seq 1 30); do
+            if curl -fsS --max-time 2 http://127.0.0.1:3000/health >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 0.5
+          done
+          echo "App failed to start for SLO check"
+          cat /tmp/aip-ci-app.log || true
+          exit 1
+      - name: Run SLO budget check
+        run: ./scripts/check-slo-budget.sh --strict --samples 10 --sleep-ms 50 --output .out/slo/slo-budget-ci.json
+      - name: Upload SLO report
+        uses: actions/upload-artifact@v4
+        with:
+          name: slo-budget-report
+          path: .out/slo/slo-budget-ci.json
+          if-no-files-found: error
+      - name: Stop app
+        if: always()
+        run: |
+          if [[ -f /tmp/aip-ci-app.pid ]]; then
+            kill "$(cat /tmp/aip-ci-app.pid)" || true
+          fi

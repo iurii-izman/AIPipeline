@@ -48,6 +48,8 @@
 | GitHub Repo (опц.) | `AIPipeline — GitHub Repo` | `aipipeline-repo` | `github.com` | repo name (WF-5 `/deploy`) | ☑ |
 | GitHub Workflow Staging (опц.) | `AIPipeline — GitHub Workflow Staging` | `aipipeline-workflow-staging` | `github.com` | filename workflow для staging deploy | ☑ |
 | GitHub Workflow Production (опц.) | `AIPipeline — GitHub Workflow Production` | `aipipeline-workflow-production` | `github.com` | filename workflow для production deploy | ☑ |
+| GitHub Workflow Rollback (опц.) | `AIPipeline — GitHub Workflow Rollback` | `aipipeline-workflow-rollback` | `github.com` | filename workflow для rollback (обычно `rollback.yml`) | ☑ |
+| Sonar Token (опц.) | `AIPipeline — Sonar Token` | `aipipeline-sonar-token` | `sonarcloud.io` | SonarCloud → My Account → Security → Generate Token | ☑ |
 | Status Auth Token (hardening) | `AIPipeline — Status Auth Token` | `status-auth-token` | `aipipeline.local` | Bearer token для `/status` auth guard | ☑ |
 | GitHub Webhook Secret (hardening) | `AIPipeline — GitHub Webhook Secret` | `aipipeline-webhook-secret` | `github.com` | HMAC verify для WF-2 webhook | ☑ |
 | Sentry Webhook Secret (hardening) | `AIPipeline — Sentry Webhook Secret` | `aipipeline-webhook-secret` | `sentry.io` | Signature verify для WF-3 webhook | ☑ |
@@ -143,6 +145,12 @@ secret-tool store --label="AIPipeline — Sentry Webhook Secret" server sentry.i
 # Model feature flags
 secret-tool store --label="AIPipeline — Model Classifier Mode" server openai.com user aipipeline-classifier-mode
 secret-tool store --label="AIPipeline — Model Kill Switch" server openai.com user aipipeline-kill-switch
+
+# GitHub rollback workflow filename
+secret-tool store --label="AIPipeline — GitHub Workflow Rollback" server github.com user aipipeline-workflow-rollback
+
+# SonarCloud token
+secret-tool store --label="AIPipeline — Sonar Token" server sonarcloud.io user aipipeline-sonar-token
 
 # OTel managed exporter controls
 secret-tool store --label="AIPipeline — OTel Enabled" server otel.aipipeline user enabled

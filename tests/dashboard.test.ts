@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 
-const { getDashboardHtml } = require("../src/dashboard.js") as {
+const { getDashboardHtml, createDashboardArtifact, triageDashboardIntake } = require("../src/dashboard.js") as {
   getDashboardHtml: (
     options?:
       | string
@@ -14,14 +14,30 @@ const { getDashboardHtml } = require("../src/dashboard.js") as {
           actionsEnabled?: boolean;
         }
   ) => Promise<string>;
+  createDashboardArtifact: (options?: {
+    requestId?: string;
+    projectKey?: string;
+    type?: string;
+    title?: string;
+    body?: string;
+  }) => Promise<Record<string, unknown>>;
+  triageDashboardIntake: (options?: {
+    requestId?: string;
+    action?: string;
+    projectKey?: string;
+    notionPageId?: string;
+    intakeItemId?: string;
+  }) => Promise<Record<string, unknown>>;
 };
 
-const originalFetch = global.fetch;
+const originalFetch = globalThis.fetch;
 const originalLinearApiKey = process.env.LINEAR_API_KEY;
 const originalNotionToken = process.env.NOTION_TOKEN;
 const originalProjectsConfig = process.env.PROJECTS_CONFIG;
 const originalDefaultProjectKey = process.env.DEFAULT_PROJECT_KEY;
 const originalNotionVersion = process.env.NOTION_VERSION;
+const originalIdempotencyStoreFile = process.env.IDEMPOTENCY_STORE_FILE;
+let idempotencyTestSequence = 0;
 
 function restoreEnv(name: string, value: string | undefined): void {
   if (value === undefined) {
@@ -32,12 +48,13 @@ function restoreEnv(name: string, value: string | undefined): void {
 }
 
 afterEach(() => {
-  global.fetch = originalFetch;
+  globalThis.fetch = originalFetch;
   restoreEnv("LINEAR_API_KEY", originalLinearApiKey);
   restoreEnv("NOTION_TOKEN", originalNotionToken);
   restoreEnv("PROJECTS_CONFIG", originalProjectsConfig);
   restoreEnv("DEFAULT_PROJECT_KEY", originalDefaultProjectKey);
   restoreEnv("NOTION_VERSION", originalNotionVersion);
+  restoreEnv("IDEMPOTENCY_STORE_FILE", originalIdempotencyStoreFile);
 });
 
 describe("dashboard renderer", () => {
@@ -64,7 +81,7 @@ describe("dashboard renderer", () => {
     process.env.DEFAULT_PROJECT_KEY = "aipipeline";
 
     const calls: string[] = [];
-    global.fetch = (async (url: string | URL) => {
+    globalThis.fetch = (async (url: string | URL) => {
       const value = String(url);
       calls.push(value);
       if (value.includes("api.linear.app/graphql")) {
@@ -156,7 +173,7 @@ describe("dashboard renderer", () => {
     process.env.DEFAULT_PROJECT_KEY = "no-linear-key";
     delete process.env.NOTION_TOKEN;
 
-    global.fetch = (async () => {
+    globalThis.fetch = (async () => {
       throw new Error("fetch should not be called when tokens are missing");
     }) as typeof fetch;
 
@@ -181,7 +198,7 @@ describe("dashboard renderer", () => {
     });
     process.env.DEFAULT_PROJECT_KEY = "aipipeline";
 
-    global.fetch = (async (url: string | URL) => {
+    globalThis.fetch = (async (url: string | URL) => {
       const value = String(url);
       if (value.includes("api.linear.app/graphql")) {
         return {
@@ -266,7 +283,7 @@ describe("dashboard renderer", () => {
     });
     process.env.DEFAULT_PROJECT_KEY = "aipipeline";
 
-    global.fetch = (async (url: string | URL) => {
+    globalThis.fetch = (async (url: string | URL) => {
       const value = String(url);
       if (value.includes("api.linear.app/graphql")) {
         return {
@@ -408,7 +425,7 @@ describe("dashboard renderer", () => {
     });
     process.env.DEFAULT_PROJECT_KEY = "aipipeline";
 
-    global.fetch = (async (url: string | URL) => {
+    globalThis.fetch = (async (url: string | URL) => {
       const value = String(url);
       if (value.includes("api.linear.app/graphql")) {
         return {
@@ -462,5 +479,94 @@ describe("dashboard renderer", () => {
     expect(html).toContain("🧪 Sandbox");
     expect(html).toContain('href="/dashboard?project=sandbox');
     expect(html).toContain("SBX-1");
+  });
+
+  it("applies idempotency for create and triage actions", async () => {
+    process.env.LINEAR_API_KEY = "linear-test";
+    process.env.NOTION_TOKEN = "notion-test";
+    process.env.NOTION_VERSION = "2025-09-03";
+    process.env.PROJECTS_CONFIG = JSON.stringify({
+      projects: [
+        {
+          key: "aipipeline",
+          label: "AIPipeline",
+          linearTeamId: "team-1",
+          linearProjectId: "proj-1",
+          notionInboxDatabaseId: "inbox-db-1",
+          notionSpecsDatabaseId: "specs-db-1",
+        },
+      ],
+    });
+    process.env.DEFAULT_PROJECT_KEY = "aipipeline";
+    idempotencyTestSequence += 1;
+    process.env.IDEMPOTENCY_STORE_FILE = `.out/tests/idempotency-${Date.now()}-${idempotencyTestSequence}.jsonl`;
+
+    let linearIssueCreateCalls = 0;
+    let notionPatchCalls = 0;
+    globalThis.fetch = (async (url: string | URL, init?: RequestInit) => {
+      const value = String(url);
+      if (value.includes("api.linear.app/graphql")) {
+        const body = typeof init?.body === "string" ? init.body : "";
+        if (body.includes("issueCreate")) {
+          linearIssueCreateCalls += 1;
+          return {
+            ok: true,
+            status: 200,
+            text: async () =>
+              JSON.stringify({
+                data: { issueCreate: { issue: { id: "lin-1", identifier: "AIP-900", url: "https://linear.app/issue/AIP-900", title: "Demo" } } },
+              }),
+          };
+        }
+        return { ok: true, status: 200, text: async () => JSON.stringify({ data: { issues: { nodes: [] } } }) };
+      }
+      if (value.includes("/v1/pages/page-1")) {
+        notionPatchCalls += 1;
+        return { ok: true, status: 200, text: async () => JSON.stringify({ id: "page-1" }) };
+      }
+      if (value.includes("/v1/pages")) {
+        return { ok: true, status: 200, text: async () => JSON.stringify({ id: "spec-1", url: "https://notion.so/spec-1" }) };
+      }
+      if (value.includes("/v1/data_sources/") || value.includes("/v1/databases/")) {
+        return { ok: true, status: 200, text: async () => JSON.stringify({ results: [] }) };
+      }
+      throw new Error(`Unexpected fetch URL: ${value}`);
+    }) as typeof fetch;
+
+    const create1 = await createDashboardArtifact({
+      requestId: "create-dup-1",
+      projectKey: "aipipeline",
+      type: "task",
+      title: "Idempotent create",
+      body: "payload",
+    });
+    const create2 = await createDashboardArtifact({
+      requestId: "create-dup-1",
+      projectKey: "aipipeline",
+      type: "task",
+      title: "Idempotent create",
+      body: "payload",
+    });
+    expect(create1.ok).toBe(true);
+    expect(create2.ok).toBe(true);
+    expect(create2.idempotentReplay).toBe(true);
+    expect(linearIssueCreateCalls).toBe(1);
+
+    const triage1 = await triageDashboardIntake({
+      requestId: "triage-dup-1",
+      action: "idea",
+      projectKey: "aipipeline",
+      notionPageId: "page-1",
+    });
+    const triage2 = await triageDashboardIntake({
+      requestId: "triage-dup-1",
+      action: "idea",
+      projectKey: "aipipeline",
+      notionPageId: "page-1",
+    });
+    expect(triage1.ok).toBe(true);
+    expect(triage2.ok).toBe(true);
+    expect(triage2.idempotentReplay).toBe(true);
+    expect(notionPatchCalls).toBe(1);
   });
 });

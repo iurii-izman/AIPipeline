@@ -1,5 +1,7 @@
+const crypto = require("node:crypto");
 const { loadProjectRegistry, getProjectByKey, resolveDefaultProject } = require("./projectRegistry.js");
 const { getLocalRuntimeStatus } = require("./local-ops.js");
+const { findIdempotencyResult, saveIdempotencyResult } = require("./opsStore.js");
 
 const CACHE_TTL_MS = Number(process.env.DASHBOARD_CACHE_TTL_MS || 60_000);
 const cache = new Map();
@@ -53,6 +55,11 @@ function normalizeDashboardOptions(optionsOrProjectKey) {
     activityLimit: clampInt(options.activityLimit, 1, 25, 8),
     actionsEnabled: options.actionsEnabled === true,
   };
+}
+
+function idempotencyDigest(parts) {
+  const serialized = JSON.stringify(parts || {});
+  return crypto.createHash("sha256").update(serialized).digest("hex");
 }
 
 async function requestJson(url, options) {
@@ -569,6 +576,20 @@ async function createDashboardArtifact(options = {}) {
   const type = String(options.type || "").trim().toLowerCase();
   const title = String(options.title || "").trim();
   const body = String(options.body || "").trim();
+  const projectKeyRaw = String(options.projectKey || "").trim().toLowerCase();
+  const keyParts = {
+    requestId: String(options.requestId || "").trim(),
+    projectKey: projectKeyRaw,
+    type,
+    title,
+    body,
+  };
+  const idempotencyKey = keyParts.requestId || idempotencyDigest(keyParts);
+  const cached = findIdempotencyResult("dashboard.create", idempotencyKey);
+  if (cached?.result) {
+    return { ...cached.result, idempotentReplay: true };
+  }
+
   if (!title) return { ok: false, error: "title is required" };
   if (!["task", "spec", "idea", "note"].includes(type)) return { ok: false, error: "type must be one of: task, spec, idea, note" };
 
@@ -576,16 +597,15 @@ async function createDashboardArtifact(options = {}) {
   const project = getProjectByKey(registry, options.projectKey) || resolveDefaultProject(registry);
   if (!project) return { ok: false, error: "project is not configured" };
 
+  let result = null;
   if (type === "task") {
-    return createLinearIssueForDashboard({
+    result = await createLinearIssueForDashboard({
       project,
       title,
       body: body || `Created from /dashboard/create\n\nProject: ${project.key}`,
     });
-  }
-
-  if (type === "spec") {
-    return notionCreatePageWithFallback({
+  } else if (type === "spec") {
+    result = await notionCreatePageWithFallback({
       databaseId: project.notionSpecsDatabaseId || process.env.NOTION_SPECS_DATABASE_ID || "",
       projectKey: project.key,
       title,
@@ -593,16 +613,21 @@ async function createDashboardArtifact(options = {}) {
       source: "Dashboard",
       artifactType: "Spec",
     });
+  } else {
+    result = await notionCreatePageWithFallback({
+      databaseId: project.notionInboxDatabaseId || process.env.NOTION_INBOX_DATABASE_ID || "",
+      projectKey: project.key,
+      title,
+      body,
+      source: "Dashboard",
+      artifactType: type === "note" ? "Note" : "Idea",
+    });
   }
 
-  return notionCreatePageWithFallback({
-    databaseId: project.notionInboxDatabaseId || process.env.NOTION_INBOX_DATABASE_ID || "",
-    projectKey: project.key,
-    title,
-    body,
-    source: "Dashboard",
-    artifactType: type === "note" ? "Note" : "Idea",
-  });
+  if (result?.ok) {
+    saveIdempotencyResult("dashboard.create", idempotencyKey, result);
+  }
+  return result;
 }
 
 async function findInboxRowByShortId(databaseId, shortId) {
@@ -620,6 +645,20 @@ async function findInboxRowByShortId(databaseId, shortId) {
 
 async function triageDashboardIntake(options = {}) {
   const action = String(options.action || "").trim().toLowerCase();
+  const projectKeyRaw = String(options.projectKey || "").trim().toLowerCase();
+  const pageKeyRaw = String(options.notionPageId || options.intakeItemId || "").trim();
+  const keyParts = {
+    requestId: String(options.requestId || "").trim(),
+    projectKey: projectKeyRaw,
+    action,
+    page: pageKeyRaw,
+  };
+  const idempotencyKey = keyParts.requestId || idempotencyDigest(keyParts);
+  const cached = findIdempotencyResult("dashboard.triage", idempotencyKey);
+  if (cached?.result) {
+    return { ...cached.result, idempotentReplay: true };
+  }
+
   if (!["task", "spec", "idea", "archive"].includes(action)) {
     return { ok: false, error: "action must be one of: task, spec, idea, archive" };
   }
@@ -644,11 +683,15 @@ async function triageDashboardIntake(options = {}) {
 
   if (action === "archive") {
     const update = await notionUpdateStatusWithFallback(pageId, "Archived");
-    return update.ok ? { ok: true, updatedStatus: "Archived", notionPageId: pageId } : update;
+    const result = update.ok ? { ok: true, updatedStatus: "Archived", notionPageId: pageId } : update;
+    if (result?.ok) saveIdempotencyResult("dashboard.triage", idempotencyKey, result);
+    return result;
   }
   if (action === "idea") {
     const update = await notionUpdateStatusWithFallback(pageId, "Processed");
-    return update.ok ? { ok: true, updatedStatus: "Processed", notionPageId: pageId } : update;
+    const result = update.ok ? { ok: true, updatedStatus: "Processed", notionPageId: pageId } : update;
+    if (result?.ok) saveIdempotencyResult("dashboard.triage", idempotencyKey, result);
+    return result;
   }
 
   const artifact =
@@ -669,7 +712,7 @@ async function triageDashboardIntake(options = {}) {
   if (!artifact.ok) return artifact;
 
   const mark = await notionUpdateStatusWithFallback(pageId, "Processed");
-  return {
+  const result = {
     ok: true,
     artifactUrl: artifact.artifactUrl || "",
     id: artifact.id || "",
@@ -677,6 +720,8 @@ async function triageDashboardIntake(options = {}) {
     warning: mark.ok ? "" : mark.error || "",
     notionPageId: pageId,
   };
+  if (result.ok) saveIdempotencyResult("dashboard.triage", idempotencyKey, result);
+  return result;
 }
 
 function renderDashboardHtml(data) {

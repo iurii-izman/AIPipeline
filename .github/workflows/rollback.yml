@@ -1,0 +1,214 @@
+name: Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      target_ref:
+        description: 'Git ref to rollback to (tag/sha/branch)'
+        required: true
+        type: string
+      run_validation:
+        description: 'Run lint/build/test on target ref before rollback'
+        required: false
+        default: true
+        type: boolean
+      allow_dry_run:
+        description: 'Allow explicit dry-run when deploy webhook/token is missing'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: rollback-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  validate-target:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify target ref exists
+        env:
+          TARGET_REF: ${{ inputs.target_ref }}
+        run: |
+          set -euo pipefail
+          git ls-remote --exit-code https://github.com/${{ github.repository }}.git "$TARGET_REF" >/dev/null
+
+  validate-code:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    needs: [validate-target]
+    if: ${{ inputs.run_validation == true }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.target_ref }}
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Build
+        run: npm run build
+      - name: Test
+        run: npm test
+
+  rollback:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    needs: [validate-target, validate-code]
+    if: ${{ always() && needs.validate-target.result == 'success' && (needs.validate-code.result == 'success' || needs.validate-code.result == 'skipped') }}
+    environment:
+      name: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.target_ref }}
+      - name: Resolve rollback metadata
+        id: meta
+        env:
+          TARGET_REF: ${{ inputs.target_ref }}
+        run: |
+          set -euo pipefail
+          printf 'target_ref=%s\n' "$TARGET_REF" >> "$GITHUB_OUTPUT"
+          echo "target_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "target_sha_short=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Rollback via webhook (strict contract)
+        id: rollback
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+          DEPLOY_WEBHOOK_STAGING: ${{ secrets.DEPLOY_WEBHOOK_STAGING }}
+          DEPLOY_WEBHOOK_TOKEN_STAGING: ${{ secrets.DEPLOY_WEBHOOK_TOKEN_STAGING }}
+          DEPLOY_WEBHOOK_PRODUCTION: ${{ secrets.DEPLOY_WEBHOOK_PRODUCTION }}
+          DEPLOY_WEBHOOK_TOKEN_PRODUCTION: ${{ secrets.DEPLOY_WEBHOOK_TOKEN_PRODUCTION }}
+          ALLOW_DRY_RUN: ${{ inputs.allow_dry_run }}
+        run: |
+          set -euo pipefail
+          case "$ENVIRONMENT" in
+            staging)
+              webhook="$DEPLOY_WEBHOOK_STAGING"
+              token="$DEPLOY_WEBHOOK_TOKEN_STAGING"
+              ;;
+            production)
+              webhook="$DEPLOY_WEBHOOK_PRODUCTION"
+              token="$DEPLOY_WEBHOOK_TOKEN_PRODUCTION"
+              ;;
+            *)
+              echo "Unsupported environment: $ENVIRONMENT"
+              exit 1
+              ;;
+          esac
+
+          if [[ -z "$webhook" || -z "$token" ]]; then
+            if [[ "$ALLOW_DRY_RUN" == "true" ]]; then
+              echo "dry_run=true" >> "$GITHUB_OUTPUT"
+              echo "mode=dry-run-explicit" >> "$GITHUB_OUTPUT"
+              echo "Rollback dry-run requested (missing webhook/token)."
+              exit 0
+            fi
+            echo "Rollback contract violation: webhook+token required for $ENVIRONMENT"
+            exit 1
+          fi
+
+          payload=$(cat <<JSON
+          {
+            "environment":"$ENVIRONMENT",
+            "repository":"${{ github.repository }}",
+            "ref":"${{ steps.meta.outputs.target_ref }}",
+            "sha":"${{ steps.meta.outputs.target_sha }}",
+            "actor":"${{ github.actor }}",
+            "rollback":true,
+            "run_url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          }
+          JSON
+          )
+
+          curl -fsSL --retry 3 --retry-all-errors --retry-delay 5 --connect-timeout 10 --max-time 30 \
+            -X POST "$webhook" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $token" \
+            -d "$payload"
+
+          echo "dry_run=false" >> "$GITHUB_OUTPUT"
+          echo "mode=webhook" >> "$GITHUB_OUTPUT"
+
+      - name: Post-rollback smoke check (optional)
+        if: ${{ steps.rollback.outputs.dry_run != 'true' }}
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+          DEPLOY_POSTCHECK_URL_STAGING: ${{ vars.DEPLOY_POSTCHECK_URL_STAGING }}
+          DEPLOY_POSTCHECK_URL_PRODUCTION: ${{ vars.DEPLOY_POSTCHECK_URL_PRODUCTION }}
+          STATUS_AUTH_TOKEN: ${{ secrets.STATUS_AUTH_TOKEN }}
+        run: |
+          set -euo pipefail
+          case "$ENVIRONMENT" in
+            staging) smoke_url="$DEPLOY_POSTCHECK_URL_STAGING" ;;
+            production) smoke_url="$DEPLOY_POSTCHECK_URL_PRODUCTION" ;;
+            *) smoke_url="" ;;
+          esac
+
+          if [[ -z "$smoke_url" ]]; then
+            echo "Smoke check skipped (postcheck URL not configured)."
+            exit 0
+          fi
+
+          auth_args=()
+          if [[ -n "$STATUS_AUTH_TOKEN" ]]; then
+            auth_args=(-H "Authorization: Bearer $STATUS_AUTH_TOKEN")
+          fi
+          curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 --connect-timeout 10 --max-time 30 \
+            "${auth_args[@]}" \
+            "$smoke_url"
+
+      - name: Write rollback artifact
+        run: |
+          mkdir -p .out/rollback
+          cat > .out/rollback/rollback-${{ inputs.environment }}-${{ github.run_id }}.json <<JSON
+          {
+            "ok": true,
+            "environment": "${{ inputs.environment }}",
+            "targetRef": "${{ steps.meta.outputs.target_ref }}",
+            "targetSha": "${{ steps.meta.outputs.target_sha }}",
+            "targetShaShort": "${{ steps.meta.outputs.target_sha_short }}",
+            "dryRun": "${{ steps.rollback.outputs.dry_run || 'false' }}",
+            "mode": "${{ steps.rollback.outputs.mode || 'unknown' }}",
+            "runId": "${{ github.run_id }}",
+            "runUrl": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          JSON
+
+      - name: Upload rollback artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rollback-report
+          path: .out/rollback/*.json
+          if-no-files-found: error
+
+      - name: Rollback summary
+        run: |
+          {
+            echo "### Rollback summary"
+            echo "- Environment: \`${{ inputs.environment }}\`"
+            echo "- Target ref: \`${{ steps.meta.outputs.target_ref }}\`"
+            echo "- Target SHA: \`${{ steps.meta.outputs.target_sha_short }}\`"
+            echo "- Mode: \`${{ steps.rollback.outputs.mode || 'unknown' }}\`"
+            if [[ "${{ steps.rollback.outputs.dry_run }}" == "true" ]]; then
+              echo "- Smoke: skipped (dry-run)"
+            else
+              echo "- Smoke: executed (if postcheck URL configured)"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

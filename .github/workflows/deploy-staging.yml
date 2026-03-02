@@ -12,6 +12,11 @@ on:
         required: false
         default: true
         type: boolean
+      allow_dry_run:
+        description: 'Allow explicit dry-run when deploy webhook/token is missing'
+        required: false
+        default: false
+        type: boolean
   push:
     branches: [staging]
 
@@ -60,15 +65,25 @@ jobs:
         run: |
           echo "ref_name=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
           echo "sha_short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
-      - name: Deploy via webhook (if configured)
+      - name: Deploy via webhook (strict contract)
+        id: deploy
         env:
           DEPLOY_WEBHOOK_STAGING: ${{ secrets.DEPLOY_WEBHOOK_STAGING }}
           DEPLOY_WEBHOOK_TOKEN_STAGING: ${{ secrets.DEPLOY_WEBHOOK_TOKEN_STAGING }}
+          ALLOW_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_dry_run || 'false' }}
         run: |
-          if [[ -z "$DEPLOY_WEBHOOK_STAGING" ]]; then
-            echo "DEPLOY_WEBHOOK_STAGING is not configured. Dry-run mode."
-            exit 0
+          if [[ -z "$DEPLOY_WEBHOOK_STAGING" || -z "$DEPLOY_WEBHOOK_TOKEN_STAGING" ]]; then
+            if [[ "$ALLOW_DRY_RUN" == "true" ]]; then
+              echo "dry_run=true" >> "$GITHUB_OUTPUT"
+              echo "deploy_mode=dry-run-explicit" >> "$GITHUB_OUTPUT"
+              echo "Explicit dry-run requested (missing DEPLOY_WEBHOOK_STAGING or DEPLOY_WEBHOOK_TOKEN_STAGING)."
+              exit 0
+            fi
+            echo "Deploy contract violation: DEPLOY_WEBHOOK_STAGING and DEPLOY_WEBHOOK_TOKEN_STAGING are required."
+            exit 1
           fi
+          echo "dry_run=false" >> "$GITHUB_OUTPUT"
+          echo "deploy_mode=webhook" >> "$GITHUB_OUTPUT"
           PAYLOAD=$(cat <<JSON
           {
             "environment":"staging",
@@ -82,19 +97,35 @@ jobs:
           )
           curl -fsSL --retry 3 --retry-all-errors --retry-delay 5 --connect-timeout 10 --max-time 30 -X POST "$DEPLOY_WEBHOOK_STAGING" \
             -H "Content-Type: application/json" \
-            ${DEPLOY_WEBHOOK_TOKEN_STAGING:+-H "Authorization: Bearer $DEPLOY_WEBHOOK_TOKEN_STAGING"} \
+            -H "Authorization: Bearer $DEPLOY_WEBHOOK_TOKEN_STAGING" \
             -d "$PAYLOAD"
-      - name: Deployment summary
+      - name: Post-deploy smoke check (optional)
+        if: ${{ steps.deploy.outputs.dry_run != 'true' }}
         env:
-          DEPLOY_WEBHOOK_STAGING: ${{ secrets.DEPLOY_WEBHOOK_STAGING }}
+          DEPLOY_POSTCHECK_URL_STAGING: ${{ vars.DEPLOY_POSTCHECK_URL_STAGING }}
+          STATUS_AUTH_TOKEN: ${{ secrets.STATUS_AUTH_TOKEN }}
+        run: |
+          if [[ -z "$DEPLOY_POSTCHECK_URL_STAGING" ]]; then
+            echo "Post-deploy smoke: skipped (DEPLOY_POSTCHECK_URL_STAGING is not configured)"
+            exit 0
+          fi
+          auth_args=()
+          if [[ -n "$STATUS_AUTH_TOKEN" ]]; then
+            auth_args=(-H "Authorization: Bearer $STATUS_AUTH_TOKEN")
+          fi
+          curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 --connect-timeout 10 --max-time 30 \
+            "${auth_args[@]}" \
+            "$DEPLOY_POSTCHECK_URL_STAGING"
+      - name: Deployment summary
         run: |
           {
             echo "### Staging deploy"
             echo "- Ref: \`${{ steps.meta.outputs.ref_name }}\`"
             echo "- SHA: \`${{ steps.meta.outputs.sha_short }}\`"
-            if [[ -n "$DEPLOY_WEBHOOK_STAGING" ]]; then
-              echo "- Mode: webhook deploy executed"
+            echo "- Mode: \`${{ steps.deploy.outputs.deploy_mode || 'unknown' }}\`"
+            if [[ "${{ steps.deploy.outputs.dry_run }}" == "true" ]]; then
+              echo "- Smoke: skipped (dry-run)"
             else
-              echo "- Mode: dry-run (DEPLOY_WEBHOOK_STAGING not configured)"
+              echo "- Smoke: executed (if DEPLOY_POSTCHECK_URL_STAGING configured)"
             fi
           } >> "$GITHUB_STEP_SUMMARY"

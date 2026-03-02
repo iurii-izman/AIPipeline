@@ -117,6 +117,28 @@ function getIntakeIngestToken() {
   return process.env.INTAKE_INGEST_TOKEN || getDlqIngestToken();
 }
 
+function getSloStatusFile() {
+  return process.env.SLO_STATUS_FILE || path.resolve(process.cwd(), ".runtime-logs/slo-budget.json");
+}
+
+function readSloStatusSnapshot() {
+  const filePath = getSloStatusFile();
+  if (!fs.existsSync(filePath)) return null;
+  try {
+    const payload = JSON.parse(fs.readFileSync(filePath, "utf8"));
+    if (!payload || typeof payload !== "object") return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+function deriveTelemetryState(envFlags) {
+  if (!envFlags?.otelEnabled) return "disabled";
+  if (envFlags.otelManaged && envFlags.otelExporterConfigured) return "managed_ok";
+  return "managed_degraded";
+}
+
 function checkBearerAuth(req, expectedToken) {
   if (!expectedToken) return true;
   const token = extractBearerToken(req);
@@ -524,6 +546,19 @@ function requestHandler(req, res) {
       };
       checkN8n(correlationId)
         .then((n8nStatus) => {
+          const sloSnapshot = readSloStatusSnapshot();
+          const telemetryState = deriveTelemetryState(env);
+          let latencyP95Ms = null;
+          if (Number.isFinite(Number(sloSnapshot?.latencyP95Ms))) {
+            latencyP95Ms = Number(sloSnapshot.latencyP95Ms);
+          }
+          let errorBudgetState = "warning";
+          const budgetStateCandidate = String(sloSnapshot?.errorBudgetState || "");
+          if (["healthy", "warning", "exhausted"].includes(budgetStateCandidate)) {
+            errorBudgetState = budgetStateCandidate;
+          } else if (n8nStatus === "reachable") {
+            errorBudgetState = "healthy";
+          }
           res.setHeader("Content-Type", "application/json");
           res.writeHead(200);
           res.end(
@@ -534,6 +569,9 @@ function requestHandler(req, res) {
               correlationId,
               env,
               n8n: n8nStatus,
+              latencyP95Ms,
+              errorBudgetState,
+              telemetryState,
             })
           );
           log("info", "status response sent", {

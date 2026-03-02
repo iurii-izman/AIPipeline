@@ -101,6 +101,13 @@ else
   ok=false
 fi
 
+if "$SCRIPT_DIR/check-slo-budget.sh" --strict >/dev/null 2>&1; then
+  echo "slo_budget: OK"
+else
+  echo "slo_budget: FAIL"
+  ok=false
+fi
+
 if [[ "$ok" == "true" ]]; then
   echo ""
   echo "observability alerts probe: OK"

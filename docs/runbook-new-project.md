@@ -60,6 +60,12 @@ node scripts/update-wf5-status-workflow.js
 ./scripts/stack-control.sh restart core
 ```
 
+8. Run production-readiness checks for onboarding wave:
+```bash
+./scripts/run-ops-batch-gate.sh --batch A
+./scripts/run-ops-batch-gate.sh --batch B
+```
+
 ## Scale Test Checklist (2nd Project)
 1. Telegram:
 - `/projects` shows new project button.
@@ -74,6 +80,11 @@ node scripts/update-wf5-status-workflow.js
 
 3. Routing:
 - WF-1/2/3 notifications route to `telegramThreadId` for that project.
+
+4. Reliability checks:
+- `./scripts/check-telegram-uat-evidence.sh --since-minutes 180 --limit 200`
+- `./scripts/check-wf5-command-routing.sh --limit 30`
+- optional weekly SLO snapshot: `./scripts/check-slo-budget.sh --strict`
 
 ## Rollback
 1. Remove project from `config/projects.json`.

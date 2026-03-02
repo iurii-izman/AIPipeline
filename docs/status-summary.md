@@ -6,8 +6,8 @@
 - Stage: `late-alpha / early-MVP`
 - Release: `v0.1.0-beta.2` (beta prerelease published)
 - Branch model: `main` as canonical branch
-- Latest major execution: merged PR #26 (2026-03-02)
-- Docs inventory: `86` files in `docs/`
+- Latest major execution: merged PR #32 (2026-03-02)
+- Docs inventory: `81` markdown files checked by `npm run docs:check-links`
 
 ## Delivery State
 - Day-0 and Phases 2–4: completed
@@ -16,12 +16,12 @@
 - Stable HTTPS mode: active (Cloudflare Tunnel path documented)
 
 ## Quality Baseline
-- Tests: `84/84` passing
+- Tests: `85/85` passing
 - Coverage: branch `80.44%` (threshold `80%`) pass
 - CI required checks: green
 - Security checks: `npm audit` gate + CodeQL
 - SonarCloud (new code gate): `projectStatus=OK` on `2026-03-02` (`new_security_rating=A`, `new_security_hotspots_reviewed=100%`, `new vulnerabilities=0`)
-- GitHub ruleset required checks include: `lint`, `build`, `typecheck`, `test`, `coverage`, `integration`, `e2e-fixtures`, `eval-alpha`, `eval-safety`, `eval-v2`, `sbom`, `iac-validate`, `cost-governance`, `workflow-governance`, `docs-links`, `data-governance-policy`, `security-audit`, `analyze (javascript-typescript)`
+- GitHub ruleset required checks include: `lint`, `build`, `typecheck`, `test`, `coverage`, `integration`, `e2e-fixtures`, `eval-alpha`, `eval-safety`, `eval-v2`, `sbom`, `iac-validate`, `cost-governance`, `workflow-governance`, `docs-links`, `data-governance-policy`, `slo-budget`, `sonar-gate`, `security-audit`, `analyze (javascript-typescript)`
 
 ## Operational Baseline
 - Environment check: `./scripts/health-check-env.sh`
@@ -30,6 +30,8 @@
 - Observability alerts probe: pass after stack warm-up
 - Synthetic probe aligned with `/status` auth policy (`scripts/synthetic-health-status-check.sh` sends bearer token when `STATUS_AUTH_TOKEN` is set)
 - GitHub controls sync: `./scripts/sync-github-repo-controls.sh` (deploy webhooks/tokens + parity secrets/vars + required checks)
+- Deploy strict contract: staging/production workflows fail-fast on missing webhook/token; explicit dry-run is allowed only via `workflow_dispatch` input `allow_dry_run=true`.
+- Rollback automation baseline: workflow `.github/workflows/rollback.yml` + CLI helper `scripts/rollback-release.sh` + artifact `rollback-report`.
 - GitHub PR-only enforcement available in sync script: `./scripts/sync-github-repo-controls.sh --strict-pr-flow` (removes ruleset bypass actors + enables strict required checks)
 - Backup retention timer: `aipipeline-backup-retention.timer` installed/enabled (`systemctl --user status aipipeline-backup-retention.timer`)
 - DR cadence timer: `aipipeline-dr-cadence.timer` installed/enabled (`systemctl --user status aipipeline-dr-cadence.timer`)
@@ -88,8 +90,10 @@
 - WF-5 capture branch now includes optional OpenAI classifier for action suggestion and Telegram `getFile` enrichment for attachment links in Notion Inbox entries
 - WF-5 capture branch now supports app-backed binary ingest (`POST /intake/telegram-file`) and confidence-gated auto-convert (`TASK|SPEC`) when `INTAKE_AUTO_CONVERT=true`
 - App read-only summary route added: `GET /dashboard` (same bearer policy as `/status`)
+- `/status` SLO fields added: `latencyP95Ms`, `errorBudgetState`, `telemetryState` (reads `.runtime-logs/slo-budget.json` when present).
 - Dashboard UX extended: runtime daemon status panel (`app/n8n/loki/grafana/cloudflared/cursor`) + optional local controls (`/ops/stack`, `/ops/cursor`) behind loopback guard and `DASHBOARD_ENABLE_ACTIONS=true`
 - Dashboard action-plane v1 added: `POST /dashboard/triage`, `POST /dashboard/create`, `GET /dashboard/search` + quick-create/search/triage controls in `/dashboard` UI (loopback + action-flag guarded for write paths)
+- Dashboard action-plane idempotency baseline added via durable store (`.runtime-logs/idempotency-results.jsonl`) for `create/triage` dedupe.
 - Dashboard Notion query path hardened: automatic `database_id -> data_source_id` resolution for query operations (no `Invalid request URL` warnings in `/dashboard/search`)
 - Multi-project scale-readiness validated with automated 2-project dashboard scenario (`tests/dashboard.test.ts`)
 - App intake file endpoints added: `POST /intake/telegram-file` and `GET /intake/files/:id` (bearer-protected, local storage-backed)
@@ -116,7 +120,7 @@
 - Intake rollout playbook added: `docs/intake-dashboard-rollout-runbook.md`
 - Telegram forum bootstrap automation added: `scripts/bootstrap-telegram-forum-topics.sh` (creates forum topics, syncs `telegramThreadId`, and updates keyring mappings)
 - Telegram topics production cutover completed: `TELEGRAM_CHAT_ID=-1003831799532` (forum supergroup), topics created (`command_center=3`, `inbox=4`, `ops=5`, `project_aipipeline=6`), bot send verified in all threads
-- Real multi-project onboarding validated: `sandbox` project added end-to-end (Linear project `1b1a74d7-e64d-491c-8b60-82887eb69ead`, Notion Inbox/Specs DB, Telegram topic `thread=13`, dashboard project tab/search/create verified).
+- Real multi-project onboarding validated: `clientops` project added end-to-end (Linear project `26f3c30a-4785-4137-aed2-85bf734641dd`, Notion Inbox/Specs DB, Telegram topic `thread=54`, dashboard project tab/search/create/triage verified).
 - `bootstrap-telegram-forum-topics.sh` now syncs topic mapping for all projects in `config/projects.json` (not only first entry), and writes updated `PROJECTS_CONFIG` to keyring.
 - Reboot/runtime status reliability fix:
   - dashboard local probes use IPv4 loopback (`127.0.0.1`) to avoid false negatives on `localhost` IPv6 resolution;
@@ -135,6 +139,7 @@
 - Eval harness v2 added (`scripts/run-ai-eval-v2.js`) with offline+online gate model
 - Release governance v2 baseline added: scorecard template + scorecard generator script
 - Data governance baseline added: policy doc + CI/release policy checks
+- Data governance machine-readable inventory added: `config/data-governance.json` (validated in policy check).
 - DR cadence baseline added: evidence freshness check + systemd automation script
 - Backup/restore and parity toolchain implemented (plus retention cleanup + timer installer + DR drill evidence script)
 - ADR template and full-primary rollout ADR added to repository docs
