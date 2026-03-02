@@ -76,6 +76,15 @@ function notionErrorDetail(response) {
   );
 }
 
+function normalizeNotionId(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const uuidLike = raw.match(/[0-9a-fA-F]{32}|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/);
+  if (uuidLike) return uuidLike[0];
+  if (raw.startsWith("collection://")) return raw.replace("collection://", "").trim();
+  return raw;
+}
+
 async function fetchLinearIssues(projectId) {
   const apiKey = process.env.LINEAR_API_KEY || "";
   if (!apiKey) return { rows: [], error: "LINEAR_API_KEY is not configured" };
@@ -108,9 +117,11 @@ async function fetchLinearIssues(projectId) {
 }
 
 async function notionRequestWithFallbacks(databaseId, payload, token) {
+  const normalizedDatabaseId = normalizeNotionId(databaseId);
+  if (!normalizedDatabaseId) return { ok: false, rows: [], error: "Notion database id is not configured" };
   const endpoints = [
-    `https://api.notion.com/v1/data-sources/${databaseId}/query`,
-    `https://api.notion.com/v1/databases/${databaseId}/query`,
+    `https://api.notion.com/v1/data_sources/${normalizedDatabaseId}/query`,
+    `https://api.notion.com/v1/databases/${normalizedDatabaseId}/query`,
   ];
 
   let lastError = "";
@@ -142,8 +153,9 @@ async function notionRequestWithFallbacks(databaseId, payload, token) {
 
 async function fetchNotionRows(databaseId, payload = {}) {
   const token = process.env.NOTION_TOKEN || "";
-  if (!token || !databaseId) return { rows: [], error: "" };
-  const response = await notionRequestWithFallbacks(databaseId, payload, token);
+  const normalizedDatabaseId = normalizeNotionId(databaseId);
+  if (!token || !normalizedDatabaseId) return { rows: [], error: "" };
+  const response = await notionRequestWithFallbacks(normalizedDatabaseId, payload, token);
   return { rows: response.rows || [], error: response.ok ? "" : `Notion request failed: ${response.error}` };
 }
 
@@ -365,7 +377,8 @@ async function createLinearIssueForDashboard({ project, title, body }) {
 async function notionCreatePageWithFallback({ databaseId, projectKey, title, body, source, artifactType }) {
   const token = process.env.NOTION_TOKEN || "";
   if (!token) return { ok: false, error: "NOTION_TOKEN is not configured" };
-  if (!databaseId) return { ok: false, error: "Notion database id is required" };
+  const normalizedDatabaseId = normalizeNotionId(databaseId);
+  if (!normalizedDatabaseId) return { ok: false, error: "Notion database id is required" };
 
   const titleContent = String(title || "Inbox item").slice(0, 120);
   const paragraphBody = String(body || "");
@@ -383,7 +396,7 @@ async function notionCreatePageWithFallback({ databaseId, projectKey, title, bod
 
   const variants = [
     {
-      parent: { database_id: databaseId },
+      parent: { database_id: normalizedDatabaseId },
       properties: {
         Name: { title: [{ type: "text", text: { content: titleContent } }] },
         ...(projectKey ? { ProjectKey: { rich_text: [{ type: "text", text: { content: String(projectKey) } }] } } : {}),
@@ -393,7 +406,7 @@ async function notionCreatePageWithFallback({ databaseId, projectKey, title, bod
       ...(baseChildren.length ? { children: baseChildren } : {}),
     },
     {
-      parent: { database_id: databaseId },
+      parent: { database_id: normalizedDatabaseId },
       properties: {
         Title: { title: [{ type: "text", text: { content: titleContent } }] },
       },
