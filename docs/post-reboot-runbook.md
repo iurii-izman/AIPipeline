@@ -6,14 +6,15 @@
 
 ## Одна команда (рекомендуется)
 
-Если уже настроен Cloudflare Tunnel и n8n хотя бы раз запускался через `run-n8n-with-cloudflared.sh`:
+Если уже настроен Cloudflare Tunnel и baseline stack scripts в репо:
 
 ```bash
 cd /var/home/user/Projects/AIPipeline
 ./scripts/start-after-reboot.sh
 ```
 
-Поднимает: user-сервис cloudflared → n8n (Podman) → приложение (Node). Проверка: `./scripts/stack-control.sh status core`.
+Поднимает профиль `full`: app + n8n + observability + cloudflared, затем проверяет `/health` и `/healthz`.  
+Проверка статуса: `./scripts/stack-control.sh status full`.
 
 ---
 
@@ -43,16 +44,16 @@ curl -sS https://n8n.aipipeline.cc/ -o /dev/null -w "%{http_code}\n"
 
 ---
 
-## Вариант B: Всё одной командой (core: app + n8n)
+## Вариант B: Минимальный режим без observability
 
-Без туннеля (только localhost; Telegram webhook не будет работать без HTTPS):
+Если нужен только `core` (app + n8n) и вы не хотите поднимать observability:
 
 ```bash
 cd /var/home/user/Projects/AIPipeline
-./scripts/stack-control.sh start core
+./scripts/start-after-reboot.sh --no-observability
 ```
 
-С туннелем (стабильный URL) — после перезагрузки лучше использовать вариант A.
+Для статуса: `./scripts/stack-control.sh status core`.
 
 ---
 
