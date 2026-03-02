@@ -78,9 +78,11 @@ jobs:
           ref: ${{ inputs.target_ref }}
       - name: Resolve rollback metadata
         id: meta
+        env:
+          TARGET_REF: ${{ inputs.target_ref }}
         run: |
           set -euo pipefail
-          echo "target_ref=${{ inputs.target_ref }}" >> "$GITHUB_OUTPUT"
+          printf 'target_ref=%s\n' "$TARGET_REF" >> "$GITHUB_OUTPUT"
           echo "target_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           echo "target_sha_short=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 

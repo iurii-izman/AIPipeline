@@ -552,12 +552,13 @@ function requestHandler(req, res) {
           if (Number.isFinite(Number(sloSnapshot?.latencyP95Ms))) {
             latencyP95Ms = Number(sloSnapshot.latencyP95Ms);
           }
-          const errorBudgetState =
-            ["healthy", "warning", "exhausted"].includes(String(sloSnapshot?.errorBudgetState || ""))
-              ? String(sloSnapshot.errorBudgetState)
-              : n8nStatus === "reachable"
-                ? "healthy"
-                : "warning";
+          let errorBudgetState = "warning";
+          const budgetStateCandidate = String(sloSnapshot?.errorBudgetState || "");
+          if (["healthy", "warning", "exhausted"].includes(budgetStateCandidate)) {
+            errorBudgetState = budgetStateCandidate;
+          } else if (n8nStatus === "reachable") {
+            errorBudgetState = "healthy";
+          }
           res.setHeader("Content-Type", "application/json");
           res.writeHead(200);
           res.end(

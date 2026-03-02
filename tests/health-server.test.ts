@@ -155,7 +155,7 @@ describe("health server", () => {
     const status = await getJson(`http://127.0.0.1:${port}/status`);
     expect(status.ok).toBe(true);
     expect(typeof status.n8n).toBe("string");
-    expect(Object.prototype.hasOwnProperty.call(status, "latencyP95Ms")).toBe(true);
+    expect(Object.hasOwn(status, "latencyP95Ms")).toBe(true);
     expect(typeof status.errorBudgetState).toBe("string");
     expect(typeof status.telemetryState).toBe("string");
     expect(["healthy", "warning", "exhausted"]).toContain(String(status.errorBudgetState));

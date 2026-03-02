@@ -30,13 +30,14 @@ const { getDashboardHtml, createDashboardArtifact, triageDashboardIntake } = req
   }) => Promise<Record<string, unknown>>;
 };
 
-const originalFetch = global.fetch;
+const originalFetch = globalThis.fetch;
 const originalLinearApiKey = process.env.LINEAR_API_KEY;
 const originalNotionToken = process.env.NOTION_TOKEN;
 const originalProjectsConfig = process.env.PROJECTS_CONFIG;
 const originalDefaultProjectKey = process.env.DEFAULT_PROJECT_KEY;
 const originalNotionVersion = process.env.NOTION_VERSION;
 const originalIdempotencyStoreFile = process.env.IDEMPOTENCY_STORE_FILE;
+let idempotencyTestSequence = 0;
 
 function restoreEnv(name: string, value: string | undefined): void {
   if (value === undefined) {
@@ -47,7 +48,7 @@ function restoreEnv(name: string, value: string | undefined): void {
 }
 
 afterEach(() => {
-  global.fetch = originalFetch;
+  globalThis.fetch = originalFetch;
   restoreEnv("LINEAR_API_KEY", originalLinearApiKey);
   restoreEnv("NOTION_TOKEN", originalNotionToken);
   restoreEnv("PROJECTS_CONFIG", originalProjectsConfig);
@@ -80,7 +81,7 @@ describe("dashboard renderer", () => {
     process.env.DEFAULT_PROJECT_KEY = "aipipeline";
 
     const calls: string[] = [];
-    global.fetch = (async (url: string | URL) => {
+    globalThis.fetch = (async (url: string | URL) => {
       const value = String(url);
       calls.push(value);
       if (value.includes("api.linear.app/graphql")) {
@@ -172,7 +173,7 @@ describe("dashboard renderer", () => {
     process.env.DEFAULT_PROJECT_KEY = "no-linear-key";
     delete process.env.NOTION_TOKEN;
 
-    global.fetch = (async () => {
+    globalThis.fetch = (async () => {
       throw new Error("fetch should not be called when tokens are missing");
     }) as typeof fetch;
 
@@ -197,7 +198,7 @@ describe("dashboard renderer", () => {
     });
     process.env.DEFAULT_PROJECT_KEY = "aipipeline";
 
-    global.fetch = (async (url: string | URL) => {
+    globalThis.fetch = (async (url: string | URL) => {
       const value = String(url);
       if (value.includes("api.linear.app/graphql")) {
         return {
@@ -282,7 +283,7 @@ describe("dashboard renderer", () => {
     });
     process.env.DEFAULT_PROJECT_KEY = "aipipeline";
 
-    global.fetch = (async (url: string | URL) => {
+    globalThis.fetch = (async (url: string | URL) => {
       const value = String(url);
       if (value.includes("api.linear.app/graphql")) {
         return {
@@ -424,7 +425,7 @@ describe("dashboard renderer", () => {
     });
     process.env.DEFAULT_PROJECT_KEY = "aipipeline";
 
-    global.fetch = (async (url: string | URL) => {
+    globalThis.fetch = (async (url: string | URL) => {
       const value = String(url);
       if (value.includes("api.linear.app/graphql")) {
         return {
@@ -497,14 +498,15 @@ describe("dashboard renderer", () => {
       ],
     });
     process.env.DEFAULT_PROJECT_KEY = "aipipeline";
-    process.env.IDEMPOTENCY_STORE_FILE = `.out/tests/idempotency-${Date.now()}-${Math.random().toString(16).slice(2)}.jsonl`;
+    idempotencyTestSequence += 1;
+    process.env.IDEMPOTENCY_STORE_FILE = `.out/tests/idempotency-${Date.now()}-${idempotencyTestSequence}.jsonl`;
 
     let linearIssueCreateCalls = 0;
     let notionPatchCalls = 0;
-    global.fetch = (async (url: string | URL, init?: RequestInit) => {
+    globalThis.fetch = (async (url: string | URL, init?: RequestInit) => {
       const value = String(url);
       if (value.includes("api.linear.app/graphql")) {
-        const body = String(init?.body || "");
+        const body = typeof init?.body === "string" ? init.body : "";
         if (body.includes("issueCreate")) {
           linearIssueCreateCalls += 1;
           return {

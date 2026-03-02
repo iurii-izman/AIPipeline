@@ -39,6 +39,7 @@ run_cmd() {
   shift
   echo "[ops-batch] $label"
   "$@"
+  return 0
 }
 
 run_batch_a() {
@@ -49,6 +50,7 @@ run_batch_a() {
   run_cmd "integration" npm run test:integration
   run_cmd "e2e fixtures" npm run test:e2e
   run_cmd "iac validate" npm run iac:validate
+  return 0
 }
 
 run_batch_b() {
@@ -60,6 +62,7 @@ run_batch_b() {
   run_cmd "eval v2" npm run eval:v2
   run_cmd "telemetry volume" npm run telemetry:check-volume
   run_cmd "cost budget" npm run cost:budget
+  return 0
 }
 
 run_batch_c() {
@@ -76,6 +79,7 @@ run_batch_c() {
     run_cmd "slo budget (non-strict)" ./scripts/check-slo-budget.sh
   fi
   run_cmd "observability alerts" ./scripts/check-observability-alerts.sh
+  return 0
 }
 
 case "$batch" in

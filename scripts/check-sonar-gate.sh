@@ -56,13 +56,13 @@ if [[ -z "${SONAR_TOKEN:-}" ]]; then
   exit 0
 fi
 
-query_url="${host_url%/}/api/qualitygates/project_status?projectKey=${project_key}&organization=${organization}"
-
 tmp_json="$(mktemp)"
 trap 'rm -f "$tmp_json"' EXIT
 
 url_encode() {
-  node -e 'console.log(encodeURIComponent(process.argv[1] || ""))' "$1"
+  local raw_value="${1:-}"
+  node -e 'console.log(encodeURIComponent(process.argv[1] || ""))' "$raw_value"
+  return 0
 }
 
 build_query_url() {
@@ -75,6 +75,7 @@ build_query_url() {
     base+="&pullRequest=$(url_encode "$value")"
   fi
   printf '%s\n' "$base"
+  return 0
 }
 
 pr_number=""
