@@ -40,6 +40,8 @@
   `https://github.com/iurii-izman/AIPipeline/actions/runs/22553227323`
 - Release Gate (remote): success with scorecard + supply-chain + ai-ops artifacts  
   `https://github.com/iurii-izman/AIPipeline/actions/runs/22553233125`
+- Release Gate refresh (remote): success with scorecard + supply-chain + ai-ops artifacts on `2026-03-02` (head `473b3fa`, branch `chore/release-gate-closure-20260302`)  
+  `https://github.com/iurii-izman/AIPipeline/actions/runs/22568481017`
 - Git sync state: local `main` and `origin/main` are synchronized
 - IaC baseline: `infra/terraform` + `scripts/check-iac-baseline.sh` + CI job `iac-validate`
 - OTel baseline: `OTEL_ENABLED=true` (или `OTEL_PILOT_ENABLED=true`) + managed exporter policy checks (`otel:check-managed`, `otel:check-coverage`)
