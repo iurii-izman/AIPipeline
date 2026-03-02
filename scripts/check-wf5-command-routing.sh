@@ -31,9 +31,21 @@ fi
 
 N8N_URL="${N8N_URL:-http://localhost:5678}"
 
+if ! curl -fsS "${N8N_URL}/healthz" >/dev/null 2>&1; then
+  echo "n8n is not reachable at ${N8N_URL} (healthz failed)." >&2
+  echo "Hint: ./scripts/stack-control.sh start core" >&2
+  exit 1
+fi
+
 WF5_ID="$(curl -fsS -H "X-N8N-API-KEY: $N8N_API_KEY" "$N8N_URL/api/v1/workflows?limit=250" | node -e '
 const fs=require("fs");
-const j=JSON.parse(fs.readFileSync(0,"utf8"));
+let j={};
+try {
+  j=JSON.parse(fs.readFileSync(0,"utf8"));
+} catch {
+  process.stdout.write("");
+  process.exit(0);
+}
 const arr=j.data||[];
 const wf=arr.find((w)=>/WF-5: Telegram Command Center/i.test(String(w.name||"")));
 process.stdout.write(wf?String(wf.id):"");

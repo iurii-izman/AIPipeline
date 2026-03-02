@@ -142,6 +142,7 @@
 2. Поддерживать актуальность repository ruleset/checks в GitHub (включая `build`, `integration`, `e2e-fixtures`, `eval-alpha`, `eval-safety`, `eval-v2`, `sbom`, `iac-validate`, `cost-governance`, `workflow-governance`, `docs-links`, `data-governance-policy`, `security-audit`, `CodeQL`) при изменениях CI.
    - Быстрая синхронизация vars/secrets из keyring: `./scripts/sync-github-repo-controls.sh`.
    - PR-only strict mode (убрать bypass + strict checks): `./scripts/sync-github-repo-controls.sh --strict-pr-flow`.
+   - Ruleset normalized to actual Sonar context (`SonarCloud Code Analysis`); keep this name in required checks.
    - Автоподготовка deploy webhook secrets (из `CLOUDFLARE_PUBLIC_BASE_URL`): `./scripts/bootstrap-deploy-webhooks.sh`.
 3. Поддерживать и расширять eval dataset (текущая база: 150 кейсов) + online telemetry sample перед rollout-изменениями `MODEL_CLASSIFIER_MODE=full_primary`.
    - Rollout policy зафиксирована в `docs/adr-001-full-primary-rollout.md`.
