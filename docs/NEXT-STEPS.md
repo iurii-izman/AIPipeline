@@ -145,6 +145,7 @@
    - Online telemetry report timer: `./scripts/install-online-telemetry-report-timer.sh --calendar daily --days 30 --min-events 40`.
    - Optional stack autostart (desktop login): `./scripts/install-stack-autostart-service.sh --profile core|extended|full [--enable-linger]`.
    - Optional dashboard browser autostart (desktop login): `./scripts/install-dashboard-browser-autostart.sh` (`--disable` to remove).
+   - Optional stack self-heal watchdog (periodic ensure): `./scripts/install-stack-watchdog-timer.sh --profile core --interval-minutes 1` (`--stop` to remove).
 5. Поддерживать release scorecard v2 в релизном цикле:
    - `./scripts/release-quality-gate.sh --strict-parity --generate-scorecard --version vX.Y.Z --env staging`.
    - Через `.github/workflows/release-gate.yml` запускать `workflow_dispatch` с `generate_scorecard=true` и сохранять artifact `release-scorecard-v2` как release evidence.

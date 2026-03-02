@@ -60,6 +60,7 @@
 - Keyring bootstrap helper added for intake/dashboard vars: `scripts/bootstrap-intake-dashboard-keyring.sh`
 - User-level stack autostart installer added: `scripts/install-stack-autostart-service.sh` (`core|extended|full`, optional `--enable-linger`)
 - Desktop dashboard browser autostart installer added: `scripts/install-dashboard-browser-autostart.sh` (`--disable` to remove)
+- User-level stack watchdog timer installer added: `scripts/install-stack-watchdog-timer.sh` (periodic `stack-control start`, self-heal on app drop)
 - `stack-control` app bootstrap hardened: waits for `/health` readiness and prints last startup logs on failure.
 - `run-n8n.sh` hardened for stuck container state: fallback recreate path on failed `podman start`.
 - Intake/dashboard keyring baseline is now populated (`NOTION_INBOX_DATABASE_ID`, `NOTION_SPECS_DATABASE_ID`, `NOTION_SPEC_TEMPLATE_ID=__NONE__`, `PROJECTS_CONFIG`, `DEFAULT_PROJECT_KEY`)

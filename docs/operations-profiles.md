@@ -27,6 +27,14 @@
 ./scripts/install-dashboard-browser-autostart.sh
 ```
 
+Опциональный self-heal watchdog (если app периодически падает):
+
+```bash
+./scripts/install-stack-watchdog-timer.sh --profile core --interval-minutes 1
+# disable:
+# ./scripts/install-stack-watchdog-timer.sh --stop
+```
+
 ## Process-level acceptance checklist
 
 Формализованный скрипт-чеклист:
