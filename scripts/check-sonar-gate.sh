@@ -12,6 +12,7 @@ require_token=false
 branch="${GITHUB_REF_NAME:-${GITHUB_HEAD_REF:-}}"
 head_ref="${GITHUB_HEAD_REF:-}"
 host_url="${SONAR_HOST_URL:-https://sonarcloud.io}"
+poll_seconds="${SONAR_GATE_POLL_SECONDS:-180}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -78,34 +79,62 @@ build_query_url() {
   return 0
 }
 
+json_status() {
+  local file_path="$1"
+  node -e 'const fs=require("node:fs"); const p=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.stdout.write(String(p?.projectStatus?.status || "UNKNOWN"));' "$file_path"
+  return 0
+}
+
 pr_number=""
 if [[ "${GITHUB_REF_NAME:-}" =~ ^([0-9]+)/merge$ ]]; then
   pr_number="${BASH_REMATCH[1]}"
 fi
 
-declare -a attempts=()
 if [[ -n "$pr_number" ]]; then
-  attempts+=("$(build_query_url pr "$pr_number")")
-fi
-if [[ -n "$head_ref" ]]; then
-  attempts+=("$(build_query_url branch "$head_ref")")
-fi
-if [[ -n "$branch" && "$branch" != "$head_ref" ]]; then
-  attempts+=("$(build_query_url branch "$branch")")
-fi
-attempts+=("$(build_query_url none "")")
-
-sonar_query_ok=false
-for candidate in "${attempts[@]}"; do
-  if curl -fsS -u "${SONAR_TOKEN}:" "$candidate" > "$tmp_json"; then
-    sonar_query_ok=true
-    break
+  pr_url="$(build_query_url pr "$pr_number")"
+  max_attempts=$((poll_seconds / 5))
+  if (( max_attempts < 1 )); then
+    max_attempts=1
   fi
-done
+  for ((attempt=1; attempt<=max_attempts; attempt++)); do
+    if curl -fsS -u "${SONAR_TOKEN}:" "$pr_url" > "$tmp_json"; then
+      status_now="$(json_status "$tmp_json")"
+      if [[ "$status_now" == "OK" ]]; then
+        break
+      fi
+      if [[ "$attempt" -lt "$max_attempts" ]]; then
+        sleep 5
+      fi
+    elif [[ "$attempt" -lt "$max_attempts" ]]; then
+      sleep 5
+    fi
+  done
+  if [[ ! -s "$tmp_json" ]]; then
+    echo "Failed to query Sonar quality gate for pull request $pr_number" >&2
+    exit 1
+  fi
+else
+  declare -a attempts=()
+  if [[ -n "$head_ref" ]]; then
+    attempts+=("$(build_query_url branch "$head_ref")")
+  fi
+  if [[ -n "$branch" && "$branch" != "$head_ref" ]]; then
+    attempts+=("$(build_query_url branch "$branch")")
+  fi
+  attempts+=("$(build_query_url none "")")
 
-if [[ "$sonar_query_ok" != "true" ]]; then
-  echo "Failed to query Sonar quality gate" >&2
-  exit 1
+  sonar_query_ok=false
+  for candidate in "${attempts[@]}"; do
+    if curl -fsS -u "${SONAR_TOKEN}:" "$candidate" > "$tmp_json"; then
+      sonar_query_ok=true
+      break
+    fi
+  done
+
+  if [[ "$sonar_query_ok" != "true" ]]; then
+    echo "Failed to query Sonar quality gate" >&2
+    exit 1
+  fi
 fi
 
 node - "$tmp_json" "$strict" <<'NODE'
