@@ -106,4 +106,3 @@ fi
 if [[ "$strict" == "true" && "$status" != "ok" ]]; then
   exit 1
 fi
-

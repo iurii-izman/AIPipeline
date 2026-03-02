@@ -1,7 +1,7 @@
 # AIPipeline — Principal Engineer Audit & Development Roadmap (Decision-Complete)
 
-Дата: 2026-03-01  
-Репозиторий: `AIPipeline`  
+Дата: 2026-03-01
+Репозиторий: `AIPipeline`
 Источник фактов: код + CI + docs в текущем workspace (без внешних секретов)
 
 ---
@@ -20,17 +20,17 @@ AIPipeline — AI-native delivery control plane для solo-разработки
 - часть operational governance зависит от ручных циклов (retention/rotation/DR cadence).
 
 **5 главных рисков**
-1. Неполный production deployment контур (webhook dry-run, нет platform IaC).  
-2. Ограниченная зрелость AI quality gates (offline, dataset 150, без online drift gates).  
-3. Недостаточная наблюдаемость для incident SLO (нет OTel tracing/центрального managed telemetry).  
-4. Долг в data governance/privacy (PII-retention и policy-as-code не формализованы).  
+1. Неполный production deployment контур (webhook dry-run, нет platform IaC).
+2. Ограниченная зрелость AI quality gates (offline, dataset 150, без online drift gates).
+3. Недостаточная наблюдаемость для incident SLO (нет OTel tracing/центрального managed telemetry).
+4. Долг в data governance/privacy (PII-retention и policy-as-code не формализованы).
 5. Security governance неполный (SBOM/SLSA provenance/dependency policy не закрыты end-to-end).
 
 **5 главных возможностей**
-1. Быстрый переход к production baseline через IaC + release governance + rollback automation.  
-2. Укрепление AI safety/качества через расширение eval harness и regression gates.  
-3. Повышение reliability через SLO-driven observability и alert routing.  
-4. Снижение операционного риска через автоматизацию backup retention и DR drills.  
+1. Быстрый переход к production baseline через IaC + release governance + rollback automation.
+2. Укрепление AI safety/качества через расширение eval harness и regression gates.
+3. Повышение reliability через SLO-driven observability и alert routing.
+4. Снижение операционного риска через автоматизацию backup retention и DR drills.
 5. Улучшение cost efficiency через лимиты/кэш/telemetry по LLM и workflow затратам.
 
 **Evidence:** `docs/status-summary.md`, `docs/NEXT-STEPS.md`, `README.md`, `docs/architecture.md`, `.github/workflows/*.yml`, `src/*`, `scripts/*`.
@@ -273,67 +273,67 @@ Quality gates в CI:
 
 ### Quick Wins (48–72 часа)
 
-1. **[P0] Deploy strict mode** — убрать silent dry-run для protected paths, добавить fail-fast при missing deploy config.  
-   Файлы: `.github/workflows/deploy-staging.yml`, `.github/workflows/deploy-production.yml`, `docs/releases.md`  
+1. **[P0] Deploy strict mode** — убрать silent dry-run для protected paths, добавить fail-fast при missing deploy config.
+   Файлы: `.github/workflows/deploy-staging.yml`, `.github/workflows/deploy-production.yml`, `docs/releases.md`
    Готово: production deploy job не может завершиться success без deploy execution + post-check.
 
-2. **[P1] Docs integrity hard gate** — добавить проверку ссылок/якорей docs как required check.  
-   Файлы: `scripts/check-doc-links.js`, `.github/workflows/ci.yml`, `docs/status-summary.md`  
+2. **[P1] Docs integrity hard gate** — добавить проверку ссылок/якорей docs как required check.
+   Файлы: `scripts/check-doc-links.js`, `.github/workflows/ci.yml`, `docs/status-summary.md`
    Готово: PR в main блокируется при битых docs-ссылках.
 
-3. **[P1] Backup timer health probe** — добавить проверку наличия/состояния retention timer в `stack-health-report.sh`.  
-   Файлы: `scripts/stack-health-report.sh`, `docs/operations-profiles.md`  
+3. **[P1] Backup timer health probe** — добавить проверку наличия/состояния retention timer в `stack-health-report.sh`.
+   Файлы: `scripts/stack-health-report.sh`, `docs/operations-profiles.md`
    Готово: отчет явно показывает backup retention status.
 
-4. **[P1] Eval dataset v1.2** — расширить dataset до >=150 кейсов (balanced + hard negatives).  
-   Файлы: `evals/datasets/sentry-severity-alpha.json`, `docs/adr-001-full-primary-rollout.md`  
+4. **[P1] Eval dataset v1.2** — расширить dataset до >=150 кейсов (balanced + hard negatives).
+   Файлы: `evals/datasets/sentry-severity-alpha.json`, `docs/adr-001-full-primary-rollout.md`
    Готово: `npm run eval:alpha` проходит на расширенном наборе.
 
 ### Issue backlog (implementation-ready)
 
-- [P0] **Prod Deploy Contract Enforcement** — ввести обязательный контракт deploy secrets/endpoints, fail-fast policy.  
-  Файлы/папки: `.github/workflows/`, `docs/releases.md`  
+- [P0] **Prod Deploy Contract Enforcement** — ввести обязательный контракт deploy secrets/endpoints, fail-fast policy.
+  Файлы/папки: `.github/workflows/`, `docs/releases.md`
   DoD: deploy workflows поддерживают strict mode + documented override process.
 
-- [P0] **AI Eval Coverage Expansion** — увеличить репрезентативность eval набора и quality gates.  
-  Файлы/папки: `evals/datasets/`, `scripts/run-ai-eval.js`, `tests/evals/`  
+- [P0] **AI Eval Coverage Expansion** — увеличить репрезентативность eval набора и quality gates.
+  Файлы/папки: `evals/datasets/`, `scripts/run-ai-eval.js`, `tests/evals/`
   DoD: dataset >=150, gates/metrics зафиксированы, regression pass в CI.
 
-- [P1] **Durable DLQ Migration** — перевести WF-7 DLQ на durable store.  
-  Файлы/папки: `scripts/update-wf7-dlq-parking.js`, `docs/n8n-workflows/wf-7-dlq-parking.json`, `docs/dlq-replay-runbook.md`  
+- [P1] **Durable DLQ Migration** — перевести WF-7 DLQ на durable store.
+  Файлы/папки: `scripts/update-wf7-dlq-parking.js`, `docs/n8n-workflows/wf-7-dlq-parking.json`, `docs/dlq-replay-runbook.md`
   DoD: replay устойчив к рестартам, есть migration note.
 
-- [P1] **DR Governance Automation** — автоматизировать cadence DR drills + evidence checks.  
-  Файлы/папки: `scripts/dr-restore-drill.sh`, `scripts/evidence-sync-cycle.sh`, `docs/operations-profiles.md`  
+- [P1] **DR Governance Automation** — автоматизировать cadence DR drills + evidence checks.
+  Файлы/папки: `scripts/dr-restore-drill.sh`, `scripts/evidence-sync-cycle.sh`, `docs/operations-profiles.md`
   DoD: есть регулярный drill report с датой и статусом.
 
-- [P1] **Supply Chain Security Pack** — SBOM + provenance + policy checks.  
-  Файлы/папки: `.github/workflows/ci.yml`, `package.json`, `docs/delivery-pipeline-compliance.md`  
+- [P1] **Supply Chain Security Pack** — SBOM + provenance + policy checks.
+  Файлы/папки: `.github/workflows/ci.yml`, `package.json`, `docs/delivery-pipeline-compliance.md`
   DoD: release artifact включает SBOM и provenance attestations.
 
-- [P1] **SLO + Alerting Baseline** — formal SLI/SLO и alert policy.  
-  Файлы/папки: `docs/observability.md`, `scripts/check-observability-alerts.sh`, `observability/grafana/provisioning/*`  
+- [P1] **SLO + Alerting Baseline** — formal SLI/SLO и alert policy.
+  Файлы/папки: `docs/observability.md`, `scripts/check-observability-alerts.sh`, `observability/grafana/provisioning/*`
   DoD: SLO spec и dashboard/alerts соответствуют инцидентным целям.
 
-- [P2] **OTel Instrumentation** — добавить distributed tracing и correlation.  
-  Файлы/папки: `src/`, `observability/`, `docs/observability.md`  
+- [P2] **OTel Instrumentation** — добавить distributed tracing и correlation.
+  Файлы/папки: `src/`, `observability/`, `docs/observability.md`
   DoD: traces доступны для критических цепочек, документация обновлена.
 
-- [P2] **WF-5 RBAC Controls** — role-based control для /deploy и других привилегированных команд.  
-  Файлы/папки: `scripts/update-wf5-status-workflow.js`, `docs/n8n-workflows/wf-5-status.json`, `tests/e2e/workflow-fixtures.test.ts`  
+- [P2] **WF-5 RBAC Controls** — role-based control для /deploy и других привилегированных команд.
+  Файлы/папки: `scripts/update-wf5-status-workflow.js`, `docs/n8n-workflows/wf-5-status.json`, `tests/e2e/workflow-fixtures.test.ts`
   DoD: неавторизованные команды блокируются и логируются.
 
 ### Рекомендуемый порядок PR (малые безопасные инкременты)
 
-1. PR-1: Deploy strict mode + releases doc updates  
-2. PR-2: Sonar hard gate + branch policy sync docs  
-3. PR-3: Backup timer health/reporting  
-4. PR-4: Eval dataset expansion (v1.1) + gate updates  
-5. PR-5: Durable DLQ migration  
-6. PR-6: DR automation cadence  
-7. PR-7: SBOM/provenance in CI  
-8. PR-8: SLO/alert baseline  
-9. PR-9: OTel tracing rollout  
+1. PR-1: Deploy strict mode + releases doc updates
+2. PR-2: Sonar hard gate + branch policy sync docs
+3. PR-3: Backup timer health/reporting
+4. PR-4: Eval dataset expansion (v1.1) + gate updates
+5. PR-5: Durable DLQ migration
+6. PR-6: DR automation cadence
+7. PR-7: SBOM/provenance in CI
+8. PR-8: SLO/alert baseline
+9. PR-9: OTel tracing rollout
 10. PR-10: WF-5 RBAC hardening
 
 ---
@@ -385,9 +385,9 @@ Quality gates в CI:
 
 ### G4. Potential interface changes (future, без реализации в этой итерации)
 
-1. Единый `ResiliencePolicy` интерфейс с profile-based overrides (dev/staging/prod).  
-2. Extended `/status` schema с SLO fields (`latency_p95`, `error_budget_state`).  
-3. Typed `AuditEvent` contract для всех ops scripts и workflow side effects.  
+1. Единый `ResiliencePolicy` интерфейс с profile-based overrides (dev/staging/prod).
+2. Extended `/status` schema с SLO fields (`latency_p95`, `error_budget_state`).
+3. Typed `AuditEvent` contract для всех ops scripts и workflow side effects.
 4. `EvalReport` versioned schema (`v1`, `v2`) с backward compatibility policy.
 
 ### G5. Внешние стандарты: зачем/как/критерий готовности
@@ -417,11 +417,11 @@ Quality gates в CI:
 
 ## Acceptance Check (self-audit of this document)
 
-1. Разделы `A..G` присутствуют в требуемом порядке: **да**.  
-2. В `C` ровно 20 weak spots: **да**.  
-3. В `D` ровно 20 roadmap steps: **да**.  
-4. Ключевые выводы привязаны к evidence (пути/артефакты): **да**.  
-5. Внешние стандарты с блоком "зачем/как/критерий": **да**.  
-6. Секреты/токены/значения env не раскрыты: **да**.  
-7. Приоритизация `C/D/E/F` согласована (`P0/P1/P2`): **да**.  
+1. Разделы `A..G` присутствуют в требуемом порядке: **да**.
+2. В `C` ровно 20 weak spots: **да**.
+3. В `D` ровно 20 roadmap steps: **да**.
+4. Ключевые выводы привязаны к evidence (пути/артефакты): **да**.
+5. Внешние стандарты с блоком "зачем/как/критерий": **да**.
+6. Секреты/токены/значения env не раскрыты: **да**.
+7. Приоритизация `C/D/E/F` согласована (`P0/P1/P2`): **да**.
 8. Quick Wins соответствуют 48–72ч и low-risk increments: **да**.

@@ -66,9 +66,9 @@
    - Перед релизом убедиться, что последний DR drill выполнен и evidence находится в `.out/drills/`.
 
 10. **Release scorecard v2**
-   - Сгенерировать scorecard:  
+   - Сгенерировать scorecard:
      `./scripts/generate-release-scorecard-v2.sh --version vX.Y.Z --env staging`
-   - Или автоматически в составе gate:  
+   - Или автоматически в составе gate:
      `./scripts/release-quality-gate.sh --strict-parity --generate-scorecard --version vX.Y.Z --env production`
    - Локальный output: `.out/releases/release-scorecard-v2-<version>-<env>-<timestamp>.md`.
    - При запуске через GitHub Actions scorecard должен быть загружен как artifact `release-scorecard-v2` и сохранён как release evidence.
