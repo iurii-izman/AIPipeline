@@ -122,7 +122,10 @@
    - запускать GitHub workflow `Release Gate` с inputs `generate_scorecard=true`, `version=vX.Y.Z`, `target_env=staging|production`;
    - проверять upload artifact `release-scorecard-v2` в run summary;
    - фиксировать ссылки на artifacts (`release-scorecard-v2`, `release-supply-chain`, `release-ai-ops`) в архивном closure snapshot.
-   - последний подтверждённый прогон: `2026-03-02`, run `22568481017` (success), artifacts: `release-scorecard-v2`, `release-supply-chain`, `release-ai-ops`.
+   - последний подтверждённый прогон: `2026-03-02`, run `22570495028` (success), artifacts:
+     - `release-scorecard-v2`: `5718661621`
+     - `release-supply-chain`: `5718661782`
+     - `release-ai-ops`: `5718661937`
    - учитывать, что в GitHub-hosted runner gate использует `--skip-dr-cadence` (локальный DR cadence остается обязательным в ops цикле).
 1. Поддерживать rotation/валидность hardening env в keyring и runtime (`STATUS_AUTH_TOKEN`, `GITHUB_WEBHOOK_SECRET`, `SENTRY_WEBHOOK_SECRET`, `MODEL_CLASSIFIER_MODE`, `MODEL_KILL_SWITCH`); bootstrap: `./scripts/bootstrap-hardening-env-keyring.sh`.
    - Intake/dashboard keyring entries уже заполнены и проходят `./scripts/health-check-env.sh`:

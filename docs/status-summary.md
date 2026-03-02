@@ -6,7 +6,7 @@
 - Stage: `late-alpha / early-MVP`
 - Release: `v0.1.0-beta.1` (beta prerelease published)
 - Branch model: `main` as canonical branch
-- Latest major execution: merged PR #24 (2026-03-01)
+- Latest major execution: merged PR #26 (2026-03-02)
 - Docs inventory: `83` files in `docs/`
 
 ## Delivery State
@@ -16,7 +16,7 @@
 - Stable HTTPS mode: active (Cloudflare Tunnel path documented)
 
 ## Quality Baseline
-- Tests: `74/74` passing
+- Tests: `78/78` passing
 - Coverage: branch `80.44%` (threshold `80%`) pass
 - CI required checks: green
 - Security checks: `npm audit` gate + CodeQL
@@ -42,6 +42,11 @@
   `https://github.com/iurii-izman/AIPipeline/actions/runs/22553233125`
 - Release Gate refresh (remote): success with scorecard + supply-chain + ai-ops artifacts on `2026-03-02` (head `473b3fa`, branch `chore/release-gate-closure-20260302`)
   `https://github.com/iurii-izman/AIPipeline/actions/runs/22568481017`
+- Release Gate refresh (remote, post-PR26): success with scorecard + supply-chain + ai-ops artifacts on `2026-03-02` (head `3fb526f`, branch `main`)
+  `https://github.com/iurii-izman/AIPipeline/actions/runs/22570495028`
+  - `release-scorecard-v2`: `https://api.github.com/repos/iurii-izman/AIPipeline/actions/artifacts/5718661621/zip`
+  - `release-supply-chain`: `https://api.github.com/repos/iurii-izman/AIPipeline/actions/artifacts/5718661782/zip`
+  - `release-ai-ops`: `https://api.github.com/repos/iurii-izman/AIPipeline/actions/artifacts/5718661937/zip`
 - Git sync state: local `main` and `origin/main` are synchronized
 - IaC baseline: `infra/terraform` + `scripts/check-iac-baseline.sh` + CI job `iac-validate`
 - OTel baseline: `OTEL_ENABLED=true` (или `OTEL_PILOT_ENABLED=true`) + managed exporter policy checks (`otel:check-managed`, `otel:check-coverage`)
