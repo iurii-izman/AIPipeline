@@ -122,10 +122,20 @@ const forwardedAt = String(message.forward_date || message.forward_origin?.date 
 const isForwarded = Boolean(forwardedFromName || forwardedAt || message.forward_origin || message.forward_from);
 
 if (callback) {
-  const params = new URLSearchParams(String(callback.data || ''));
-  callbackAction = String(params.get('a') || '').toUpperCase();
-  callbackShortId = String(params.get('i') || '').trim();
-  callbackArg = String(params.get('p') || '').trim();
+  const rawData = String(callback.data || '');
+  const pairs = rawData.split('&').filter(Boolean);
+  const parsed = {};
+  for (const pair of pairs) {
+    const idx = pair.indexOf('=');
+    const key = idx >= 0 ? pair.slice(0, idx) : pair;
+    const val = idx >= 0 ? pair.slice(idx + 1) : '';
+    const decodedKey = decodeURIComponent(String(key || '').replace(/\\+/g, '%20'));
+    const decodedVal = decodeURIComponent(String(val || '').replace(/\\+/g, '%20'));
+    parsed[decodedKey] = decodedVal;
+  }
+  callbackAction = String(parsed.a || '').toUpperCase();
+  callbackShortId = String(parsed.i || '').trim();
+  callbackArg = String(parsed.p || '').trim();
   if (!callbackArg && callbackAction.startsWith('MOVE:')) {
     callbackArg = callbackAction.slice(5).trim();
     callbackAction = 'MOVE';
