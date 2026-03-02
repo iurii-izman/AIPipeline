@@ -1,6 +1,6 @@
 # Стратегия AIPipeline v2: Hybrid A→G+Strategy (Decision-Complete)
 
-Дата ревизии: 2026-03-01  
+Дата ревизии: 2026-03-01
 Статус документа: executive+strategy companion к полному аудиту [project-audit-and-roadmap.md](project-audit-and-roadmap.md)
 
 ---
@@ -223,20 +223,20 @@ Evidence:
 
 ## 9. Quick Wins (48-72 часа)
 
-1. `[P0]` Убрать silent dry-run в deploy workflows.  
-   Файлы: `.github/workflows/deploy-staging.yml`, `.github/workflows/deploy-production.yml`  
+1. `[P0]` Убрать silent dry-run в deploy workflows.
+   Файлы: `.github/workflows/deploy-staging.yml`, `.github/workflows/deploy-production.yml`
    Done: deploy job не может быть green без фактического deploy path.
-2. `[P1]` Добавить hard gate для целостности документации.  
-   Файлы: `scripts/check-doc-links.js`, `.github/workflows/ci.yml`  
+2. `[P1]` Добавить hard gate для целостности документации.
+   Файлы: `scripts/check-doc-links.js`, `.github/workflows/ci.yml`
    Done: `docs-links` job блокирует merge при битых/невалидных ссылках.
-3. `[P1]` Добавить backup-retention статус в unified health report.  
-   Файл: `scripts/stack-health-report.sh`  
+3. `[P1]` Добавить backup-retention статус в unified health report.
+   Файл: `scripts/stack-health-report.sh`
    Done: отчет явно показывает состояние timer/retention.
-4. `[P1]` Расширить eval dataset до >=150 и включить online eval-v2 scorecard.  
-   Файлы: `evals/datasets/sentry-severity-alpha.json`, `scripts/run-ai-eval.js`  
+4. `[P1]` Расширить eval dataset до >=150 и включить online eval-v2 scorecard.
+   Файлы: `evals/datasets/sentry-severity-alpha.json`, `scripts/run-ai-eval.js`
    Done: dataset `150` кейсов, eval-alpha и eval-v2 публикуют отчёты.
-5. `[P1]` Добавить минимальный cost report по LLM/API usage.  
-   Файлы: `scripts/` (новый отчёт), `docs/observability.md`  
+5. `[P1]` Добавить минимальный cost report по LLM/API usage.
+   Файлы: `scripts/` (новый отчёт), `docs/observability.md`
    Done: weekly/monthly cost summary доступен в evidence цикле.
 
 Evidence:

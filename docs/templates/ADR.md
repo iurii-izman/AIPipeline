@@ -18,13 +18,13 @@ YYYY-MM-DD
 
 ## Consequences
 ### Positive
-- 
+-
 
 ### Negative / Tradeoffs
-- 
+-
 
 ### Follow-up Actions
-- 
+-
 
 ## Rollback / Exit Criteria
 - Trigger:

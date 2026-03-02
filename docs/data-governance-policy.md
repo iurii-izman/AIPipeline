@@ -1,6 +1,6 @@
 # Data Governance Policy (v1)
 
-Дата: 2026-03-01  
+Дата: 2026-03-01
 Статус: Draft (P1 Harden baseline)
 
 ## Scope
@@ -73,4 +73,3 @@
 - `scripts/install-backup-retention-timer.sh`
 - `scripts/dr-restore-drill.sh`
 - `docs/n8n-workflows/wf-7-dlq-parking.json`
-

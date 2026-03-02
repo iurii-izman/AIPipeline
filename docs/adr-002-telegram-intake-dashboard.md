@@ -6,7 +6,7 @@
 
 ## Context
 
-WF-5 already acts as the Telegram command center, but the previous surface was command-only and single-project-leaning.  
+WF-5 already acts as the Telegram command center, but the previous surface was command-only and single-project-leaning.
 Needed capabilities:
 
 1. Unified intake path for unstructured messages.

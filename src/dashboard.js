@@ -280,4 +280,3 @@ async function getDashboardHtml(projectKey = "") {
 }
 
 module.exports = { getDashboardHtml };
-

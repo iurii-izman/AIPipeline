@@ -94,4 +94,3 @@ echo "  systemctl --user status $TIMER_NAME"
 echo "  systemctl --user list-timers --all | rg aipipeline-dr-cadence"
 echo "  systemctl --user start $SERVICE_NAME"
 echo "  journalctl --user -u $SERVICE_NAME -n 100 --no-pager"
-

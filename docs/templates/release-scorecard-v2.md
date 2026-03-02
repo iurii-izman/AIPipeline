@@ -1,8 +1,8 @@
 # Release Scorecard v2 Template
 
-Дата: YYYY-MM-DD  
-Версия: vX.Y.Z  
-Окружение: staging | production  
+Дата: YYYY-MM-DD
+Версия: vX.Y.Z
+Окружение: staging | production
 Owner: @owner
 
 ## 1) Release Decision

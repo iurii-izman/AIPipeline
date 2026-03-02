@@ -74,9 +74,9 @@ latest_cost_report="$(ls -1 .out/cost/cost-report-*.md 2>/dev/null | tail -n 1 |
 cat >"$output" <<EOF
 # Release Scorecard v2
 
-Дата: $(date +%F)  
-Версия: ${version}  
-Окружение: ${target_env}  
+Дата: $(date +%F)
+Версия: ${version}
+Окружение: ${target_env}
 Owner: ${owner}
 
 ## 1) Release Decision

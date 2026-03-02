@@ -34,13 +34,13 @@
 - DR cadence last successful run: `2026-03-01T20:24:59+02:00` (`/var/home/user/Projects/AIPipeline/.out/drills/dr-restore-drill-20260301-202456.json`)
 - Cost governance timer: `aipipeline-cost-governance.timer` installed/enabled
 - Online telemetry report timer: `aipipeline-online-telemetry-report.timer` installed/enabled
-- Local release gate (strict + scorecard): pass  
+- Local release gate (strict + scorecard): pass
   `./scripts/release-quality-gate.sh --strict-parity --generate-scorecard --version v0.1.0-alpha.2 --env staging`
-- CI (remote): success with extended jobs (`eval-v2`, telemetry volume check, `iac-validate`, `cost-governance`, `sbom+provenance verify`)  
+- CI (remote): success with extended jobs (`eval-v2`, telemetry volume check, `iac-validate`, `cost-governance`, `sbom+provenance verify`)
   `https://github.com/iurii-izman/AIPipeline/actions/runs/22553227323`
-- Release Gate (remote): success with scorecard + supply-chain + ai-ops artifacts  
+- Release Gate (remote): success with scorecard + supply-chain + ai-ops artifacts
   `https://github.com/iurii-izman/AIPipeline/actions/runs/22553233125`
-- Release Gate refresh (remote): success with scorecard + supply-chain + ai-ops artifacts on `2026-03-02` (head `473b3fa`, branch `chore/release-gate-closure-20260302`)  
+- Release Gate refresh (remote): success with scorecard + supply-chain + ai-ops artifacts on `2026-03-02` (head `473b3fa`, branch `chore/release-gate-closure-20260302`)
   `https://github.com/iurii-izman/AIPipeline/actions/runs/22568481017`
 - Git sync state: local `main` and `origin/main` are synchronized
 - IaC baseline: `infra/terraform` + `scripts/check-iac-baseline.sh` + CI job `iac-validate`
