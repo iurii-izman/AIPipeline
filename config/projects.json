@@ -35,6 +35,24 @@
         "sentry": "https://aipipeline.sentry.io/projects/node/",
         "n8n": "http://localhost:5678"
       }
+    },
+    {
+      "key": "clientops",
+      "label": "ClientOps",
+      "emoji": "🚀",
+      "linearTeamId": "d27ffe88-769f-4b73-8db9-fa11bd9bf915",
+      "linearProjectId": "26f3c30a-4785-4137-aed2-85bf734641dd",
+      "notionInboxDatabaseId": "31765d48-e797-8122-827a-cdcf2af21ec1",
+      "notionSpecsDatabaseId": "31765d48-e797-8183-a0e7-cb73f6e0abcd",
+      "notionSpecTemplateId": "__NONE__",
+      "telegramThreadId": "54",
+      "links": {
+        "linear": "https://linear.app/aipipeline/project/clientops-eecc4169f00e",
+        "notion": "https://www.notion.so/31765d48e7978183a0e7cb73f6e0abcd",
+        "github": "https://github.com/iurii-izman/AIPipeline",
+        "sentry": "https://aipipeline.sentry.io/projects/node/",
+        "n8n": "http://localhost:5678"
+      }
     }
   ]
 }

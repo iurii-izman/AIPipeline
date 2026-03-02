@@ -120,7 +120,7 @@
 - Intake rollout playbook added: `docs/intake-dashboard-rollout-runbook.md`
 - Telegram forum bootstrap automation added: `scripts/bootstrap-telegram-forum-topics.sh` (creates forum topics, syncs `telegramThreadId`, and updates keyring mappings)
 - Telegram topics production cutover completed: `TELEGRAM_CHAT_ID=-1003831799532` (forum supergroup), topics created (`command_center=3`, `inbox=4`, `ops=5`, `project_aipipeline=6`), bot send verified in all threads
-- Real multi-project onboarding validated: `sandbox` project added end-to-end (Linear project `1b1a74d7-e64d-491c-8b60-82887eb69ead`, Notion Inbox/Specs DB, Telegram topic `thread=13`, dashboard project tab/search/create verified).
+- Real multi-project onboarding validated: `clientops` project added end-to-end (Linear project `26f3c30a-4785-4137-aed2-85bf734641dd`, Notion Inbox/Specs DB, Telegram topic `thread=54`, dashboard project tab/search/create/triage verified).
 - `bootstrap-telegram-forum-topics.sh` now syncs topic mapping for all projects in `config/projects.json` (not only first entry), and writes updated `PROJECTS_CONFIG` to keyring.
 - Reboot/runtime status reliability fix:
   - dashboard local probes use IPv4 loopback (`127.0.0.1`) to avoid false negatives on `localhost` IPv6 resolution;
