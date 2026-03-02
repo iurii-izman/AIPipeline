@@ -597,24 +597,34 @@
       }
     },
     {
+      "id": "prepare-telegram-wf2",
+      "name": "Prepare Telegram payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4620,
+        -180
+      ],
+      "parameters": {
+        "jsCode": "const src = $json || {};\nconst baseText = String(src.text || '').trim();\nconst issueKey = String($('Extract PR payload').first().json.issueKey || '');\nconst teamPrefix = String(issueKey.split('-')[0] || '').trim().toLowerCase();\nlet projects = [];\ntry {\n  const parsed = JSON.parse(String($env.PROJECTS_CONFIG || '{\"projects\":[]}'));\n  projects = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.projects) ? parsed.projects : []);\n} catch {\n  projects = [];\n}\nconst match = projects.find((p) => {\n  const key = String(p?.key || '').toLowerCase();\n  const label = String(p?.label || '').toLowerCase();\n  if (!teamPrefix) return false;\n  return key === teamPrefix || key.startsWith(teamPrefix) || label.includes(teamPrefix);\n}) || (projects.length === 1 ? projects[0] : null);\nconst label = String(match?.label || match?.key || '').trim();\nconst prefix = label ? ('[' + label + '] ') : '';\nconst text = baseText.startsWith('[') ? baseText : (prefix + baseText);\nconst rawThread = match?.telegramThreadId;\nconst threadId = rawThread === undefined || rawThread === null || String(rawThread).trim() === '' ? undefined : Number(rawThread);\nreturn [{ json: { ...src, text, threadId } }];"
+      }
+    },
+    {
       "id": "telegram-send",
       "name": "Telegram: send",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         4620,
         -100
       ],
       "parameters": {
-        "operation": "sendMessage",
-        "chatId": "={{ $env.TELEGRAM_CHAT_ID || 'YOUR_CHAT_ID' }}",
-        "text": "={{ $json.text }}"
-      },
-      "credentials": {
-        "telegramApi": {
-          "id": "CumMgGtm8MpeMfxm",
-          "name": "AIPipeline Telegram"
-        }
+        "method": "POST",
+        "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { chat_id: $env.TELEGRAM_CHAT_ID || 'YOUR_CHAT_ID', message_thread_id: Number($json.threadId || 0) || undefined, text: $json.text || 'WF-2 notification' } }}",
+        "options": {}
       },
       "retryOnFail": true,
       "maxTries": 4,
@@ -968,7 +978,7 @@
       "main": [
         [
           {
-            "node": "Telegram: send",
+            "node": "Prepare Telegram payload",
             "type": "main",
             "index": 0
           }
@@ -979,7 +989,7 @@
       "main": [
         [
           {
-            "node": "Telegram: send",
+            "node": "Prepare Telegram payload",
             "type": "main",
             "index": 0
           }
@@ -990,7 +1000,7 @@
       "main": [
         [
           {
-            "node": "Telegram: send",
+            "node": "Prepare Telegram payload",
             "type": "main",
             "index": 0
           }
@@ -998,6 +1008,17 @@
       ]
     },
     "Set PR opened": {
+      "main": [
+        [
+          {
+            "node": "Prepare Telegram payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Telegram payload": {
       "main": [
         [
           {

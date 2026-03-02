@@ -7,9 +7,14 @@ export type AppConfig = {
   linearTeamId?: string;
   notionToken?: string;
   notionVersion: string;
+  notionInboxDatabaseId?: string;
+  notionSpecsDatabaseId?: string;
+  notionSpecTemplateId?: string;
   githubToken?: string;
   githubOwner?: string;
   githubRepo?: string;
+  projectsConfig?: string;
+  defaultProjectKey?: string;
 };
 
 export class EnvValidationError extends Error {
@@ -37,9 +42,14 @@ const schema = z.object({
   LINEAR_TEAM_ID: z.string().min(1).optional(),
   NOTION_TOKEN: z.string().min(1).optional(),
   NOTION_VERSION: z.string().min(1).optional().default("2025-09-03"),
+  NOTION_INBOX_DATABASE_ID: z.string().min(1).optional(),
+  NOTION_SPECS_DATABASE_ID: z.string().min(1).optional(),
+  NOTION_SPEC_TEMPLATE_ID: z.string().min(1).optional(),
   GITHUB_PERSONAL_ACCESS_TOKEN: z.string().min(1).optional(),
   GITHUB_OWNER: z.string().min(1).optional(),
   GITHUB_REPO: z.string().min(1).optional(),
+  PROJECTS_CONFIG: z.string().min(1).optional(),
+  DEFAULT_PROJECT_KEY: z.string().min(1).optional(),
 });
 
 export function loadConfig(options?: { requireLinear?: boolean; requireNotion?: boolean; requireGithub?: boolean }): AppConfig {
@@ -56,9 +66,14 @@ export function loadConfig(options?: { requireLinear?: boolean; requireNotion?: 
     linearTeamId: parsed.data.LINEAR_TEAM_ID,
     notionToken: parsed.data.NOTION_TOKEN,
     notionVersion: parsed.data.NOTION_VERSION,
+    notionInboxDatabaseId: parsed.data.NOTION_INBOX_DATABASE_ID,
+    notionSpecsDatabaseId: parsed.data.NOTION_SPECS_DATABASE_ID,
+    notionSpecTemplateId: parsed.data.NOTION_SPEC_TEMPLATE_ID,
     githubToken: parsed.data.GITHUB_PERSONAL_ACCESS_TOKEN,
     githubOwner: parsed.data.GITHUB_OWNER,
     githubRepo: parsed.data.GITHUB_REPO,
+    projectsConfig: parsed.data.PROJECTS_CONFIG,
+    defaultProjectKey: parsed.data.DEFAULT_PROJECT_KEY,
   };
 
   if (options?.requireLinear) {

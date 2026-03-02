@@ -452,27 +452,34 @@
       }
     },
     {
+      "id": "prepare-telegram-wf3",
+      "name": "Prepare Telegram payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3300,
+        -120
+      ],
+      "parameters": {
+        "jsCode": "const src = $json || {};\nconst baseText = String(src.text || '').trim();\nconst sentryProject = String(src.project || '').toLowerCase();\nlet projects = [];\ntry {\n  const parsed = JSON.parse(String($env.PROJECTS_CONFIG || '{\"projects\":[]}'));\n  projects = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.projects) ? parsed.projects : []);\n} catch {\n  projects = [];\n}\nconst match = projects.find((p) => {\n  const key = String(p?.key || '').toLowerCase();\n  const label = String(p?.label || '').toLowerCase();\n  const sentryLink = String(p?.links?.sentry || '').toLowerCase();\n  if (!sentryProject) return false;\n  return key === sentryProject || label.includes(sentryProject) || sentryLink.includes(sentryProject);\n}) || (projects.length === 1 ? projects[0] : null);\nconst label = String(match?.label || match?.key || '').trim();\nconst prefix = label ? ('[' + label + '] ') : '';\nconst text = baseText.startsWith('[') ? baseText : (prefix + baseText);\nconst rawThread = match?.telegramThreadId;\nconst threadId = rawThread === undefined || rawThread === null || String(rawThread).trim() === '' ? undefined : Number(rawThread);\nreturn [{ json: { ...src, text, threadId } }];"
+      }
+    },
+    {
       "id": "telegram-wf3",
       "name": "Telegram: notify",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         3300,
         -20
       ],
       "parameters": {
-        "operation": "sendMessage",
-        "chatId": "1877269414",
-        "text": "={{ $json.text }}",
-        "additionalFields": {
-          "parse_mode": "Markdown"
-        }
-      },
-      "credentials": {
-        "telegramApi": {
-          "id": "CumMgGtm8MpeMfxm",
-          "name": "AIPipeline Telegram"
-        }
+        "method": "POST",
+        "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { chat_id: $env.TELEGRAM_CHAT_ID || 'YOUR_CHAT_ID', message_thread_id: Number($json.threadId || 0) || undefined, text: $json.text || 'WF-3 notification', parse_mode: 'Markdown' } }}",
+        "options": {}
       },
       "retryOnFail": true,
       "maxTries": 4,
@@ -876,7 +883,7 @@
             "index": 0
           },
           {
-            "node": "Telegram: notify",
+            "node": "Prepare Telegram payload",
             "type": "main",
             "index": 0
           }
@@ -892,7 +899,7 @@
             "index": 0
           },
           {
-            "node": "Telegram: notify",
+            "node": "Prepare Telegram payload",
             "type": "main",
             "index": 0
           }
@@ -912,6 +919,17 @@
       ]
     },
     "Format no-linear notification": {
+      "main": [
+        [
+          {
+            "node": "Prepare Telegram payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Telegram payload": {
       "main": [
         [
           {

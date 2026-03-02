@@ -10,9 +10,6 @@ const http = require("http");
 const N8N_URL = process.env.N8N_URL || "http://localhost:5678";
 const N8N_API_KEY = process.env.N8N_API_KEY;
 const WF1_ID = "YOE8DIxImk86Hogb";
-const TELEGRAM_CRED_ID = "CumMgGtm8MpeMfxm";
-const CHAT_ID = process.env.TELEGRAM_CHAT_ID || "";
-
 if (!N8N_API_KEY) {
   console.error("N8N_API_KEY not set. Run: source scripts/load-env-from-keyring.sh && node scripts/update-wf1-linear-telegram.js");
   process.exit(1);
@@ -112,17 +109,29 @@ const workflow = {
       },
     },
     {
-      id: "telegram-send-wf1",
-      name: "Telegram: notify",
-      type: "n8n-nodes-base.telegram",
-      typeVersion: 1.2,
+      id: "prepare-telegram-wf1",
+      name: "Prepare Telegram payload",
+      type: "n8n-nodes-base.code",
+      typeVersion: 2,
       position: [720, -80],
       parameters: {
-        operation: "sendMessage",
-        chatId: CHAT_ID || "YOUR_CHAT_ID",
-        text: "=🔄 {{ $json.title }}\n→ {{ $json.state?.name || 'N/A' }} | Assignee: {{ $json.assignee?.name || '—' }}",
+        jsCode: `const issue = $json || {};\nlet projects = [];\ntry {\n  const parsed = JSON.parse(String($env.PROJECTS_CONFIG || '{\"projects\":[]}'));\n  projects = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.projects) ? parsed.projects : []);\n} catch {\n  projects = [];\n}\nconst toKey = (v) => String(v || '').trim().toLowerCase();\nconst byId = new Map(projects.map((p) => [toKey(p.linearProjectId), p]).filter(([k]) => k));\nconst byKey = new Map(projects.map((p) => [toKey(p.key), p]).filter(([k]) => k));\nconst projectId = toKey(issue.project?.id);\nconst projectKey = toKey(issue.project?.key || issue.project?.name);\nconst match = byId.get(projectId) || byKey.get(projectKey) || null;\nconst projectLabel = String(match?.label || issue.project?.name || issue.project?.key || 'General');\nconst thread = match?.telegramThreadId;\nconst threadId = thread === undefined || thread === null || String(thread).trim() === '' ? undefined : Number(thread);\nconst text = '🔄 [' + projectLabel + '] ' + String(issue.title || '(untitled)') + '\\n→ ' + String(issue.state?.name || 'N/A') + ' | Assignee: ' + String(issue.assignee?.name || '—');\nreturn [{ json: { text, threadId } }];`,
       },
-      credentials: { telegramApi: { id: TELEGRAM_CRED_ID, name: "AIPipeline Telegram" } },
+    },
+    {
+      id: "telegram-send-wf1",
+      name: "Telegram: notify",
+      type: "n8n-nodes-base.httpRequest",
+      typeVersion: 4.2,
+      position: [940, -80],
+      parameters: {
+        method: "POST",
+        url: "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
+        sendBody: true,
+        specifyBody: "json",
+        jsonBody: "={{ { chat_id: $env.TELEGRAM_CHAT_ID || 'YOUR_CHAT_ID', message_thread_id: Number($json.threadId || 0) || undefined, text: $json.text || 'WF-1 alert' } }}",
+        options: {},
+      },
     },
     {
       id: "manual-wf1",
@@ -152,12 +161,8 @@ const workflow = {
     "Linear: Get issues": {
       main: [[{ node: "IF status In Review or Blocked", type: "main", index: 0 }]],
     },
-    "IF status In Review or Blocked": {
-      main: [
-        [{ node: "Telegram: notify", type: "main", index: 0 }],
-        [],
-      ],
-    },
+    "IF status In Review or Blocked": { main: [[{ node: "Prepare Telegram payload", type: "main", index: 0 }], []] },
+    "Prepare Telegram payload": { main: [[{ node: "Telegram: notify", type: "main", index: 0 }]] },
     "When clicking 'Test workflow'": {
       main: [[{ node: "Placeholder", type: "main", index: 0 }]],
     },

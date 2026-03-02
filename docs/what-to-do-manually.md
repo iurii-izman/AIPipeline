@@ -65,6 +65,28 @@ WF-4 отправляет digest в Telegram всегда.
    - `NOTION_TOKEN`
    - `GITHUB_OWNER`, `GITHUB_REPO`, `GITHUB_WORKFLOW_STAGING`, `GITHUB_WORKFLOW_PRODUCTION`, `GITHUB_PERSONAL_ACCESS_TOKEN`
 
+Дополнительно для intake/multi-project (итерация 2026-03-02):
+
+5. Подготовить Notion базы и template:
+   - Inbox DB (`NOTION_INBOX_DATABASE_ID`);
+   - Specs DB (`NOTION_SPECS_DATABASE_ID`);
+   - Spec template id (`NOTION_SPEC_TEMPLATE_ID`) или `__NONE__`, если template пока не заведён.
+   - можно автозаполнить keyring из `config/projects.json`: `./scripts/bootstrap-intake-dashboard-keyring.sh`.
+6. Заполнить project mapping:
+   - `config/projects.json` (repo SSoT) или `PROJECTS_CONFIG` в keyring;
+   - выполнить `node scripts/validate-projects-config.js`.
+7. Для topic routing (step-2 hybrid mode):
+   - создать/проверить forum topics;
+   - получить `message_thread_id`;
+   - записать `telegramThreadId` в project registry.
+8. Провести live UAT callback-кнопок intake:
+   - отправить свободный текст и сообщение с вложением/voice (capture);
+   - нажать `Task`, `Spec`, `Idea`, `Move`, `Archive`;
+   - проверить, что бот редактирует исходное сообщение и создаёт артефакты (Linear/Notion) без дублей.
+9. Проверить `/triage`:
+   - команда показывает следующий NEW intake item;
+   - inline actions работают как в capture.
+
 ---
 
 ## WF-6 (Notion → NotebookLM reminder)

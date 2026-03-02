@@ -6,8 +6,11 @@
 
 const http = require("http");
 const https = require("https");
+const fs = require("fs");
+const path = require("path");
 const { context: otelContext, trace, SpanStatusCode } = require("@opentelemetry/api");
 const { log, correlationIdFromRequest } = require("./logger.js");
+const { getDashboardHtml } = require("./dashboard.js");
 const {
   appendAiTelemetryEvent,
   appendDlqEvent,
@@ -94,6 +97,10 @@ function getTelemetryIngestToken() {
 
 function getDlqReplayToken() {
   return process.env.DLQ_REPLAY_TOKEN || getDlqIngestToken();
+}
+
+function getIntakeIngestToken() {
+  return process.env.INTAKE_INGEST_TOKEN || getDlqIngestToken();
 }
 
 function checkBearerAuth(req, expectedToken) {
@@ -229,6 +236,65 @@ function dispatchReplay(target, payload, timeoutMs = 10_000) {
   });
 }
 
+function getIntakeStorageDir() {
+  const configured = String(process.env.INTAKE_FILES_DIR || "").trim();
+  if (configured) return configured;
+  return path.resolve(process.cwd(), ".runtime-logs/intake-files");
+}
+
+function safeFileSegment(value, fallback = "file") {
+  const cleaned = String(value || "")
+    .replace(/[^a-zA-Z0-9._-]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return cleaned || fallback;
+}
+
+function buildIntakePublicUrl(fileId) {
+  return `/intake/files/${encodeURIComponent(fileId)}`;
+}
+
+async function ingestTelegramFile({ filePath, fileName, shortId, telegramBotToken }) {
+  if (!filePath || !telegramBotToken) {
+    throw new Error("filePath and telegramBotToken are required");
+  }
+  const sourceUrl = `https://api.telegram.org/file/bot${telegramBotToken}/${filePath.replace(/^\/+/, "")}`;
+  const response = await fetch(sourceUrl);
+  if (!response.ok) {
+    throw new Error(`telegram file download failed (${response.status})`);
+  }
+  const bytes = Buffer.from(await response.arrayBuffer());
+  const now = Date.now();
+  const baseName = safeFileSegment(fileName || path.basename(filePath) || "file");
+  const ext = path.extname(baseName) || path.extname(filePath) || "";
+  const idPrefix = safeFileSegment(shortId || "intake");
+  const id = `${idPrefix}_${now.toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const storedName = `${id}${ext}`;
+  const storageDir = getIntakeStorageDir();
+  fs.mkdirSync(storageDir, { recursive: true });
+  const storedPath = path.join(storageDir, storedName);
+  fs.writeFileSync(storedPath, bytes);
+  const metaPath = `${storedPath}.json`;
+  const metadata = {
+    id,
+    shortId: shortId || "",
+    sourceFilePath: filePath,
+    sourceFileName: fileName || path.basename(filePath),
+    storedName,
+    storedPath,
+    size: bytes.length,
+    storedAt: new Date().toISOString(),
+  };
+  fs.writeFileSync(metaPath, JSON.stringify(metadata, null, 2));
+  return {
+    id,
+    storedPath,
+    storedName,
+    size: bytes.length,
+    publicUrl: buildIntakePublicUrl(id),
+  };
+}
+
 /**
  * Pings n8n (GET base URL). Returns "reachable" or "unreachable".
  * @returns {Promise<string>}
@@ -356,7 +422,7 @@ function requestHandler(req, res) {
       return;
     }
 
-    if ((url === "/health" || url === "/status") && !enforceRateLimit(`${remoteAddress}:${url}`)) {
+    if ((url === "/health" || url === "/status" || url === "/dashboard") && !enforceRateLimit(`${remoteAddress}:${url}`)) {
       res.writeHead(429);
       res.end();
       log("error", "rate limit exceeded", {
@@ -432,6 +498,33 @@ function requestHandler(req, res) {
           res.writeHead(500);
           res.end();
           log("error", "status endpoint failed", {
+            correlationId,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        });
+      return;
+    }
+
+    if (req.method === "GET" && url === "/dashboard") {
+      if (!checkBearerAuth(req, getStatusAuthToken())) {
+        res.writeHead(401);
+        res.end();
+        return;
+      }
+      const parsed = new URL(req.url || "/dashboard", "http://localhost");
+      const projectKey = parsed.searchParams.get("project") || "";
+      getDashboardHtml(projectKey)
+        .then((html) => {
+          res.setHeader("Content-Type", "text/html; charset=utf-8");
+          res.writeHead(200);
+          res.end(html);
+        })
+        .catch((err) => {
+          span.recordException(err);
+          res.setHeader("Content-Type", "application/json");
+          res.writeHead(500);
+          res.end(JSON.stringify({ ok: false, error: err instanceof Error ? err.message : String(err) }));
+          log("error", "dashboard endpoint failed", {
             correlationId,
             error: err instanceof Error ? err.message : String(err),
           });
@@ -606,6 +699,78 @@ function requestHandler(req, res) {
             error: err instanceof Error ? err.message : String(err),
           });
         });
+      return;
+    }
+
+    if (req.method === "POST" && url === "/intake/telegram-file") {
+      if (!checkBearerAuth(req, getIntakeIngestToken())) {
+        res.writeHead(401);
+        res.end();
+        return;
+      }
+      parseJsonBody(req)
+        .then(async (payload) => {
+          const filePath = String(payload.filePath || "").trim();
+          const fileName = String(payload.fileName || "").trim();
+          const shortId = String(payload.shortId || "").trim();
+          const token = String(process.env.TELEGRAM_BOT_TOKEN || "").trim();
+          if (!filePath || !token) {
+            res.writeHead(400);
+            res.end(JSON.stringify({ ok: false, error: "filePath and TELEGRAM_BOT_TOKEN are required" }));
+            return;
+          }
+          const result = await ingestTelegramFile({ filePath, fileName, shortId, telegramBotToken: token });
+          res.setHeader("Content-Type", "application/json");
+          res.writeHead(201);
+          res.end(JSON.stringify({ ok: true, ...result }));
+          log("info", "intake file stored", {
+            correlationId,
+            id: result.id,
+            size: result.size,
+            storedPath: result.storedPath,
+          });
+        })
+        .catch((err) => {
+          res.writeHead(500);
+          res.end(JSON.stringify({ ok: false, error: err instanceof Error ? err.message : String(err) }));
+          log("error", "intake file ingest failed", {
+            correlationId,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        });
+      return;
+    }
+
+    if (req.method === "GET" && url.startsWith("/intake/files/")) {
+      if (!checkBearerAuth(req, getStatusAuthToken())) {
+        res.writeHead(401);
+        res.end();
+        return;
+      }
+      const fileId = decodeURIComponent(url.slice("/intake/files/".length));
+      const storageDir = getIntakeStorageDir();
+      const files = fs.existsSync(storageDir) ? fs.readdirSync(storageDir) : [];
+      const match = files.find((entry) => entry.startsWith(`${safeFileSegment(fileId)}_`) || entry.startsWith(`${safeFileSegment(fileId)}.`) || entry === fileId || entry.startsWith(fileId));
+      if (!match) {
+        res.writeHead(404);
+        res.end();
+        return;
+      }
+      const fullPath = path.join(storageDir, match);
+      if (!fs.existsSync(fullPath) || fs.statSync(fullPath).isDirectory() || fullPath.endsWith(".json")) {
+        res.writeHead(404);
+        res.end();
+        return;
+      }
+      const stream = fs.createReadStream(fullPath);
+      res.writeHead(200, { "Content-Type": "application/octet-stream" });
+      stream.pipe(res);
+      stream.on("error", () => {
+        if (!res.headersSent) {
+          res.writeHead(500);
+        }
+        res.end();
+      });
       return;
     }
 

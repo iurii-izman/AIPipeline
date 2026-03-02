@@ -13,7 +13,6 @@ const http = require("http");
 const N8N_URL = process.env.N8N_URL || "http://localhost:5678";
 const N8N_API_KEY = process.env.N8N_API_KEY;
 const WF3_ID = "95voTtHeQwJ7E3m5";
-const CHAT_ID = process.env.TELEGRAM_CHAT_ID || "";
 const DLQ_PARK_URL = process.env.DLQ_PARK_URL || "http://host.containers.internal:3000/dlq/park";
 
 if (!N8N_API_KEY) {
@@ -476,18 +475,29 @@ return [{ json: { text: '⚠️ *Sentry issue*\\n' + src.title + '\\nLevel: ' + 
       },
     },
     {
+      id: "prepare-telegram-wf3",
+      name: "Prepare Telegram payload",
+      type: "n8n-nodes-base.code",
+      typeVersion: 2,
+      position: [3300, -120],
+      parameters: {
+        jsCode: `const src = $json || {};\nconst baseText = String(src.text || '').trim();\nconst sentryProject = String(src.project || '').toLowerCase();\nlet projects = [];\ntry {\n  const parsed = JSON.parse(String($env.PROJECTS_CONFIG || '{\"projects\":[]}'));\n  projects = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.projects) ? parsed.projects : []);\n} catch {\n  projects = [];\n}\nconst match = projects.find((p) => {\n  const key = String(p?.key || '').toLowerCase();\n  const label = String(p?.label || '').toLowerCase();\n  const sentryLink = String(p?.links?.sentry || '').toLowerCase();\n  if (!sentryProject) return false;\n  return key === sentryProject || label.includes(sentryProject) || sentryLink.includes(sentryProject);\n}) || (projects.length === 1 ? projects[0] : null);\nconst label = String(match?.label || match?.key || '').trim();\nconst prefix = label ? ('[' + label + '] ') : '';\nconst text = baseText.startsWith('[') ? baseText : (prefix + baseText);\nconst rawThread = match?.telegramThreadId;\nconst threadId = rawThread === undefined || rawThread === null || String(rawThread).trim() === '' ? undefined : Number(rawThread);\nreturn [{ json: { ...src, text, threadId } }];`,
+      },
+    },
+    {
       id: "telegram-wf3",
       name: "Telegram: notify",
-      type: "n8n-nodes-base.telegram",
-      typeVersion: 1.2,
+      type: "n8n-nodes-base.httpRequest",
+      typeVersion: 4.2,
       position: [3300, -20],
       parameters: {
-        operation: "sendMessage",
-        chatId: CHAT_ID || "={{ $env.TELEGRAM_CHAT_ID || 'YOUR_CHAT_ID' }}",
-        text: "={{ $json.text }}",
-        additionalFields: { parse_mode: "Markdown" },
+        method: "POST",
+        url: "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
+        sendBody: true,
+        specifyBody: "json",
+        jsonBody: "={{ { chat_id: $env.TELEGRAM_CHAT_ID || 'YOUR_CHAT_ID', message_thread_id: Number($json.threadId || 0) || undefined, text: $json.text || 'WF-3 notification', parse_mode: 'Markdown' } }}",
+        options: {},
       },
-      credentials: { telegramApi: { name: "AIPipeline Telegram" } },
     },
     {
       id: "if-linear-message-failed",
@@ -645,10 +655,11 @@ return [{ json: { telegramFailed: true, rateLimited, reason: msg } }];`,
     "Linear: Create critical issue": { main: [[{ node: "Format critical notification", type: "main", index: 0 }]] },
     "Linear: Create bug issue": { main: [[{ node: "Format non-critical notification", type: "main", index: 0 }]] },
 
-    "Format critical notification": { main: [[{ node: "If Linear create failed", type: "main", index: 0 }, { node: "Telegram: notify", type: "main", index: 0 }]] },
-    "Format non-critical notification": { main: [[{ node: "If Linear create failed", type: "main", index: 0 }, { node: "Telegram: notify", type: "main", index: 0 }]] },
+    "Format critical notification": { main: [[{ node: "If Linear create failed", type: "main", index: 0 }, { node: "Prepare Telegram payload", type: "main", index: 0 }]] },
+    "Format non-critical notification": { main: [[{ node: "If Linear create failed", type: "main", index: 0 }, { node: "Prepare Telegram payload", type: "main", index: 0 }]] },
     "If Linear create failed": { main: [[{ node: "DLQ: park WF-3 Linear failure", type: "main", index: 0 }], []] },
-    "Format no-linear notification": { main: [[{ node: "Telegram: notify", type: "main", index: 0 }]] },
+    "Format no-linear notification": { main: [[{ node: "Prepare Telegram payload", type: "main", index: 0 }]] },
+    "Prepare Telegram payload": { main: [[{ node: "Telegram: notify", type: "main", index: 0 }]] },
     "Telegram: notify": { main: [[{ node: "Assess Telegram notify delivery", type: "main", index: 0 }]] },
     "Assess Telegram notify delivery": { main: [[{ node: "If Telegram notify failed", type: "main", index: 0 }]] },
     "If Telegram notify failed": { main: [[{ node: "DLQ: park WF-3 Telegram failure", type: "main", index: 0 }], []] },

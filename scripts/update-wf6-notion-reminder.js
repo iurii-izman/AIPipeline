@@ -100,13 +100,38 @@ const workflow = {
       },
     },
     {
+      id: "notion-inbox-new",
+      name: "Notion: query inbox NEW",
+      type: "n8n-nodes-base.httpRequest",
+      typeVersion: 4.2,
+      position: [660, 0],
+      continueOnFail: true,
+      alwaysOutputData: true,
+      parameters: {
+        method: "POST",
+        url: "={{ 'https://api.notion.com/v1/databases/' + ($env.NOTION_INBOX_DATABASE_ID || '') + '/query' }}",
+        sendHeaders: true,
+        headerParameters: {
+          parameters: [
+            { name: "Authorization", value: "={{ 'Bearer ' + $env.NOTION_TOKEN }}" },
+            { name: "Notion-Version", value: "2025-09-03" },
+            { name: "Content-Type", value: "application/json" },
+          ],
+        },
+        sendBody: true,
+        specifyBody: "json",
+        jsonBody: "={{ { page_size: 20, filter: { property: 'Status', select: { equals: 'New' } } } }}",
+        options: {},
+      },
+    },
+    {
       id: "build-reminder",
       name: "Build reminder message",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
-      position: [660, -120],
+      position: [880, -120],
       parameters: {
-        jsCode: `const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;\nconst rows = ($json.results || []).filter(r => {\n  const t = Date.parse(r.last_edited_time || '');\n  return Number.isFinite(t) && t >= weekAgo;\n});\nconst top = rows.slice(0, 5);\nconst titles = top.map(r => {\n  const p = r.properties || {};\n  for (const k of Object.keys(p)) {\n    if (p[k]?.type === 'title') {\n      const tt = (p[k].title || []).map(x => x.plain_text).join('');\n      return tt || '(untitled)';\n    }\n  }\n  return '(untitled)';\n});\nconst list = titles.map((t, i) => (i + 1) + '. ' + t).join('\\n');\nconst text = top.length\n  ? '📚 Updated Notion pages this week (' + top.length + ')\\n' + list + '\\n\\nResync NotebookLM sources.'\n  : '';\nreturn [{ json: { hasUpdates: top.length > 0, text } }];`,
+        jsCode: `const searchPayload = $('Notion: search recent pages').first().json || {};\nconst weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;\nconst rows = (searchPayload.results || []).filter((r) => {\n  const t = Date.parse(r.last_edited_time || '');\n  return Number.isFinite(t) && t >= weekAgo;\n});\nconst top = rows.slice(0, 5);\nconst titles = top.map((r) => {\n  const p = r.properties || {};\n  for (const k of Object.keys(p)) {\n    if (p[k]?.type === 'title') {\n      const tt = (p[k].title || []).map((x) => x.plain_text).join('');\n      return tt || '(untitled)';\n    }\n  }\n  return '(untitled)';\n});\nconst list = titles.map((t, i) => (i + 1) + '. ' + t).join('\\n');\n\nconst inboxPayload = $json || {};\nconst inboxCount = Array.isArray(inboxPayload.results) ? inboxPayload.results.length : 0;\nconst inboxText = inboxCount > 0\n  ? ('\\n\\n📥 Inbox needs triage: *' + inboxCount + '* NEW item(s). Use /triage.')\n  : '';\n\nconst text = top.length\n  ? '📚 Updated Notion pages this week (' + top.length + ')\\n' + list + '\\n\\nResync NotebookLM sources.' + inboxText\n  : (inboxCount > 0 ? ('📥 Inbox review reminder: *' + inboxCount + '* NEW item(s). Use /triage.') : '');\nreturn [{ json: { hasUpdates: top.length > 0 || inboxCount > 0, text } }];`,
       },
     },
     {
@@ -114,7 +139,7 @@ const workflow = {
       name: "If updates exist",
       type: "n8n-nodes-base.if",
       typeVersion: 2.3,
-      position: [880, -120],
+      position: [1100, -120],
       parameters: {
         conditions: {
           options: { caseSensitive: true },
@@ -128,7 +153,7 @@ const workflow = {
       name: "Telegram: send reminder",
       type: "n8n-nodes-base.telegram",
       typeVersion: 1.2,
-      position: [1100, -120],
+      position: [1320, -120],
       parameters: {
         operation: "sendMessage",
         chatId: "={{ $env.TELEGRAM_CHAT_ID || 'YOUR_CHAT_ID' }}",
@@ -151,7 +176,8 @@ const workflow = {
   connections: {
     "Every Monday 10:00": { main: [[{ node: "If NOTION_TOKEN set", type: "main", index: 0 }]] },
     "If NOTION_TOKEN set": { main: [[{ node: "Notion: search recent pages", type: "main", index: 0 }], [{ node: "Set no Notion token", type: "main", index: 0 }]] },
-    "Notion: search recent pages": { main: [[{ node: "Build reminder message", type: "main", index: 0 }]] },
+    "Notion: search recent pages": { main: [[{ node: "Notion: query inbox NEW", type: "main", index: 0 }]] },
+    "Notion: query inbox NEW": { main: [[{ node: "Build reminder message", type: "main", index: 0 }]] },
     "Build reminder message": { main: [[{ node: "If updates exist", type: "main", index: 0 }]] },
     "If updates exist": { main: [[{ node: "Telegram: send reminder", type: "main", index: 0 }], []] },
   },

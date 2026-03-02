@@ -28,6 +28,9 @@ _load LINEAR_API_KEY linear.app aipipeline
 _load LINEAR_TEAM_ID linear.app aipipeline-team-id
 _load NOTION_TOKEN notion.so aipipeline
 _load NOTION_SPRINT_LOG_DATABASE_ID notion.so aipipeline-sprint-log-db
+_load NOTION_INBOX_DATABASE_ID notion.so aipipeline-inbox-db
+_load NOTION_SPECS_DATABASE_ID notion.so aipipeline-specs-db
+_load NOTION_SPEC_TEMPLATE_ID notion.so aipipeline-spec-template-id
 _load TELEGRAM_BOT_TOKEN api.telegram.org aipipeline_delivery_bot
 _load TELEGRAM_CHAT_ID api.telegram.org aipipeline-alerts
 
@@ -66,6 +69,14 @@ _load WF5_RBAC_ALLOWED_CHAT_IDS telegram.rbac aipipeline-allowed-chat-ids
 _load WF5_RBAC_ALLOWED_USER_IDS telegram.rbac aipipeline-allowed-user-ids
 _load WF5_RBAC_ALLOWED_USERNAMES telegram.rbac aipipeline-allowed-usernames
 _load WF5_PRIVILEGED_COMMANDS telegram.rbac aipipeline-privileged-commands
+_load PROJECTS_CONFIG aipipeline.config projects-config
+_load DEFAULT_PROJECT_KEY aipipeline.config default-project-key
+_load INTAKE_INGEST_URL aipipeline.intake ingest-url
+_load INTAKE_INGEST_TOKEN aipipeline.intake ingest-token
+_load INTAKE_PUBLIC_BASE_URL aipipeline.intake public-base-url
+_load INTAKE_AUTO_CONVERT aipipeline.intake auto-convert
+_load INTAKE_AUTO_CONVERT_CONFIDENCE aipipeline.intake auto-convert-confidence
+_load INTAKE_FILES_DIR aipipeline.intake files-dir
 
 # Compatibility fallbacks for OPENAI_API_KEY if stored with custom attributes.
 if [[ -z "${OPENAI_API_KEY:-}" ]]; then

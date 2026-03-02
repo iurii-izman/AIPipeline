@@ -62,6 +62,24 @@
   - env parity-check: `scripts/check-env-parity.sh` (`--strict`);
   - unified release gate: `scripts/release-quality-gate.sh`;
   - `evidence-sync-cycle.sh` поддерживает `--with-backup`.
+- Telegram intake + dashboard baseline (итерация 2026-03-02) внедрён:
+  - WF-5 расширен до multi-project + intake surface (`/project`, `/projects`, `/progress`, `/inbox`, `/spec`, `/idea`, `/task`, `/note`, `/capture`);
+  - добавлены `/links[:project]` и `/activity[:project]` для быстрых ссылок и ленты изменений;
+  - callback branch (`If /callback`, `answerCallbackQuery`, `editMessageText`) добавлен в WF-5, включая actions `TASK/SPEC/IDEA/MOVE/ARCHIVE`;
+  - callback conversion hardened: state-first routing from intake store + triage status/link persistence;
+  - `/triage[:project]` command добавлен для поэлементного inbox triage;
+  - free-text capture улучшен для document/photo/voice/audio payloads с suggested action + artifact type;
+  - capture enrichment: optional OpenAI action classification + Telegram `getFile` lookup to persist file link into Notion Inbox;
+  - app-backed binary ingest endpoint enabled for capture attachments (`POST /intake/telegram-file` + `GET /intake/files/:id`);
+  - confidence-gated intake auto-convert enabled (`INTAKE_AUTO_CONVERT`, `INTAKE_AUTO_CONVERT_CONFIDENCE`) for `TASK|SPEC`;
+  - RBAC allowlist fully populated (chat + user id + username) in keyring and injected into n8n runtime;
+  - WF-4 digest обновлен до project-aware с per-project секциями;
+  - WF-6 now includes weekly Inbox NEW reminder (nudges to `/triage`);
+  - WF-1/WF-2/WF-3 now support project-topic Telegram routing via `PROJECTS_CONFIG.telegramThreadId` (fallback to default chat);
+  - `/dashboard` route добавлен в app (`src/dashboard.js`, auth policy как `/status`);
+  - введён project registry SSoT: `config/projects.json` + `node scripts/validate-projects-config.js`.
+  - тестовый baseline усилен: `tests/dashboard.test.ts`, `tests/project-registry.test.ts`, расширенные WF-5 callback graph invariants в `tests/e2e/workflow-fixtures.test.ts`.
+  - rollout/rollback playbook добавлен: `docs/intake-dashboard-rollout-runbook.md`.
 
 ## Операционные проверки
 
@@ -104,6 +122,9 @@
    - фиксировать ссылки на artifacts (`release-scorecard-v2`, `release-supply-chain`, `release-ai-ops`) в архивном closure snapshot.
    - учитывать, что в GitHub-hosted runner gate использует `--skip-dr-cadence` (локальный DR cadence остается обязательным в ops цикле).
 1. Поддерживать rotation/валидность hardening env в keyring и runtime (`STATUS_AUTH_TOKEN`, `GITHUB_WEBHOOK_SECRET`, `SENTRY_WEBHOOK_SECRET`, `MODEL_CLASSIFIER_MODE`, `MODEL_KILL_SWITCH`); bootstrap: `./scripts/bootstrap-hardening-env-keyring.sh`.
+   - Intake/dashboard keyring entries уже заполнены и проходят `./scripts/health-check-env.sh`:
+     - `NOTION_INBOX_DATABASE_ID`, `NOTION_SPECS_DATABASE_ID`, `NOTION_SPEC_TEMPLATE_ID`, `PROJECTS_CONFIG`, `DEFAULT_PROJECT_KEY`
+   - Для пересборки baseline из registry использовать: `./scripts/bootstrap-intake-dashboard-keyring.sh`.
 2. Поддерживать актуальность repository ruleset/checks в GitHub (включая `build`, `integration`, `e2e-fixtures`, `eval-alpha`, `eval-safety`, `eval-v2`, `sbom`, `iac-validate`, `cost-governance`, `workflow-governance`, `docs-links`, `data-governance-policy`, `security-audit`, `CodeQL`) при изменениях CI.
    - Быстрая синхронизация vars/secrets из keyring: `./scripts/sync-github-repo-controls.sh`.
    - Автоподготовка deploy webhook secrets (из `CLOUDFLARE_PUBLIC_BASE_URL`): `./scripts/bootstrap-deploy-webhooks.sh`.
@@ -142,3 +163,5 @@
 - Новые задачи из Linear по [linear-phase3-runbook.md](linear-phase3-runbook.md): ветка `AIP-XX-short-desc`, PR с `Closes AIP-XX`.
 - После любых ручных правок WF в n8n UI обязательно:
   - `source scripts/load-env-from-keyring.sh && ./scripts/export-n8n-workflows.sh`
+- Topics production-mode уже активен (`TELEGRAM_CHAT_ID=-1003831799532`); для новых проектов переиспользовать:
+  - `source scripts/load-env-from-keyring.sh && ./scripts/bootstrap-telegram-forum-topics.sh -1003831799532`.

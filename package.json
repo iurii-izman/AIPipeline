@@ -31,6 +31,7 @@
     "policy:data-governance": "./scripts/check-data-governance-policy.sh --strict",
     "workflow:governance": "./scripts/check-workflow-governance.sh --strict",
     "docs:check-links": "node scripts/check-doc-links.js",
+    "projects:validate": "node scripts/validate-projects-config.js",
     "readiness:progress": "./scripts/readiness-progress.sh --run-checks",
     "release:scorecard:v2": "./scripts/generate-release-scorecard-v2.sh",
     "ops:backup-n8n": "./scripts/backup-n8n.sh",

@@ -35,12 +35,15 @@
 | Sentry Auth Token (опц.) | `AIPipeline — Sentry Auth Token` | `aipipeline-auth` | `sentry.io` | Sentry → Settings → Auth Tokens → Create (scope **project:write**). Нужен для авторегистрации webhook через `scripts/register-sentry-webhook.js` (после добавления — запустить ngrok, выставить WEBHOOK_BASE_URL и скрипт). | ☑ |
 | Sentry Org Slug (опц.) | `AIPipeline — Sentry Org Slug` | `aipipeline-org-slug` | `sentry.io` | Slug org в Sentry API (нужен для WF-5 `/errors`) | ☑ |
 | Sentry Project Slug (опц.) | `AIPipeline — Sentry Project Slug` | `aipipeline-project-slug` | `sentry.io` | Slug проекта в Sentry API (нужен для WF-5 `/errors`) | ☑ |
-| OpenAI API Key (опц.) | `AIPipeline — OpenAI API Key` | `aipipeline` | `openai.com` | Для LLM-классификации severity в WF-3 | ☐ |
+| OpenAI API Key (опц.) | `AIPipeline — OpenAI API Key` | `aipipeline` | `openai.com` | Для LLM-классификации severity в WF-3 | ☑ |
 | OpenAI Model (опц.) | `AIPipeline — OpenAI Model` | `aipipeline-model` | `openai.com` | Модель для WF-3 (`gpt-4o-mini` по умолчанию) | ☐ |
-| Cloudflare Tunnel Token (опц.) | `AIPipeline — Cloudflared Tunnel Token` | `aipipeline-tunnel-token` | `cloudflare.com` | Zero Trust → Tunnels → Run tunnel token | ☐ |
-| Cloudflare Public Base URL (опц.) | `AIPipeline — Cloudflare Public Base URL` | `aipipeline-public-url` | `cloudflare.com` | Стабильный URL tunnel host, напр. `https://n8n.example.com` | ☐ |
+| Cloudflare Tunnel Token (опц.) | `AIPipeline — Cloudflared Tunnel Token` | `aipipeline-tunnel-token` | `cloudflare.com` | Zero Trust → Tunnels → Run tunnel token | ☑ |
+| Cloudflare Public Base URL (опц.) | `AIPipeline — Cloudflare Public Base URL` | `aipipeline-public-url` | `cloudflare.com` | Стабильный URL tunnel host, напр. `https://n8n.example.com` | ☑ |
 | Linear Team ID (опц.) | `AIPipeline — Linear Team ID` | `aipipeline-team-id` | `linear.app` | Linear GraphQL: `teams { id key }`; нужен для WF-5 `/create` | ☑ |
 | Notion Sprint Log DB ID (опц.) | `AIPipeline — Notion Sprint Log Database ID` | `aipipeline-sprint-log-db` | `notion.so` | ID database для WF-4 записи Sprint Log | ☑ |
+| Notion Inbox DB ID (опц.) | `AIPipeline — Notion Inbox Database ID` | `aipipeline-inbox-db` | `notion.so` | ID database для WF-5 `/idea`, `/inbox`, `/capture` | ☑ |
+| Notion Specs DB ID (опц.) | `AIPipeline — Notion Specs Database ID` | `aipipeline-specs-db` | `notion.so` | ID database для WF-5 `/spec` | ☑ |
+| Notion Spec Template ID (опц.) | `AIPipeline — Notion Spec Template ID` | `aipipeline-spec-template-id` | `notion.so` | template_id для создания spec pages (или `__NONE__` для disable) | ☑ |
 | GitHub Owner (опц.) | `AIPipeline — GitHub Owner` | `aipipeline-owner` | `github.com` | owner repo (WF-5 `/deploy`) | ☑ |
 | GitHub Repo (опц.) | `AIPipeline — GitHub Repo` | `aipipeline-repo` | `github.com` | repo name (WF-5 `/deploy`) | ☑ |
 | GitHub Workflow Staging (опц.) | `AIPipeline — GitHub Workflow Staging` | `aipipeline-workflow-staging` | `github.com` | filename workflow для staging deploy | ☑ |
@@ -50,15 +53,28 @@
 | Sentry Webhook Secret (hardening) | `AIPipeline — Sentry Webhook Secret` | `aipipeline-webhook-secret` | `sentry.io` | Signature verify для WF-3 webhook | ☑ |
 | Model Classifier Mode (hardening) | `AIPipeline — Model Classifier Mode` | `aipipeline-classifier-mode` | `openai.com` | `full_primary|shadow|heuristic_only` для WF-3 | ☑ |
 | Model Kill Switch (hardening) | `AIPipeline — Model Kill Switch` | `aipipeline-kill-switch` | `openai.com` | `true|false` kill switch для WF-3 | ☑ |
-| OTel Enabled (managed) | `AIPipeline — OTel Enabled` | `enabled` | `otel.aipipeline` | `true|false` включение OTel runtime | ☐ |
-| OTel Exporter Mode (managed) | `AIPipeline — OTel Exporter Mode` | `exporter-mode` | `otel.aipipeline` | `managed|pilot` | ☐ |
-| OTel OTLP Endpoint (managed) | `AIPipeline — OTel OTLP Endpoint` | `otlp-endpoint` | `otel.aipipeline` | managed OTLP HTTP endpoint | ☐ |
+| OTel Enabled (managed) | `AIPipeline — OTel Enabled` | `enabled` | `otel.aipipeline` | `true|false` включение OTel runtime | ☑ |
+| OTel Exporter Mode (managed) | `AIPipeline — OTel Exporter Mode` | `exporter-mode` | `otel.aipipeline` | `managed|pilot` | ☑ |
+| OTel OTLP Endpoint (managed) | `AIPipeline — OTel OTLP Endpoint` | `otlp-endpoint` | `otel.aipipeline` | managed OTLP HTTP endpoint | ☑ |
 | OTel OTLP Headers (managed, опц.) | `AIPipeline — OTel OTLP Headers` | `otlp-headers` | `otel.aipipeline` | `key=value,key2=value2` для exporter auth | ☐ |
-| WF-5 RBAC Allowed Chat IDs | `AIPipeline — WF5 RBAC Allowed Chat IDs` | `aipipeline-allowed-chat-ids` | `telegram.rbac` | comma-separated chat ids для privileged команд | ☐ |
-| WF-5 RBAC Allowed User IDs | `AIPipeline — WF5 RBAC Allowed User IDs` | `aipipeline-allowed-user-ids` | `telegram.rbac` | comma-separated user ids для privileged команд | ☐ |
-| WF-5 RBAC Allowed Usernames | `AIPipeline — WF5 RBAC Allowed Usernames` | `aipipeline-allowed-usernames` | `telegram.rbac` | comma-separated usernames без `@` | ☐ |
-| WF-5 Privileged Commands (опц.) | `AIPipeline — WF5 Privileged Commands` | `aipipeline-privileged-commands` | `telegram.rbac` | override списка privileged команд (`/deploy,/create`) | ☐ |
+| WF-5 RBAC Allowed Chat IDs | `AIPipeline — WF5 RBAC Allowed Chat IDs` | `aipipeline-allowed-chat-ids` | `telegram.rbac` | comma-separated chat ids для privileged команд | ☑ |
+| WF-5 RBAC Allowed User IDs | `AIPipeline — WF5 RBAC Allowed User IDs` | `aipipeline-allowed-user-ids` | `telegram.rbac` | comma-separated user ids для privileged команд | ☑ |
+| WF-5 RBAC Allowed Usernames | `AIPipeline — WF5 RBAC Allowed Usernames` | `aipipeline-allowed-usernames` | `telegram.rbac` | comma-separated usernames без `@` | ☑ |
+| WF-5 Privileged Commands (опц.) | `AIPipeline — WF5 Privileged Commands` | `aipipeline-privileged-commands` | `telegram.rbac` | override списка privileged команд (`/deploy,/create`) | ☑ |
+| Projects Config JSON (опц.) | `AIPipeline — Projects Config` | `projects-config` | `aipipeline.config` | JSON registry для WF-5 project routing и `/dashboard` | ☑ |
+| Default Project Key (опц.) | `AIPipeline — Default Project Key` | `default-project-key` | `aipipeline.config` | fallback project key для WF-5 и `/dashboard` | ☑ |
+| Intake Ingest URL (опц.) | `AIPipeline — Intake Ingest URL` | `ingest-url` | `aipipeline.intake` | app endpoint для сохранения attachment binary (`/intake/telegram-file`) | ☑ |
+| Intake Ingest Token (опц.) | `AIPipeline — Intake Ingest Token` | `ingest-token` | `aipipeline.intake` | bearer для ingest endpoint | ☑ |
+| Intake Public Base URL (опц.) | `AIPipeline — Intake Public Base URL` | `public-base-url` | `aipipeline.intake` | базовый URL для формирования публичной ссылки на файл | ☑ |
+| Intake Auto Convert (опц.) | `AIPipeline — Intake Auto Convert` | `auto-convert` | `aipipeline.intake` | `true|false` для confidence-gated auto TASK/SPEC | ☑ |
+| Intake Auto Convert Confidence (опц.) | `AIPipeline — Intake Auto Convert Confidence` | `auto-convert-confidence` | `aipipeline.intake` | порог confidence (например `0.90`) | ☑ |
 | ngrok authtoken (опц.) | `AIPipeline — ngrok` | `aipipeline` | `ngrok.com` | [dashboard.ngrok.com](https://dashboard.ngrok.com/get-started/your-authtoken) — для скрипта `run-n8n-with-ngrok.sh` (Telegram webhook по HTTPS) | ☑ |
+
+Быстрый bootstrap для intake/dashboard keyring entries из `config/projects.json`:
+
+```bash
+./scripts/bootstrap-intake-dashboard-keyring.sh
+```
 
 **Примечание:** Sentry MCP использует OAuth (логин в браузере), в keyring его хранить не обязательно. В keyring — DSN для SDK в коде и для n8n, если нужен. **Sentry Auth Token** — только для автоматической регистрации webhook (WF-3) через API.
 
@@ -132,11 +148,27 @@ secret-tool store --label="AIPipeline — OTel Exporter Mode" server otel.aipipe
 secret-tool store --label="AIPipeline — OTel OTLP Endpoint" server otel.aipipeline user otlp-endpoint
 secret-tool store --label="AIPipeline — OTel OTLP Headers" server otel.aipipeline user otlp-headers
 
+# Notion intake/spec registry ids
+secret-tool store --label="AIPipeline — Notion Inbox Database ID" server notion.so user aipipeline-inbox-db
+secret-tool store --label="AIPipeline — Notion Specs Database ID" server notion.so user aipipeline-specs-db
+secret-tool store --label="AIPipeline — Notion Spec Template ID" server notion.so user aipipeline-spec-template-id
+
 # WF-5 RBAC allowlists
 secret-tool store --label="AIPipeline — WF5 RBAC Allowed Chat IDs" server telegram.rbac user aipipeline-allowed-chat-ids
 secret-tool store --label="AIPipeline — WF5 RBAC Allowed User IDs" server telegram.rbac user aipipeline-allowed-user-ids
 secret-tool store --label="AIPipeline — WF5 RBAC Allowed Usernames" server telegram.rbac user aipipeline-allowed-usernames
 secret-tool store --label="AIPipeline — WF5 Privileged Commands" server telegram.rbac user aipipeline-privileged-commands
+
+# Multi-project registry overrides (optional)
+secret-tool store --label="AIPipeline — Projects Config" server aipipeline.config user projects-config
+secret-tool store --label="AIPipeline — Default Project Key" server aipipeline.config user default-project-key
+
+# Intake binary ingest + auto-convert controls
+secret-tool store --label="AIPipeline — Intake Ingest URL" server aipipeline.intake user ingest-url
+secret-tool store --label="AIPipeline — Intake Ingest Token" server aipipeline.intake user ingest-token
+secret-tool store --label="AIPipeline — Intake Public Base URL" server aipipeline.intake user public-base-url
+secret-tool store --label="AIPipeline — Intake Auto Convert" server aipipeline.intake user auto-convert
+secret-tool store --label="AIPipeline — Intake Auto Convert Confidence" server aipipeline.intake user auto-convert-confidence
 ```
 
 > **Важно:** CLI-шаблоны выше используют `server` (не `service`), чтобы быть совместимыми с GUI-записями. Если ранее ключи создавались с `service`, скрипт всё равно их найдёт (fallback).

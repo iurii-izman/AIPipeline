@@ -1,0 +1,22 @@
+{
+  "projects": [
+    {
+      "key": "aipipeline",
+      "label": "AIPipeline",
+      "emoji": "🔧",
+      "linearTeamId": "d27ffe88-769f-4b73-8db9-fa11bd9bf915",
+      "linearProjectId": "e10c10df-8906-412f-9cbf-2af2363ac737",
+      "notionInboxDatabaseId": "7da0e071-9335-4620-a225-de8af5ebc6b5",
+      "notionSpecsDatabaseId": "10348387-606d-4277-879e-309f65b2fafa",
+      "notionSpecTemplateId": "__NONE__",
+      "telegramThreadId": "6",
+      "links": {
+        "linear": "https://linear.app/aipipeline/project/aipipeline-7d90cd8107f8",
+        "notion": "https://www.notion.so/31465d48e7978083ba91cc26254fd523",
+        "github": "https://github.com/iurii-izman/AIPipeline",
+        "sentry": "https://aipipeline.sentry.io/projects/node/",
+        "n8n": "http://localhost:5678"
+      }
+    }
+  ]
+}

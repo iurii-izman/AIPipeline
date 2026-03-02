@@ -93,6 +93,72 @@ if [[ -f "$WF_DIR/wf-5-status.json" ]]; then
   else
     fail "WF-5 RBAC does not reference allowlist env variables"
   fi
+
+  if jq -e '.nodes[] | select(.name == "If /callback")' "$WF_DIR/wf-5-status.json" >/dev/null; then
+    ok "WF-5 contains callback branch gate"
+  else
+    fail "WF-5 missing callback branch gate"
+  fi
+
+  if jq -e '.nodes[] | select(.name == "Telegram: answer callback")' "$WF_DIR/wf-5-status.json" >/dev/null; then
+    ok "WF-5 contains callback acknowledgement node"
+  else
+    fail "WF-5 missing callback acknowledgement node"
+  fi
+
+  if jq -e '.nodes[] | select(.name == "Telegram: edit callback message")' "$WF_DIR/wf-5-status.json" >/dev/null; then
+    ok "WF-5 contains callback message edit node"
+  else
+    fail "WF-5 missing callback message edit node"
+  fi
+
+  if jq -e '.nodes[] | select(.name == "If callback TASK" or .name == "If callback SPEC" or .name == "If callback IDEA" or .name == "If callback MOVE" or .name == "If callback ARCHIVE")' "$WF_DIR/wf-5-status.json" >/dev/null; then
+    ok "WF-5 contains callback action gates"
+  else
+    fail "WF-5 missing callback action gates"
+  fi
+
+  if jq -e '.connections["If /callback"].main[][] | select(.node == "If callback TASK")' "$WF_DIR/wf-5-status.json" >/dev/null; then
+    ok "WF-5 callback branch is wired into action flow"
+  else
+    fail "WF-5 callback branch wiring is missing"
+  fi
+
+  if jq -e '.connections["If callback IDEA"].main[][] | select(.node == "If callback MOVE")' "$WF_DIR/wf-5-status.json" >/dev/null; then
+    ok "WF-5 callback MOVE branch is wired after IDEA"
+  else
+    fail "WF-5 callback MOVE branch wiring is missing"
+  fi
+
+  if jq -e '.connections["If callback MOVE"].main[][] | select(.node == "Set callback MOVE")' "$WF_DIR/wf-5-status.json" >/dev/null; then
+    ok "WF-5 callback MOVE branch has state-update action"
+  else
+    fail "WF-5 callback MOVE action node wiring is missing"
+  fi
+
+  if jq -e '.nodes[] | select(.name == "Telegram: capture actions") | (.parameters.jsonBody // "") | test("a=MOVE&i=")' "$WF_DIR/wf-5-status.json" >/dev/null; then
+    ok "WF-5 capture keyboard includes MOVE callback buttons"
+  else
+    fail "WF-5 capture keyboard MOVE callback buttons are missing"
+  fi
+
+  if jq -e '.nodes[] | select(.name == "If /project")' "$WF_DIR/wf-5-status.json" >/dev/null; then
+    ok "WF-5 contains project context command branch"
+  else
+    fail "WF-5 missing project context command branch"
+  fi
+
+  if jq -e '.nodes[] | select(.name == "If /triage" or .name == "Set /triage next item" or .name == "If /triage item found" or .name == "Telegram: triage actions")' "$WF_DIR/wf-5-status.json" >/dev/null; then
+    ok "WF-5 contains triage command flow nodes"
+  else
+    fail "WF-5 triage command flow nodes are missing"
+  fi
+
+  if jq -e '.connections["If /triage"].main[][] | select(.node == "Set /triage next item")' "$WF_DIR/wf-5-status.json" >/dev/null; then
+    ok "WF-5 triage branch wiring is present"
+  else
+    fail "WF-5 triage branch wiring is missing"
+  fi
 else
   fail "wf-5-status.json missing"
 fi

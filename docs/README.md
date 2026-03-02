@@ -18,6 +18,7 @@
 - [releases.md](releases.md) — release process и quality gates
 - [dlq-replay-runbook.md](dlq-replay-runbook.md) — DLQ parking/replay
 - [sentry-db-timeout-cascade-runbook.md](sentry-db-timeout-cascade-runbook.md) — критический incident runbook
+- [intake-dashboard-rollout-runbook.md](intake-dashboard-rollout-runbook.md) — rollout/rollback для WF-5 intake + `/dashboard`
 
 ## 3) Platform Setup Guides
 - [keyring-credentials.md](keyring-credentials.md)
@@ -33,6 +34,7 @@
 - [integration-spec.md](integration-spec.md)
 - [data-mapping.md](data-mapping.md)
 - [adr-001-full-primary-rollout.md](adr-001-full-primary-rollout.md)
+- [adr-002-telegram-intake-dashboard.md](adr-002-telegram-intake-dashboard.md)
 - [templates/ADR.md](templates/ADR.md)
 - [definition-of-done.md](definition-of-done.md)
 - [token-least-privilege.md](token-least-privilege.md)

@@ -24,5 +24,6 @@
 - **Проверка окружения:** `./scripts/health-check-env.sh` (keyring, приложение, n8n). Полная проверка среды (Node, Podman, Flatpak): `./scripts/system-check.sh`.
 - **Runtime lifecycle:** graceful shutdown добавлен (`SIGTERM/SIGINT`, controlled drain) для health runtime.
 - **Docs quality gate consistency:** в CI добавлен `docs-links` (проверка целостности Markdown-ссылок).
+- **UX intake/dash baseline:** WF-5 расширен (multi-project + intake callbacks), app получил `GET /dashboard` (SSR, auth как `/status`), проектный registry в `config/projects.json`.
 
 Детали по фазам и скриптам — в [status-summary.md](status-summary.md); пошаговый контур — в [NEXT-STEPS.md](NEXT-STEPS.md) и [archive/next-steps-step-by-step.md](archive/next-steps-step-by-step.md).

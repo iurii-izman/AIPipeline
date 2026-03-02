@@ -1,5 +1,7 @@
 import http from "node:http";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import fs from "node:fs";
+import path from "node:path";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { resetRateLimiter, start, stop } from "../src/healthServer.js";
 
 function request(
@@ -72,6 +74,14 @@ describe("health server", () => {
   const originalDlqStoreFile = process.env.DLQ_STORE_FILE;
   const originalAiTelemetryStoreFile = process.env.AI_TELEMETRY_STORE_FILE;
   const originalDlqReplayToken = process.env.DLQ_REPLAY_TOKEN;
+  const originalLinearApiKey = process.env.LINEAR_API_KEY;
+  const originalNotionToken = process.env.NOTION_TOKEN;
+  const originalNotionInboxDatabaseId = process.env.NOTION_INBOX_DATABASE_ID;
+  const originalProjectsConfig = process.env.PROJECTS_CONFIG;
+  const originalDefaultProjectKey = process.env.DEFAULT_PROJECT_KEY;
+  const originalIntakeIngestToken = process.env.INTAKE_INGEST_TOKEN;
+  const originalIntakeFilesDir = process.env.INTAKE_FILES_DIR;
+  const originalTelegramBotToken = process.env.TELEGRAM_BOT_TOKEN;
 
   function restoreEnv(name: string, value: string | undefined): void {
     if (value === undefined) {
@@ -86,6 +96,15 @@ describe("health server", () => {
     delete process.env.STATUS_AUTH_TOKEN;
     delete process.env.HEALTH_RATE_LIMIT_MAX_REQUESTS;
     delete process.env.MAX_REQUEST_BODY_BYTES;
+    delete process.env.LINEAR_API_KEY;
+    delete process.env.NOTION_TOKEN;
+    delete process.env.NOTION_INBOX_DATABASE_ID;
+    delete process.env.PROJECTS_CONFIG;
+    delete process.env.DEFAULT_PROJECT_KEY;
+    delete process.env.INTAKE_INGEST_TOKEN;
+    delete process.env.INTAKE_FILES_DIR;
+    delete process.env.TELEGRAM_BOT_TOKEN;
+    vi.restoreAllMocks();
   });
 
   afterEach(() => {
@@ -102,6 +121,14 @@ describe("health server", () => {
     restoreEnv("DLQ_STORE_FILE", originalDlqStoreFile);
     restoreEnv("AI_TELEMETRY_STORE_FILE", originalAiTelemetryStoreFile);
     restoreEnv("DLQ_REPLAY_TOKEN", originalDlqReplayToken);
+    restoreEnv("LINEAR_API_KEY", originalLinearApiKey);
+    restoreEnv("NOTION_TOKEN", originalNotionToken);
+    restoreEnv("NOTION_INBOX_DATABASE_ID", originalNotionInboxDatabaseId);
+    restoreEnv("PROJECTS_CONFIG", originalProjectsConfig);
+    restoreEnv("DEFAULT_PROJECT_KEY", originalDefaultProjectKey);
+    restoreEnv("INTAKE_INGEST_TOKEN", originalIntakeIngestToken);
+    restoreEnv("INTAKE_FILES_DIR", originalIntakeFilesDir);
+    restoreEnv("TELEGRAM_BOT_TOKEN", originalTelegramBotToken);
     resetRateLimiter();
   });
 
@@ -145,6 +172,30 @@ describe("health server", () => {
       headers: { Authorization: "Bearer secret-token" },
     });
     expect(authorized.statusCode).toBe(200);
+  });
+
+  it("serves /dashboard and enforces the same bearer auth policy as /status", async () => {
+    process.env.STATUS_AUTH_TOKEN = "secret-token";
+    process.env.PROJECTS_CONFIG = JSON.stringify({
+      projects: [{ key: "aipipeline", label: "AIPipeline", emoji: "🔧", links: { github: "https://github.com/iurii-izman/AIPipeline" } }],
+    });
+    process.env.DEFAULT_PROJECT_KEY = "aipipeline";
+    const runningServer = await start(0);
+    server = runningServer;
+    const address = runningServer.address();
+    if (!address || typeof address === "string") throw new Error("Server did not provide numeric address");
+    const port = address.port;
+
+    const unauthorized = await request(`http://127.0.0.1:${port}/dashboard`);
+    expect(unauthorized.statusCode).toBe(401);
+
+    const authorized = await request(`http://127.0.0.1:${port}/dashboard?project=aipipeline`, {
+      headers: { Authorization: "Bearer secret-token" },
+    });
+    expect(authorized.statusCode).toBe(200);
+    expect(String(authorized.headers["content-type"] || "")).toContain("text/html");
+    expect(authorized.body).toContain("AIPipeline Dashboard");
+    expect(authorized.body).toContain("AIPipeline");
   });
 
   it("rate limits health endpoint", async () => {
@@ -322,5 +373,56 @@ describe("health server", () => {
       body: JSON.stringify({ id }),
     });
     expect(replay.statusCode).toBe(200);
+  });
+
+  it("ingests Telegram files and serves stored intake files with auth", async () => {
+    const tmpDir = path.resolve(`.out/tests/intake-files-${Date.now()}`);
+    process.env.INTAKE_INGEST_TOKEN = "intake-token";
+    process.env.STATUS_AUTH_TOKEN = "status-token";
+    process.env.TELEGRAM_BOT_TOKEN = "telegram-test-token";
+    process.env.INTAKE_FILES_DIR = tmpDir;
+
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      arrayBuffer: async () => Uint8Array.from([1, 2, 3, 4]).buffer,
+    }));
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+
+    const runningServer = await start(0);
+    server = runningServer;
+    const address = runningServer.address();
+    if (!address || typeof address === "string") throw new Error("Server did not provide numeric address");
+    const port = address.port;
+
+    const ingest = await request(`http://127.0.0.1:${port}/intake/telegram-file`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer intake-token",
+      },
+      body: JSON.stringify({
+        filePath: "documents/spec.pdf",
+        fileName: "spec.pdf",
+        shortId: "kabc123",
+      }),
+    });
+    expect(ingest.statusCode).toBe(201);
+    const ingestJson = JSON.parse(ingest.body) as { ok: boolean; publicUrl?: string };
+    expect(ingestJson.ok).toBe(true);
+    expect(String(ingestJson.publicUrl || "")).toContain("/intake/files/");
+
+    const unauthorizedFile = await request(`http://127.0.0.1:${port}${ingestJson.publicUrl || ""}`);
+    expect(unauthorizedFile.statusCode).toBe(401);
+
+    const fileRes = await request(`http://127.0.0.1:${port}${ingestJson.publicUrl || ""}`, {
+      headers: { Authorization: "Bearer status-token" },
+    });
+    expect(fileRes.statusCode).toBe(200);
+    expect(fileRes.body.length).toBeGreaterThan(0);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[0]).toContain("/file/bottelegram-test-token/documents/spec.pdf");
+
+    fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 });

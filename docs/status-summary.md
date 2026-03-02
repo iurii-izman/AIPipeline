@@ -7,7 +7,7 @@
 - Release: `v0.1.0-beta.1` (beta prerelease published)
 - Branch model: `main` as canonical branch
 - Latest major execution: merged PR #24 (2026-03-01)
-- Docs inventory: `79` files in `docs/`
+- Docs inventory: `83` files in `docs/`
 
 ## Delivery State
 - Day-0 and Phases 2–4: completed
@@ -16,7 +16,7 @@
 - Stable HTTPS mode: active (Cloudflare Tunnel path documented)
 
 ## Quality Baseline
-- Tests: `66/66` passing
+- Tests: `74/74` passing
 - Coverage: branch `80.44%` (threshold `80%`) pass
 - CI required checks: green
 - Security checks: `npm audit` gate + CodeQL
@@ -47,6 +47,25 @@
 - Durable DLQ primary store: app endpoints `/dlq/park`, `/dlq/mark`, `/dlq/events`, `/dlq/replay` + JSONL store `.runtime-logs/dlq-events.jsonl`
 - WF-7 replay path: без `workflow staticData`, orchestration через app durable replay API
 - WF-5 privileged commands: RBAC allowlist (`WF5_RBAC_ALLOWED_CHAT_IDS`, `WF5_RBAC_ALLOWED_USER_IDS`, `WF5_RBAC_ALLOWED_USERNAMES`)
+- WF-5 intake/multi-project baseline added: `/project`, `/projects`, `/links`, `/activity`, `/progress`, `/inbox`, `/triage`, `/spec`, `/idea`, `/task` alias, callback actions (`TASK/SPEC/IDEA/MOVE/ARCHIVE`) with `answerCallbackQuery` + `editMessageText`, free-text/file/voice capture path with action suggestion
+- WF-5 callback conversion hardened: action context resolved from intake item state, callback outcomes mark intake as `triaged` and persist artifact links in static store (`linearUrl/specUrl/ideaUrl`)
+- WF-5 capture branch now includes optional OpenAI classifier for action suggestion and Telegram `getFile` enrichment for attachment links in Notion Inbox entries
+- WF-5 capture branch now supports app-backed binary ingest (`POST /intake/telegram-file`) and confidence-gated auto-convert (`TASK|SPEC`) when `INTAKE_AUTO_CONVERT=true`
+- App read-only summary route added: `GET /dashboard` (same bearer policy as `/status`)
+- App intake file endpoints added: `POST /intake/telegram-file` and `GET /intake/files/:id` (bearer-protected, local storage-backed)
+- Project registry baseline added: `config/projects.json` + `scripts/validate-projects-config.js`
+- Keyring bootstrap helper added for intake/dashboard vars: `scripts/bootstrap-intake-dashboard-keyring.sh`
+- Intake/dashboard keyring baseline is now populated (`NOTION_INBOX_DATABASE_ID`, `NOTION_SPECS_DATABASE_ID`, `NOTION_SPEC_TEMPLATE_ID=__NONE__`, `PROJECTS_CONFIG`, `DEFAULT_PROJECT_KEY`)
+- Intake runtime keyring controls are populated (`INTAKE_INGEST_URL`, `INTAKE_INGEST_TOKEN`, `INTAKE_PUBLIC_BASE_URL`, `INTAKE_AUTO_CONVERT=true`, `INTAKE_AUTO_CONVERT_CONFIDENCE=0.90`)
+- WF-5 RBAC user allowlist is populated from live Telegram activity (`WF5_RBAC_ALLOWED_USER_IDS`, `WF5_RBAC_ALLOWED_USERNAMES`)
+- WF-4 digest upgraded to project-aware summary (all-project + per-project counts using `state.type` and `PROJECTS_CONFIG`)
+- WF-6 reminder extended with Inbox NEW triage nudge (`/triage`) when unresolved intake items exist
+- WF-1 alerts upgraded to topic-aware Telegram routing by project mapping (`PROJECTS_CONFIG.telegramThreadId`) with fallback to default chat
+- WF-2 and WF-3 Telegram notifications upgraded to topic-aware routing by project mapping (`PROJECTS_CONFIG.telegramThreadId`) with fallback to default chat
+- Test coverage extended for new surface: `tests/dashboard.test.ts`, `tests/project-registry.test.ts`, and stricter WF-5 callback graph invariants in `tests/e2e/workflow-fixtures.test.ts`
+- Intake rollout playbook added: `docs/intake-dashboard-rollout-runbook.md`
+- Telegram forum bootstrap automation added: `scripts/bootstrap-telegram-forum-topics.sh` (creates forum topics, syncs `telegramThreadId`, and updates keyring mappings)
+- Telegram topics production cutover completed: `TELEGRAM_CHAT_ID=-1003831799532` (forum supergroup), topics created (`command_center=3`, `inbox=4`, `ops=5`, `project_aipipeline=6`), bot send verified in all threads
 
 ## Hardening Completed
 - `/status` protected with bearer auth + rate-limit + request-size guard
@@ -78,6 +97,7 @@
 5. Start 90-day execution slice tracking (strategy v2) in `NEXT-STEPS.md`.
 6. Keep SBOM/provenance + safety/eval-v2 gates green after CI/ruleset evolution.
 7. Keep DR cadence evidence fresh (<=30 days), include scorecard + supply-chain artifacts in release cycle.
+8. Maintain Telegram forum/topic mapping lifecycle when adding projects (`scripts/bootstrap-telegram-forum-topics.sh` + `PROJECTS_CONFIG.telegramThreadId` sync).
 
 ## Where to Look
 - Next actionable queue: [NEXT-STEPS.md](NEXT-STEPS.md)

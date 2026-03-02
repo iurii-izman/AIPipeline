@@ -12,12 +12,12 @@ Source of truth for workflow JSON: `docs/n8n-workflows/*.json`.
 
 | ID   | Trigger | Реализация | Статус |
 |------|---------|------------|--------|
-| WF-1 | Schedule (10 min) | Linear Get issues → IF `In Review/Blocked` → Telegram | ✅ Active |
-| WF-2 | GitHub Webhook (`/webhook/wf2-github-pr`) | Parse PR payload + `AIP-XX` → Linear GraphQL update to Done (on merge) → Telegram + DLQ parking on failures | ✅ Active |
-| WF-3 | Sentry Webhook | LLM classify (`OPENAI_API_KEY`) or heuristic fallback → Linear Create Issue → Telegram + DLQ parking on failures | ✅ Active |
+| WF-1 | Schedule (10 min) | Linear Get issues → IF `In Review/Blocked` → topic-aware Telegram notify (via `PROJECTS_CONFIG.telegramThreadId`, fallback to default chat) | ✅ Active |
+| WF-2 | GitHub Webhook (`/webhook/wf2-github-pr`) | Parse PR payload + `AIP-XX` → Linear GraphQL update to Done (on merge) → topic-aware Telegram notify + DLQ parking on failures | ✅ Active |
+| WF-3 | Sentry Webhook | LLM classify (`OPENAI_API_KEY`) or heuristic fallback → Linear Create Issue → topic-aware Telegram notify + DLQ parking on failures | ✅ Active |
 | WF-4 | Schedule (weekday 09:00) | Linear digest → Telegram + optional Notion Sprint Log write + Notion-failure alert/DLQ | ✅ Active |
-| WF-5 | Telegram Trigger | `/status`, `/help`, `/tasks`, `/errors`, `/search`, `/create`, `/deploy`, `/standup` + rate-limit-aware fallbacks + DLQ on Telegram send fail | ✅ Active |
-| WF-6 | Schedule (Monday 10:00) | Notion search (last 7 days) → IF updates exist → Telegram reminder | ✅ Active |
+| WF-5 | Telegram Trigger (`message`, `callback_query`) | `/status`, `/help`, `/tasks[:project]`, `/errors`, `/search`, `/create`+`/task`, `/spec`, `/idea`+`/note`, `/project`, `/projects`, `/links`, `/activity`, `/progress`, `/inbox`, `/triage`, `/deploy`, `/standup` + intake `/capture` (text/file/voice summaries, optional OpenAI suggestion, Telegram `getFile` enrichment) + callback actions (`TASK/SPEC/IDEA/MOVE/ARCHIVE`) via ack/edit + DLQ on Telegram send fail | ✅ Active |
+| WF-6 | Schedule (Monday 10:00) | Notion search (last 7 days) + Inbox NEW count → IF updates/triage needed → Telegram reminder | ✅ Active |
 | WF-7 | Webhook (`/webhook/wf-dlq-park`, `/webhook/wf-dlq-replay`) | Centralized replay orchestration + durable DLQ sync to app store | ✅ Active |
 
 ---
@@ -64,11 +64,16 @@ n8n container gets env from `run-n8n.sh` (if variables exist in shell/keyring):
 
 - `LINEAR_API_KEY`, `LINEAR_TEAM_ID`
 - `NOTION_TOKEN`, `NOTION_SPRINT_LOG_DATABASE_ID`
+- `NOTION_INBOX_DATABASE_ID`, `NOTION_SPECS_DATABASE_ID`, `NOTION_SPEC_TEMPLATE_ID` (или per-project mapping в `PROJECTS_CONFIG`)
 - `GITHUB_PERSONAL_ACCESS_TOKEN`, `GITHUB_OWNER`, `GITHUB_REPO`, `GITHUB_WORKFLOW_STAGING`, `GITHUB_WORKFLOW_PRODUCTION`
 - `SENTRY_AUTH_TOKEN`, `SENTRY_ORG_SLUG`, `SENTRY_PROJECT_SLUG`
 - `OPENAI_API_KEY`, `OPENAI_MODEL` (optional, for WF-3 LLM branch)
 - `MODEL_CLASSIFIER_MODE` (`full_primary|shadow|heuristic_only`) and `MODEL_KILL_SWITCH` (`true|false`) for WF-3 gating
 - `TELEGRAM_CHAT_ID`
+- `TELEGRAM_BOT_TOKEN` (for WF-5 callback/edit and inline intake actions)
+- `PROJECTS_CONFIG`, `DEFAULT_PROJECT_KEY` (multi-project routing for WF-5)
+- `INTAKE_INGEST_URL`, `INTAKE_INGEST_TOKEN`, `INTAKE_PUBLIC_BASE_URL` (optional, for attachment binary ingest/public links)
+- `INTAKE_AUTO_CONVERT`, `INTAKE_AUTO_CONVERT_CONFIDENCE` (optional, confidence-gated TASK/SPEC auto-convert in capture flow)
 - `GITHUB_WEBHOOK_SECRET` (optional but recommended, WF-2 signature verify)
 - `SENTRY_WEBHOOK_SECRET` (optional but recommended, WF-3 signature verify)
 
