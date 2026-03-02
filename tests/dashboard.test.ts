@@ -1,7 +1,17 @@
 import { afterEach, describe, expect, it } from "vitest";
 
 const { getDashboardHtml } = require("../src/dashboard.js") as {
-  getDashboardHtml: (projectKey?: string) => Promise<string>;
+  getDashboardHtml: (
+    options?:
+      | string
+      | {
+          projectKey?: string;
+          stateFilter?: string;
+          taskLimit?: number;
+          inboxLimit?: number;
+          activityLimit?: number;
+        }
+  ) => Promise<string>;
 };
 
 const originalFetch = global.fetch;
@@ -113,8 +123,10 @@ describe("dashboard renderer", () => {
 
     const html = await getDashboardHtml("aipipeline");
     expect(html).toContain("AIPipeline Dashboard");
+    expect(html).toContain("Projects Overview");
     expect(html).toContain("AIP-42");
     expect(html).toContain("Investigate callback idempotency");
+    expect(html).toContain("Recent Activity");
     expect(html).toContain("Completion: 50.0% (1/2)");
     expect(html).toContain("https://github.com/iurii-izman/AIPipeline");
     expect(calls.some((v) => v.includes("api.linear.app/graphql"))).toBe(true);
@@ -136,5 +148,78 @@ describe("dashboard renderer", () => {
     const html = await getDashboardHtml("no-linear-key");
     expect(html).toContain("Warnings");
     expect(html).toContain("LINEAR_API_KEY is not configured");
+  });
+
+  it("supports state filter and custom task limit options", async () => {
+    process.env.LINEAR_API_KEY = "linear-test";
+    process.env.NOTION_TOKEN = "notion-test";
+    process.env.NOTION_VERSION = "2025-09-03";
+    process.env.PROJECTS_CONFIG = JSON.stringify({
+      projects: [
+        {
+          key: "aipipeline",
+          label: "AIPipeline",
+          linearProjectId: "lin-proj-1",
+          notionInboxDatabaseId: "notion-db-1",
+        },
+      ],
+    });
+    process.env.DEFAULT_PROJECT_KEY = "aipipeline";
+
+    global.fetch = (async (url: string | URL) => {
+      const value = String(url);
+      if (value.includes("api.linear.app/graphql")) {
+        return {
+          ok: true,
+          status: 200,
+          text: async () =>
+            JSON.stringify({
+              data: {
+                issues: {
+                  nodes: [
+                    {
+                      id: "1",
+                      identifier: "AIP-100",
+                      title: "Open item",
+                      url: "https://linear.app/issue/AIP-100",
+                      updatedAt: "2026-03-02T12:00:00.000Z",
+                      state: { name: "Todo", type: "backlog" },
+                      project: { id: "lin-proj-1", name: "AIPipeline" },
+                    },
+                    {
+                      id: "2",
+                      identifier: "AIP-101",
+                      title: "Completed item",
+                      url: "https://linear.app/issue/AIP-101",
+                      updatedAt: "2026-03-01T12:00:00.000Z",
+                      state: { name: "Done", type: "completed" },
+                      project: { id: "lin-proj-1", name: "AIPipeline" },
+                    },
+                  ],
+                },
+              },
+            }),
+        };
+      }
+      if (value.includes("/v1/databases/notion-db-1/query")) {
+        return {
+          ok: true,
+          status: 200,
+          text: async () => JSON.stringify({ results: [] }),
+        };
+      }
+      throw new Error(`Unexpected fetch URL: ${value}`);
+    }) as typeof fetch;
+
+    const html = await getDashboardHtml({
+      projectKey: "aipipeline",
+      stateFilter: "completed",
+      taskLimit: 1,
+      inboxLimit: 5,
+      activityLimit: 5,
+    });
+    expect(html).toContain("filter: completed");
+    expect(html).toContain("AIP-101");
+    expect(html).not.toContain("AIP-100");
   });
 });

@@ -513,7 +513,18 @@ function requestHandler(req, res) {
       }
       const parsed = new URL(req.url || "/dashboard", "http://localhost");
       const projectKey = parsed.searchParams.get("project") || "";
-      getDashboardHtml(projectKey)
+      const stateFilter = parsed.searchParams.get("state") || "all";
+      const taskLimit = parsed.searchParams.get("tasks") || "";
+      const inboxLimit = parsed.searchParams.get("inbox") || "";
+      const activityLimit = parsed.searchParams.get("activity") || "";
+
+      getDashboardHtml({
+        projectKey,
+        stateFilter,
+        taskLimit,
+        inboxLimit,
+        activityLimit,
+      })
         .then((html) => {
           res.setHeader("Content-Type", "text/html; charset=utf-8");
           res.writeHead(200);

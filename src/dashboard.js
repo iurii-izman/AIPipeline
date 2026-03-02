@@ -17,6 +17,39 @@ function percent(done, total) {
   return ((done / total) * 100).toFixed(1);
 }
 
+function clampInt(value, min, max, fallback) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(min, Math.min(max, Math.trunc(parsed)));
+}
+
+function normalizeStateFilter(value) {
+  const safe = String(value || "all").trim().toLowerCase();
+  if (["all", "open", "started", "completed", "canceled"].includes(safe)) return safe;
+  return "all";
+}
+
+function normalizeDashboardOptions(optionsOrProjectKey) {
+  if (typeof optionsOrProjectKey === "string") {
+    return {
+      projectKey: optionsOrProjectKey,
+      stateFilter: "all",
+      taskLimit: 10,
+      inboxLimit: 8,
+      activityLimit: 8,
+    };
+  }
+
+  const options = optionsOrProjectKey || {};
+  return {
+    projectKey: String(options.projectKey || ""),
+    stateFilter: normalizeStateFilter(options.stateFilter),
+    taskLimit: clampInt(options.taskLimit, 1, 50, 10),
+    inboxLimit: clampInt(options.inboxLimit, 1, 25, 8),
+    activityLimit: clampInt(options.activityLimit, 1, 25, 8),
+  };
+}
+
 async function requestJson(url, options) {
   const response = await fetch(url, options);
   const text = await response.text();
@@ -46,7 +79,7 @@ async function fetchLinearIssues(projectId) {
     },
     body: JSON.stringify({
       query: hasProject ? filteredQuery : baseQuery,
-      variables: hasProject ? { first: 100, projectId } : { first: 100 },
+      variables: hasProject ? { first: 200, projectId } : { first: 200 },
     }),
   });
 
@@ -59,7 +92,7 @@ async function fetchLinearIssues(projectId) {
   return { rows, error: "" };
 }
 
-async function fetchNotionInboxRows(databaseId, projectKey) {
+async function fetchNotionInboxRows(databaseId, projectKey, pageSize) {
   const token = process.env.NOTION_TOKEN || "";
   if (!token || !databaseId) return { rows: [], error: "" };
   const filter =
@@ -80,7 +113,7 @@ async function fetchNotionInboxRows(databaseId, projectKey) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      page_size: 8,
+      page_size: pageSize,
       filter,
       sorts: [{ timestamp: "created_time", direction: "descending" }],
     }),
@@ -93,13 +126,25 @@ async function fetchNotionInboxRows(databaseId, projectKey) {
   return { rows, error: "" };
 }
 
-function buildLinearSummary(rows) {
+function matchStateFilter(row, stateFilter) {
+  const type = String(row?.state?.type || "").toLowerCase();
+  if (stateFilter === "all") return true;
+  if (stateFilter === "open") return !["started", "completed", "canceled"].includes(type);
+  return type === stateFilter;
+}
+
+function sortByUpdatedDesc(rows) {
+  return rows.slice().sort((a, b) => String(b?.updatedAt || "").localeCompare(String(a?.updatedAt || "")));
+}
+
+function buildLinearSummary(rows, stateFilter, taskLimit) {
   const buckets = {
     completed: 0,
     started: 0,
     canceled: 0,
     open: 0,
   };
+
   for (const row of rows) {
     const type = String(row?.state?.type || "").toLowerCase();
     if (type === "completed") buckets.completed += 1;
@@ -107,18 +152,19 @@ function buildLinearSummary(rows) {
     else if (type === "canceled") buckets.canceled += 1;
     else buckets.open += 1;
   }
+
+  const filtered = sortByUpdatedDesc(rows.filter((row) => matchStateFilter(row, stateFilter)));
   const total = rows.length;
   const done = buckets.completed;
-  const active = rows
-    .slice()
-    .sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")))
-    .slice(0, 10);
+
   return {
     total,
     done,
     percent: percent(done, total),
     buckets,
-    topTasks: active,
+    filteredCount: filtered.length,
+    stateFilter,
+    topTasks: filtered.slice(0, taskLimit),
   };
 }
 
@@ -133,8 +179,65 @@ function titleFromNotionRow(row) {
   return "(untitled)";
 }
 
+function aggregateProjectsSummary(projects, rows) {
+  return projects.map((project) => {
+    const byProject = rows.filter((row) => {
+      const rowProjectId = String(row?.project?.id || "");
+      if (project.linearProjectId) return rowProjectId === String(project.linearProjectId);
+      return false;
+    });
+
+    const done = byProject.filter((row) => String(row?.state?.type || "") === "completed").length;
+    const started = byProject.filter((row) => String(row?.state?.type || "") === "started").length;
+
+    return {
+      key: project.key,
+      label: project.label,
+      emoji: project.emoji,
+      total: byProject.length,
+      done,
+      started,
+      percent: percent(done, byProject.length),
+    };
+  });
+}
+
+function buildActivityFeed(topTasks, inboxRows, activityLimit) {
+  const taskEvents = topTasks.map((row) => ({
+    ts: String(row?.updatedAt || ""),
+    label: `Task ${row?.identifier || "N/A"}: ${row?.title || "(untitled)"}`,
+    url: row?.url || "#",
+    kind: "task",
+  }));
+
+  const inboxEvents = inboxRows.map((row) => ({
+    ts: String(row?.last_edited_time || row?.created_time || ""),
+    label: `Inbox: ${titleFromNotionRow(row)}`,
+    url: row?.url || "#",
+    kind: "inbox",
+  }));
+
+  return taskEvents
+    .concat(inboxEvents)
+    .sort((a, b) => String(b.ts).localeCompare(String(a.ts)))
+    .slice(0, activityLimit);
+}
+
+function buildDashboardHref(options, overrides = {}) {
+  const merged = { ...options, ...overrides };
+  const params = new URLSearchParams();
+  if (merged.projectKey) params.set("project", merged.projectKey);
+  if (merged.stateFilter && merged.stateFilter !== "all") params.set("state", merged.stateFilter);
+  if (merged.taskLimit !== 10) params.set("tasks", String(merged.taskLimit));
+  if (merged.inboxLimit !== 8) params.set("inbox", String(merged.inboxLimit));
+  if (merged.activityLimit !== 8) params.set("activity", String(merged.activityLimit));
+  const query = params.toString();
+  return query ? `/dashboard?${query}` : "/dashboard";
+}
+
 function renderDashboardHtml(data) {
   const projectTitle = data.project ? `${data.project.emoji || ""} ${data.project.label}`.trim() : "All Projects";
+
   const taskRows = data.linear.topTasks
     .map((row) => {
       const state = escapeHtml(row?.state?.name || "Unknown");
@@ -153,20 +256,47 @@ function renderDashboardHtml(data) {
     })
     .join("");
 
+  const activityRows = data.activity
+    .map((item) => {
+      const icon = item.kind === "task" ? "[Task]" : "[Inbox]";
+      return `<li>${icon} <a href="${escapeHtml(item.url)}" target="_blank" rel="noreferrer">${escapeHtml(item.label)}</a> <span class="muted">${escapeHtml(item.ts)}</span></li>`;
+    })
+    .join("");
+
   const links = data.project?.links || {};
   const linksHtml = ["linear", "notion", "github", "sentry", "n8n"]
     .filter((name) => Boolean(links[name]))
     .map((name) => `<a href="${escapeHtml(String(links[name]))}" target="_blank" rel="noreferrer">${name}</a>`)
     .join(" · ");
 
-  const projectTabs = data.projects
-    .map((project) => {
+  const allTabHref = buildDashboardHref(data.options, { projectKey: "" });
+  const projectTabs = [
+    `<a class="tab${data.project ? "" : " selected"}" href="${allTabHref}">All</a>`,
+    ...data.projects.map((project) => {
       const selected = data.project?.key === project.key;
-      const href = `/dashboard?project=${encodeURIComponent(project.key)}`;
+      const href = buildDashboardHref(data.options, { projectKey: project.key });
       return `<a class="tab${selected ? " selected" : ""}" href="${href}">${escapeHtml(
         `${project.emoji || ""} ${project.label}`.trim()
       )}</a>`;
+    }),
+  ].join("");
+
+  const stateTabs = ["all", "open", "started", "completed", "canceled"]
+    .map((state) => {
+      const selected = data.options.stateFilter === state;
+      const href = buildDashboardHref(data.options, { stateFilter: state });
+      return `<a class="chip${selected ? " selected" : ""}" href="${href}">${escapeHtml(state)}</a>`;
     })
+    .join("");
+
+  const projectCards = data.projectsSummary
+    .map(
+      (project) => `<div class="project-card">
+        <div><strong>${escapeHtml(`${project.emoji || ""} ${project.label}`.trim())}</strong></div>
+        <div class="muted">${project.done}/${project.total} done · ${project.started} in progress</div>
+        <div class="bar small"><span style="width:${project.percent}%;"></span></div>
+      </div>`
+    )
     .join("");
 
   const notices = [data.linear.error, data.inbox.error].filter(Boolean).map((msg) => `<li>${escapeHtml(msg)}</li>`).join("");
@@ -180,17 +310,20 @@ function renderDashboardHtml(data) {
   <title>AIPipeline Dashboard</title>
   <style>
     body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, sans-serif; margin: 0; padding: 24px; background: #f2f5f7; color: #17212a; }
-    .wrap { max-width: 1040px; margin: 0 auto; display: grid; gap: 16px; }
+    .wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 16px; }
     .card { background: #fff; border: 1px solid #d7e0e7; border-radius: 12px; padding: 16px; }
     h1, h2 { margin: 0 0 10px; }
     h1 { font-size: 26px; }
     h2 { font-size: 18px; }
     .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-    .tab { display: inline-block; padding: 8px 12px; border-radius: 999px; border: 1px solid #c6d4df; color: #1d3f58; text-decoration: none; background: #f7fbff; }
-    .tab.selected { background: #1d3f58; color: #fff; border-color: #1d3f58; }
+    .tab, .chip { display: inline-block; padding: 8px 12px; border-radius: 999px; border: 1px solid #c6d4df; color: #1d3f58; text-decoration: none; background: #f7fbff; text-transform: capitalize; }
+    .tab.selected, .chip.selected { background: #1d3f58; color: #fff; border-color: #1d3f58; }
     .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
     .stat { background: #f7fbff; border: 1px solid #d4e3ee; border-radius: 10px; padding: 10px; }
+    .projects-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+    .project-card { background: #f7fbff; border: 1px solid #d4e3ee; border-radius: 10px; padding: 10px; }
     .bar { width: 100%; height: 10px; border-radius: 8px; background: #e5edf2; overflow: hidden; margin-top: 8px; }
+    .bar.small { height: 8px; margin-top: 6px; }
     .bar > span { display: block; height: 100%; background: #2e8b57; }
     table { width: 100%; border-collapse: collapse; }
     th, td { text-align: left; padding: 8px; border-bottom: 1px solid #e6edf2; font-size: 14px; }
@@ -200,13 +333,14 @@ function renderDashboardHtml(data) {
     ul { margin: 0; padding-left: 20px; }
     .muted { color: #5f7385; font-size: 13px; }
     .errors { color: #8a1f17; }
+    @media (max-width: 680px) { body { padding: 12px; } }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
       <h1>AIPipeline Dashboard</h1>
-      <div class="muted">Updated: ${escapeHtml(data.generatedAt)}</div>
+      <div class="muted">Updated: ${escapeHtml(data.generatedAt)} · <a href="${escapeHtml(buildDashboardHref(data.options))}">refresh</a></div>
       <div class="row" style="margin-top:10px;">${projectTabs || '<span class="muted">No projects configured</span>'}</div>
     </div>
 
@@ -223,7 +357,16 @@ function renderDashboardHtml(data) {
     </div>
 
     <div class="card">
+      <h2>Projects Overview</h2>
+      <div class="projects-grid">${projectCards || '<div class="muted">No project registry entries found.</div>'}</div>
+    </div>
+
+    <div class="card">
       <h2>Open Tasks</h2>
+      <div class="row" style="margin-bottom:10px;">${stateTabs}</div>
+      <div class="muted" style="margin-bottom:8px;">Showing ${data.linear.topTasks.length} of ${data.linear.filteredCount} tasks (filter: ${escapeHtml(
+        data.options.stateFilter
+      )}, limit: ${data.options.taskLimit})</div>
       <table>
         <thead><tr><th>ID</th><th>Title</th><th>State</th></tr></thead>
         <tbody>${taskRows || '<tr><td colspan="3" class="muted">No tasks found.</td></tr>'}</tbody>
@@ -231,9 +374,14 @@ function renderDashboardHtml(data) {
     </div>
 
     <div class="card">
+      <h2>Recent Activity</h2>
+      <ul>${activityRows || '<li class="muted">No recent activity.</li>'}</ul>
+    </div>
+
+    <div class="card">
       <h2>Inbox (Status=New)</h2>
       <ul>${inboxRows || '<li class="muted">No new items.</li>'}</ul>
-      <div class="muted" style="margin-top:8px;">Count: ${data.inbox.rows.length}</div>
+      <div class="muted" style="margin-top:8px;">Count: ${data.inbox.rows.length} (limit: ${data.options.inboxLimit})</div>
     </div>
 
     <div class="card">
@@ -247,33 +395,39 @@ function renderDashboardHtml(data) {
 </html>`;
 }
 
-async function buildDashboardData(projectKey) {
+async function buildDashboardData(options) {
   const registry = loadProjectRegistry();
-  const selected = getProjectByKey(registry, projectKey) || (projectKey ? null : resolveDefaultProject(registry));
+  const selected = getProjectByKey(registry, options.projectKey) || (!options.projectKey ? resolveDefaultProject(registry) : null);
   const effectiveProject = selected || null;
   const notionInboxFallback =
     (effectiveProject && effectiveProject.notionInboxDatabaseId) || process.env.NOTION_INBOX_DATABASE_ID || "";
 
   const [linear, inbox] = await Promise.all([
     fetchLinearIssues(effectiveProject?.linearProjectId || ""),
-    fetchNotionInboxRows(notionInboxFallback, effectiveProject?.key || ""),
+    fetchNotionInboxRows(notionInboxFallback, effectiveProject?.key || "", options.inboxLimit),
   ]);
+
+  const linearSummary = buildLinearSummary(linear.rows, options.stateFilter, options.taskLimit);
 
   return {
     generatedAt: new Date().toISOString(),
+    options,
     project: effectiveProject,
     projects: registry.projects,
-    linear: { ...buildLinearSummary(linear.rows), error: linear.error },
+    projectsSummary: aggregateProjectsSummary(registry.projects, linear.rows),
+    linear: { ...linearSummary, error: linear.error },
     inbox,
+    activity: buildActivityFeed(linearSummary.topTasks, inbox.rows, options.activityLimit),
   };
 }
 
-async function getDashboardHtml(projectKey = "") {
-  const cacheKey = `dashboard:${projectKey || "all"}`;
+async function getDashboardHtml(optionsOrProjectKey = "") {
+  const options = normalizeDashboardOptions(optionsOrProjectKey);
+  const cacheKey = `dashboard:${options.projectKey || "all"}:${options.stateFilter}:${options.taskLimit}:${options.inboxLimit}:${options.activityLimit}`;
   const hit = cache.get(cacheKey);
   const now = Date.now();
   if (hit && now - hit.ts < CACHE_TTL_MS) return hit.html;
-  const data = await buildDashboardData(projectKey);
+  const data = await buildDashboardData(options);
   const html = renderDashboardHtml(data);
   cache.set(cacheKey, { ts: now, html });
   return html;
