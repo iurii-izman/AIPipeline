@@ -1,7 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { createRequire } from "node:module";
 
-const require = createRequire(import.meta.url);
 const {
   loadProjectRegistry,
   getProjectByKey,
@@ -77,4 +75,3 @@ describe("projectRegistry", () => {
     expect(resolveDefaultProject(registry)?.key).toBe("valid");
   });
 });
-

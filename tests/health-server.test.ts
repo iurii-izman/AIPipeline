@@ -421,7 +421,9 @@ describe("health server", () => {
     expect(fileRes.statusCode).toBe(200);
     expect(fileRes.body.length).toBeGreaterThan(0);
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock.mock.calls[0]?.[0]).toContain("/file/bottelegram-test-token/documents/spec.pdf");
+    const firstFetchCall = fetchMock.mock.calls[0] as unknown[] | undefined;
+    const firstFetchUrl = String(firstFetchCall?.[0] ?? "");
+    expect(firstFetchUrl).toContain("/file/bottelegram-test-token/documents/spec.pdf");
 
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
