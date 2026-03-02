@@ -77,6 +77,8 @@ _load INTAKE_PUBLIC_BASE_URL aipipeline.intake public-base-url
 _load INTAKE_AUTO_CONVERT aipipeline.intake auto-convert
 _load INTAKE_AUTO_CONVERT_CONFIDENCE aipipeline.intake auto-convert-confidence
 _load INTAKE_FILES_DIR aipipeline.intake files-dir
+_load DASHBOARD_PUBLIC_LOCAL aipipeline.dashboard public-local
+_load DASHBOARD_ENABLE_ACTIONS aipipeline.dashboard enable-actions
 
 # Compatibility fallbacks for OPENAI_API_KEY if stored with custom attributes.
 if [[ -z "${OPENAI_API_KEY:-}" ]]; then

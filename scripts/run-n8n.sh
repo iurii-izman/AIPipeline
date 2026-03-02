@@ -25,12 +25,20 @@ fi
 
 if podman ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
   if ! podman ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
-    podman start "$CONTAINER_NAME"
-    echo "Container $CONTAINER_NAME started. Open http://localhost:5678"
+    if podman start "$CONTAINER_NAME"; then
+      echo "Container $CONTAINER_NAME started. Open http://localhost:5678"
+    else
+      echo "Container $CONTAINER_NAME failed to start; recreating container with existing volume." >&2
+      podman rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+      # fall through to container creation path
+    fi
+    if podman ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+      exit 0
+    fi
   else
     echo "Container $CONTAINER_NAME already running. Open http://localhost:5678"
+    exit 0
   fi
-  exit 0
 fi
 
 podman run -d \

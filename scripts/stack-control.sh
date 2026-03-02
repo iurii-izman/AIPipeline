@@ -65,13 +65,23 @@ start_app() {
     echo $! > "$APP_PID_FILE"
   )
 
-  sleep 1
-  if [[ -f "$APP_PID_FILE" ]] && kill -0 "$(cat "$APP_PID_FILE")" 2>/dev/null; then
-    echo "app: started (pid=$(cat "$APP_PID_FILE"))"
-  else
-    echo "app: failed to start" >&2
-    return 1
-  fi
+  local pid=""
+  pid="$(cat "$APP_PID_FILE" 2>/dev/null || true)"
+  for _ in {1..15}; do
+    if [[ -n "$pid" ]] && ! kill -0 "$pid" 2>/dev/null; then
+      break
+    fi
+    if curl -fsS "http://localhost:3000/health" >/dev/null 2>&1; then
+      echo "app: started (pid=$pid)"
+      return
+    fi
+    sleep 1
+  done
+
+  echo "app: failed to become healthy" >&2
+  echo "app: last logs:" >&2
+  tail -n 40 "$LOG_DIR/app-stdout.log" >&2 || true
+  return 1
 }
 
 stop_app() {

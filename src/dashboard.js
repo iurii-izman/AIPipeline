@@ -1,4 +1,5 @@
 const { loadProjectRegistry, getProjectByKey, resolveDefaultProject } = require("./projectRegistry.js");
+const { getLocalRuntimeStatus } = require("./local-ops.js");
 
 const CACHE_TTL_MS = Number(process.env.DASHBOARD_CACHE_TTL_MS || 60_000);
 const cache = new Map();
@@ -37,6 +38,7 @@ function normalizeDashboardOptions(optionsOrProjectKey) {
       taskLimit: 10,
       inboxLimit: 8,
       activityLimit: 8,
+      actionsEnabled: false,
     };
   }
 
@@ -47,6 +49,7 @@ function normalizeDashboardOptions(optionsOrProjectKey) {
     taskLimit: clampInt(options.taskLimit, 1, 50, 10),
     inboxLimit: clampInt(options.inboxLimit, 1, 25, 8),
     activityLimit: clampInt(options.activityLimit, 1, 25, 8),
+    actionsEnabled: options.actionsEnabled === true,
   };
 }
 
@@ -299,6 +302,30 @@ function renderDashboardHtml(data) {
     )
     .join("");
 
+  const runtimeRows = Object.entries(data.runtime.services)
+    .map(([name, meta]) => {
+      const stateClass = meta.running ? "ok" : "bad";
+      return `<tr><td>${escapeHtml(name)}</td><td><span class="pill ${stateClass}">${meta.running ? "running" : "stopped"}</span></td><td>${escapeHtml(
+        meta.detail
+      )}</td></tr>`;
+    })
+    .join("");
+
+  const controlPanel = data.options.actionsEnabled
+    ? `<div class="card">
+      <h2>Local Controls</h2>
+      <div class="row">
+        <button data-action="start" data-profile="core">Start core</button>
+        <button data-action="start" data-profile="extended">Start extended</button>
+        <button data-action="stop" data-profile="core">Stop core</button>
+        <button data-action="restart" data-profile="extended">Restart extended</button>
+        <button data-action="start" data-profile="full">Start full</button>
+        <button id="launchCursor">Launch aipipeline-cursor</button>
+      </div>
+      <pre id="opsOutput" class="muted" style="margin-top:10px; white-space:pre-wrap;"></pre>
+    </div>`
+    : "";
+
   const notices = [data.linear.error, data.inbox.error].filter(Boolean).map((msg) => `<li>${escapeHtml(msg)}</li>`).join("");
 
   return `<!doctype html>
@@ -318,6 +345,8 @@ function renderDashboardHtml(data) {
     .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
     .tab, .chip { display: inline-block; padding: 8px 12px; border-radius: 999px; border: 1px solid #c6d4df; color: #1d3f58; text-decoration: none; background: #f7fbff; text-transform: capitalize; }
     .tab.selected, .chip.selected { background: #1d3f58; color: #fff; border-color: #1d3f58; }
+    button { border: 1px solid #c6d4df; background: #f7fbff; color: #1d3f58; border-radius: 10px; padding: 8px 12px; cursor: pointer; }
+    button:hover { background: #eef6fc; }
     .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
     .stat { background: #f7fbff; border: 1px solid #d4e3ee; border-radius: 10px; padding: 10px; }
     .projects-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
@@ -333,6 +362,9 @@ function renderDashboardHtml(data) {
     ul { margin: 0; padding-left: 20px; }
     .muted { color: #5f7385; font-size: 13px; }
     .errors { color: #8a1f17; }
+    .pill { border-radius: 999px; padding: 2px 8px; font-size: 12px; border: 1px solid transparent; }
+    .pill.ok { background: #e6f4ea; color: #1f6b3a; border-color: #b7dfc6; }
+    .pill.bad { background: #fdeaea; color: #8a1f17; border-color: #efc4c4; }
     @media (max-width: 680px) { body { padding: 12px; } }
   </style>
 </head>
@@ -359,6 +391,14 @@ function renderDashboardHtml(data) {
     <div class="card">
       <h2>Projects Overview</h2>
       <div class="projects-grid">${projectCards || '<div class="muted">No project registry entries found.</div>'}</div>
+    </div>
+
+    <div class="card">
+      <h2>Runtime Status</h2>
+      <table>
+        <thead><tr><th>Service</th><th>State</th><th>Detail</th></tr></thead>
+        <tbody>${runtimeRows}</tbody>
+      </table>
     </div>
 
     <div class="card">
@@ -389,8 +429,54 @@ function renderDashboardHtml(data) {
       <div>${linksHtml || '<span class="muted">No links configured for selected project.</span>'}</div>
     </div>
 
+    ${controlPanel}
     ${notices ? `<div class="card"><h2>Warnings</h2><ul class="errors">${notices}</ul></div>` : ""}
   </div>
+  <script>
+    (function () {
+      const output = document.getElementById("opsOutput");
+      if (!output) return;
+
+      async function postJson(url, payload) {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload || {}),
+        });
+        const text = await response.text();
+        let data = {};
+        try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
+        if (!response.ok) throw new Error(data.error || ("HTTP " + response.status));
+        return data;
+      }
+
+      document.querySelectorAll("button[data-action]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          const action = button.getAttribute("data-action");
+          const profile = button.getAttribute("data-profile");
+          try {
+            const data = await postJson("/ops/stack", { action, profile });
+            output.textContent = (data.stdout || "OK").trim();
+            setTimeout(() => location.reload(), 700);
+          } catch (err) {
+            output.textContent = String(err && err.message ? err.message : err);
+          }
+        });
+      });
+
+      const launchCursor = document.getElementById("launchCursor");
+      if (launchCursor) {
+        launchCursor.addEventListener("click", async () => {
+          try {
+            const data = await postJson("/ops/cursor", {});
+            output.textContent = "Cursor launch requested (pid: " + (data.pid || "n/a") + ")";
+          } catch (err) {
+            output.textContent = String(err && err.message ? err.message : err);
+          }
+        });
+      }
+    })();
+  </script>
 </body>
 </html>`;
 }
@@ -402,9 +488,10 @@ async function buildDashboardData(options) {
   const notionInboxFallback =
     (effectiveProject && effectiveProject.notionInboxDatabaseId) || process.env.NOTION_INBOX_DATABASE_ID || "";
 
-  const [linear, inbox] = await Promise.all([
+  const [linear, inbox, runtime] = await Promise.all([
     fetchLinearIssues(effectiveProject?.linearProjectId || ""),
     fetchNotionInboxRows(notionInboxFallback, effectiveProject?.key || "", options.inboxLimit),
+    getLocalRuntimeStatus(),
   ]);
 
   const linearSummary = buildLinearSummary(linear.rows, options.stateFilter, options.taskLimit);
@@ -415,6 +502,7 @@ async function buildDashboardData(options) {
     project: effectiveProject,
     projects: registry.projects,
     projectsSummary: aggregateProjectsSummary(registry.projects, linear.rows),
+    runtime,
     linear: { ...linearSummary, error: linear.error },
     inbox,
     activity: buildActivityFeed(linearSummary.topTasks, inbox.rows, options.activityLimit),
@@ -423,7 +511,7 @@ async function buildDashboardData(options) {
 
 async function getDashboardHtml(optionsOrProjectKey = "") {
   const options = normalizeDashboardOptions(optionsOrProjectKey);
-  const cacheKey = `dashboard:${options.projectKey || "all"}:${options.stateFilter}:${options.taskLimit}:${options.inboxLimit}:${options.activityLimit}`;
+  const cacheKey = `dashboard:${options.projectKey || "all"}:${options.stateFilter}:${options.taskLimit}:${options.inboxLimit}:${options.activityLimit}:${options.actionsEnabled ? "actions" : "readonly"}`;
   const hit = cache.get(cacheKey);
   const now = Date.now();
   if (hit && now - hit.ts < CACHE_TTL_MS) return hit.html;
