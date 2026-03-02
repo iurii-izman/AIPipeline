@@ -13,6 +13,10 @@ function getAiTelemetryStoreFile() {
   return process.env.AI_TELEMETRY_STORE_FILE || path.resolve(process.cwd(), ".runtime-logs/ai-online-telemetry.jsonl");
 }
 
+function getIdempotencyStoreFile() {
+  return process.env.IDEMPOTENCY_STORE_FILE || path.resolve(process.cwd(), ".runtime-logs/idempotency-results.jsonl");
+}
+
 function appendJsonLine(filePath, payload) {
   ensureParentDir(filePath);
   fs.appendFileSync(filePath, `${JSON.stringify(payload)}\n`, "utf8");
@@ -89,13 +93,52 @@ function findDlqEventById(id) {
   return rows.find((row) => String(row.id || "") === String(id)) || null;
 }
 
+function findIdempotencyResult(scope, key) {
+  const scopeSafe = String(scope || "").trim();
+  const keySafe = String(key || "").trim();
+  if (!scopeSafe || !keySafe) return null;
+  const rows = readJsonLines(getIdempotencyStoreFile());
+  const now = Date.now();
+  const matches = rows.filter((row) => {
+    const rowScope = String(row.scope || "");
+    const rowKey = String(row.key || "");
+    const expiresAt = row.expiresAt ? Date.parse(String(row.expiresAt)) : Number.NaN;
+    const expired = Number.isFinite(expiresAt) && expiresAt < now;
+    return !expired && rowScope === scopeSafe && rowKey === keySafe;
+  });
+  if (!matches.length) return null;
+  return matches[matches.length - 1];
+}
+
+function saveIdempotencyResult(scope, key, result, ttlSeconds = 86_400) {
+  const scopeSafe = String(scope || "").trim();
+  const keySafe = String(key || "").trim();
+  if (!scopeSafe || !keySafe) return null;
+  const now = new Date();
+  const ttl = Number.isFinite(Number(ttlSeconds)) ? Math.max(1, Number(ttlSeconds)) : 86_400;
+  const expiresAt = new Date(now.getTime() + ttl * 1000).toISOString();
+  const payload = {
+    scope: scopeSafe,
+    key: keySafe,
+    result,
+    createdAt: now.toISOString(),
+    expiresAt,
+  };
+  const filePath = getIdempotencyStoreFile();
+  appendJsonLine(filePath, payload);
+  return payload;
+}
+
 module.exports = {
   appendAiTelemetryEvent,
   appendDlqEvent,
   findDlqEventById,
+  findIdempotencyResult,
   getAiTelemetryStoreFile,
   getDlqStoreFile,
+  getIdempotencyStoreFile,
   markDlqEvent,
   readAiTelemetryEvents,
   readDlqEvents,
+  saveIdempotencyResult,
 };

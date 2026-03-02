@@ -88,6 +88,28 @@
   - `bootstrap-telegram-forum-topics.sh` масштабирован на N проектов из registry.
   - тестовый baseline усилен: `tests/dashboard.test.ts`, `tests/project-registry.test.ts`, расширенные WF-5 callback graph invariants в `tests/e2e/workflow-fixtures.test.ts`.
   - rollout/rollback playbook добавлен: `docs/intake-dashboard-rollout-runbook.md`.
+  - deploy strict contract внедрён в `.github/workflows/deploy-staging.yml` и `.github/workflows/deploy-production.yml`:
+    - missing webhook/token => `failed`;
+    - explicit dry-run только через `allow_dry_run=true`;
+    - optional post-deploy smoke через `DEPLOY_POSTCHECK_URL_STAGING|PRODUCTION`.
+  - rollback automation v1 внедрён:
+    - workflow `.github/workflows/rollback.yml`;
+    - helper `scripts/rollback-release.sh`;
+    - runbook `docs/rollback-runbook.md`;
+    - artifact `rollback-report`.
+  - IaC validation усилена:
+    - `scripts/check-iac-baseline.sh --strict` теперь делает `terraform plan` per-environment и пишет report в `.out/iac/*.json`;
+    - CI `iac-validate` запускается матрицей `staging+production` и публикует artifacts.
+  - SLO policy-as-code baseline усилен:
+    - `scripts/check-slo-budget.sh` + `/status` поля `latencyP95Ms/errorBudgetState/telemetryState`;
+    - `scripts/check-observability-alerts.sh` включает SLO budget check.
+  - Security/governance baseline усилен:
+    - `scripts/check-sonar-gate.sh` + CI job `sonar-gate`;
+    - Release Gate использует Sonar token/vars при наличии.
+  - Data governance as code baseline усилен:
+    - machine-readable inventory `config/data-governance.json`;
+    - `check-data-governance-policy.sh` валидирует inventory schema/coverage.
+  - Ops large-batch cadence script добавлен: `scripts/run-ops-batch-gate.sh` (`A|B|C|all`).
 
 ## Операционные проверки
 
@@ -139,7 +161,7 @@
    - Intake/dashboard keyring entries уже заполнены и проходят `./scripts/health-check-env.sh`:
      - `NOTION_INBOX_DATABASE_ID`, `NOTION_SPECS_DATABASE_ID`, `NOTION_SPEC_TEMPLATE_ID`, `PROJECTS_CONFIG`, `DEFAULT_PROJECT_KEY`
    - Для пересборки baseline из registry использовать: `./scripts/bootstrap-intake-dashboard-keyring.sh`.
-2. Поддерживать актуальность repository ruleset/checks в GitHub (включая `build`, `integration`, `e2e-fixtures`, `eval-alpha`, `eval-safety`, `eval-v2`, `sbom`, `iac-validate`, `cost-governance`, `workflow-governance`, `docs-links`, `data-governance-policy`, `security-audit`, `CodeQL`) при изменениях CI.
+2. Поддерживать актуальность repository ruleset/checks в GitHub (включая `build`, `integration`, `e2e-fixtures`, `eval-alpha`, `eval-safety`, `eval-v2`, `sbom`, `iac-validate`, `cost-governance`, `workflow-governance`, `docs-links`, `data-governance-policy`, `slo-budget`, `sonar-gate`, `security-audit`, `CodeQL`) при изменениях CI.
    - Быстрая синхронизация vars/secrets из keyring: `./scripts/sync-github-repo-controls.sh`.
    - PR-only strict mode (убрать bypass + strict checks): `./scripts/sync-github-repo-controls.sh --strict-pr-flow`.
    - Ruleset normalized to actual Sonar context (`SonarCloud Code Analysis`); keep this name in required checks.

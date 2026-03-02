@@ -136,6 +136,14 @@ ensure_required_checks() {
                   {
                     context: "data-governance-policy",
                     integration_id: null
+                  },
+                  {
+                    context: "slo-budget",
+                    integration_id: null
+                  },
+                  {
+                    context: "sonar-gate",
+                    integration_id: null
                   }
                 ])
                 | unique_by(.context)
@@ -173,6 +181,12 @@ owner="${repo%%/*}"
 repo_name="${repo##*/}"
 default_project_key="${owner}_${repo_name}"
 default_org="$owner"
+default_postcheck_base="${CLOUDFLARE_PUBLIC_BASE_URL:-}"
+if [[ -n "$default_postcheck_base" ]]; then
+  default_postcheck_url="${default_postcheck_base%/}/health"
+else
+  default_postcheck_url=""
+fi
 
 set_repo_var "SONAR_PROJECT_KEY" "${SONAR_PROJECT_KEY:-$default_project_key}"
 set_repo_var "SONAR_ORGANIZATION" "${SONAR_ORGANIZATION:-$default_org}"
@@ -198,6 +212,9 @@ set_repo_var "AIP_GITHUB_OWNER" "${GITHUB_OWNER:-$owner}"
 set_repo_var "AIP_GITHUB_REPO" "${GITHUB_REPO:-$repo_name}"
 set_repo_var "AIP_GITHUB_WORKFLOW_STAGING" "${GITHUB_WORKFLOW_STAGING:-deploy-staging.yml}"
 set_repo_var "AIP_GITHUB_WORKFLOW_PRODUCTION" "${GITHUB_WORKFLOW_PRODUCTION:-deploy-production.yml}"
+set_repo_var "AIP_GITHUB_WORKFLOW_ROLLBACK" "${GITHUB_WORKFLOW_ROLLBACK:-rollback.yml}"
+set_repo_var "DEPLOY_POSTCHECK_URL_STAGING" "${DEPLOY_POSTCHECK_URL_STAGING:-$default_postcheck_url}"
+set_repo_var "DEPLOY_POSTCHECK_URL_PRODUCTION" "${DEPLOY_POSTCHECK_URL_PRODUCTION:-$default_postcheck_url}"
 set_repo_var "MODEL_CLASSIFIER_MODE" "${MODEL_CLASSIFIER_MODE:-heuristic_only}"
 set_repo_var "MODEL_KILL_SWITCH" "${MODEL_KILL_SWITCH:-false}"
 
@@ -243,6 +260,16 @@ if ruleset_has_context "data-governance-policy"; then
   echo "  ruleset required check data-governance-policy: present"
 else
   echo "  ruleset required check data-governance-policy: missing"
+fi
+if ruleset_has_context "slo-budget"; then
+  echo "  ruleset required check slo-budget: present"
+else
+  echo "  ruleset required check slo-budget: missing"
+fi
+if ruleset_has_context "sonar-gate"; then
+  echo "  ruleset required check sonar-gate: present"
+else
+  echo "  ruleset required check sonar-gate: missing"
 fi
 
 echo ""

@@ -18,6 +18,8 @@ Accepted
      - `precisionCritical >= 0.70`
      - `recallCritical >= 0.95`
      - `fnrCritical <= 0.05`
+  2.1 `npm run eval:safety` passes adversarial/prompt-injection suite.
+  2.2 `npm run eval:v2` passes offline+online gate thresholds with sufficient online sample volume.
   3. WF-3 schema safety is active:
      - input sanitization + delimiters (`BEGIN_SENTRY_EVENT`/`END_SENTRY_EVENT`)
      - strict LLM output schema validation
@@ -42,6 +44,7 @@ Accepted
 ### Follow-up Actions
 - Add broader dataset curation cycle (weekly refresh).
 - Add reporting for mismatch/fallback rate in WF-3 telemetry.
+- Keep promotion decision evidence in release artifacts (`release-ai-ops` + scorecard).
 
 ## Rollback / Exit Criteria
 - Immediate rollback to `heuristic_only` when at least one condition is true:

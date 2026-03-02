@@ -53,20 +53,32 @@
 
 7. **Deploy strict mode (staging/production)**
    - `DEPLOY_WEBHOOK_STAGING` и `DEPLOY_WEBHOOK_PRODUCTION` считаются обязательными для реального деплоя в соответствующих workflow.
+   - `DEPLOY_WEBHOOK_TOKEN_STAGING` и `DEPLOY_WEBHOOK_TOKEN_PRODUCTION` также обязательны (deploy contract).
    - Silent dry-run отключён: если webhook не задан, job завершится `failed`.
    - Допускается только явный dry-run через `workflow_dispatch` input `allow_dry_run=true` (для ручной проверки пайплайна).
+   - Post-deploy smoke поддерживается через vars:
+     - `DEPLOY_POSTCHECK_URL_STAGING`
+     - `DEPLOY_POSTCHECK_URL_PRODUCTION`
 
-8. **Security gates**
+8. **Rollback workflow (обязательный контур)**
+   - Использовать `.github/workflows/rollback.yml` для rollback с pinned ref (`target_ref`).
+   - Для CLI trigger:
+     - `./scripts/rollback-release.sh --env staging|production --ref <tag|sha> --wait`
+   - Обязательно сохранять artifact `rollback-report` как release/incident evidence.
+
+9. **Security gates**
    - Перед релизом убедиться, что checks `security-audit` и `analyze (javascript-typescript)` (CodeQL) зелёные.
    - Для supply-chain maturity дополнительно проверить `sbom` + attestation artifacts.
+   - Дополнительно: `sonar-gate` check должен быть зелёным при наличии `SONAR_TOKEN`.
 
-9. **Data governance + DR cadence gates**
+10. **Data governance + DR cadence gates**
    - Data governance policy check обязателен: `npm run policy:data-governance`.
+   - Machine-readable inventory обязателен: `config/data-governance.json`.
    - DR cadence freshness обязателен локально: `npm run dr:check-cadence` (по умолчанию требует drill evidence не старше 30 дней).
    - В GitHub-hosted Release Gate DR cadence пропускается (`--skip-dr-cadence`) и валидируется отдельно в локальном ops цикле.
    - Перед релизом убедиться, что последний DR drill выполнен и evidence находится в `.out/drills/`.
 
-10. **Release scorecard v2**
+11. **Release scorecard v2**
    - Сгенерировать scorecard:
      `./scripts/generate-release-scorecard-v2.sh --version vX.Y.Z --env staging`
    - Или автоматически в составе gate:
@@ -78,7 +90,7 @@
      - `release-ai-ops` (`eval-v2 + cost report`, при наличии данных)
    - Шаблон scorecard: `docs/templates/release-scorecard-v2.md`.
 
-11. **Online telemetry + OTel coverage checks**
+12. **Online telemetry + OTel coverage checks**
    - Проверка online telemetry объема:
      - `npm run telemetry:check-volume`
      - `npm run telemetry:report`
@@ -86,7 +98,7 @@
      - `npm run otel:check-coverage`
      - `npm run otel:check-managed`
 
-12. **IaC + provenance baseline checks**
+13. **IaC + provenance baseline checks**
    - IaC validation: `npm run iac:validate` (или CI job `iac-validate`).
    - SBOM + provenance:
      - `npm run sbom:generate`
@@ -94,11 +106,11 @@
    - strict verify:
      - `npm run supply-chain:verify`
 
-13. **Workflow governance invariants**
+14. **Workflow governance invariants**
    - Проверка durable DLQ + RBAC workflow-инвариантов:
      - `npm run workflow:governance`
 
-14. **Beta RC package (recommended)**
+15. **Beta RC package (recommended)**
    - RC notes + rollout window: [release-notes/v0.1.0-beta.2-rc.md](release-notes/v0.1.0-beta.2-rc.md)
    - Previous RC: [release-notes/v0.1.0-beta.1-rc.md](release-notes/v0.1.0-beta.1-rc.md)
    - Release tag: `v0.1.0-beta.2` (prerelease)

@@ -24,6 +24,9 @@
 | Telegram | Command payloads, alerts, chat metadata | Sensitive (chat identifiers) | Repo owner | Telegram + n8n logs |
 | n8n | Workflow state, execution logs, DLQ events | Sensitive/Internal | Repo owner | Podman volume `n8n_data` |
 
+Machine-readable inventory SSoT:
+- `config/data-governance.json`
+
 ## PII Classification and Handling
 
 - PII classes:
@@ -54,6 +57,7 @@
 
 - Обязательные проверки:
   - `scripts/check-data-governance-policy.sh --strict` в CI/release gate.
+  - Валидация machine-readable inventory (`config/data-governance.json`) внутри `check-data-governance-policy.sh`.
   - DR cadence freshness: `scripts/check-dr-cadence.sh --strict`.
   - Backup retention timer presence в health report.
 - Cadence:
@@ -73,3 +77,4 @@
 - `scripts/install-backup-retention-timer.sh`
 - `scripts/dr-restore-drill.sh`
 - `docs/n8n-workflows/wf-7-dlq-parking.json`
+- `config/data-governance.json`

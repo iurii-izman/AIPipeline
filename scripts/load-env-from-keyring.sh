@@ -55,6 +55,8 @@ _load SENTRY_DSN sentry.io aipipeline
 _load SENTRY_AUTH_TOKEN sentry.io aipipeline-auth
 _load SENTRY_ORG_SLUG sentry.io aipipeline-org-slug
 _load SENTRY_PROJECT_SLUG sentry.io aipipeline-project-slug
+_load SONAR_TOKEN sonarcloud.io aipipeline
+_load SONAR_TOKEN sonarcloud.io aipipeline-sonar-token
 _load OPENAI_API_KEY openai.com aipipeline
 _load OPENAI_MODEL openai.com aipipeline-model
 _load NGROK_AUTHTOKEN ngrok.com aipipeline
@@ -64,6 +66,7 @@ _load GITHUB_OWNER github.com aipipeline-owner
 _load GITHUB_REPO github.com aipipeline-repo
 _load GITHUB_WORKFLOW_STAGING github.com aipipeline-workflow-staging
 _load GITHUB_WORKFLOW_PRODUCTION github.com aipipeline-workflow-production
+_load GITHUB_WORKFLOW_ROLLBACK github.com aipipeline-workflow-rollback
 
 # Hardening/runtime controls
 _load STATUS_AUTH_TOKEN aipipeline.local status-auth-token
@@ -106,6 +109,10 @@ fi
 
 if [[ -z "${N8N_URL:-}" ]]; then
   export N8N_URL="http://localhost:5678"
+fi
+
+if [[ -z "${GITHUB_WORKFLOW_ROLLBACK:-}" ]]; then
+  export GITHUB_WORKFLOW_ROLLBACK="rollback.yml"
 fi
 
 if [[ "${1:-}" == "--cursor" ]]; then

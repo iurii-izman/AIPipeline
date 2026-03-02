@@ -53,9 +53,12 @@ jobs:
           N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           STATUS_AUTH_TOKEN: ${{ secrets.STATUS_AUTH_TOKEN }}
           GITHUB_WEBHOOK_SECRET: ${{ secrets.AIP_GITHUB_WEBHOOK_SECRET }}
           SENTRY_WEBHOOK_SECRET: ${{ secrets.SENTRY_WEBHOOK_SECRET }}
+          SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
+          SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
           GITHUB_OWNER: ${{ vars.AIP_GITHUB_OWNER }}
           GITHUB_REPO: ${{ vars.AIP_GITHUB_REPO }}
           GITHUB_WORKFLOW_STAGING: ${{ vars.AIP_GITHUB_WORKFLOW_STAGING }}

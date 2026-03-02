@@ -13,7 +13,14 @@
 ## Локальная проверка
 
 ```bash
-./scripts/check-iac-baseline.sh
+./scripts/check-iac-baseline.sh --strict
+```
+
+Per-environment plan report:
+
+```bash
+./scripts/check-iac-baseline.sh --strict --env staging --report-file .out/iac/iac-plan-report-staging.json
+./scripts/check-iac-baseline.sh --strict --env production --report-file .out/iac/iac-plan-report-production.json
 ```
 
 ## Примечания

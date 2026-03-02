@@ -11,6 +11,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 POLICY_FILE="$REPO_ROOT/docs/data-governance-policy.md"
+INVENTORY_FILE="$REPO_ROOT/config/data-governance.json"
 
 strict=false
 markdown=false
@@ -105,6 +106,44 @@ else
     add_result "OK" "retention window declared"
   else
     add_result "FAIL" "retention window not declared"
+  fi
+fi
+
+if [[ ! -f "$INVENTORY_FILE" ]]; then
+  add_result "FAIL" "inventory file missing: config/data-governance.json"
+else
+  add_result "OK" "inventory file exists"
+  inventory_check="$(node - "$INVENTORY_FILE" <<'NODE'
+const fs = require('node:fs');
+const file = process.argv[2];
+const requiredSystems = ['GitHub', 'Linear', 'Notion', 'Sentry', 'Telegram', 'n8n'];
+try {
+  const payload = JSON.parse(fs.readFileSync(file, 'utf8'));
+  const systems = Array.isArray(payload.systems) ? payload.systems : [];
+  const names = new Set(systems.map((entry) => String(entry?.name || '')));
+  const missing = requiredSystems.filter((name) => !names.has(name));
+  const badRetention = systems.filter((entry) => !Number.isFinite(Number(entry?.retentionDays)) || Number(entry?.retentionDays) <= 0);
+  const policies = payload.policies || {};
+  const policyFlagsOk =
+    typeof policies.secretsInRepo === 'boolean' &&
+    typeof policies.piiMaskingRequired === 'boolean' &&
+    typeof policies.retentionEnforcedByAutomation === 'boolean';
+  process.stdout.write(JSON.stringify({
+    ok: missing.length === 0 && badRetention.length === 0 && policyFlagsOk,
+    missing,
+    badRetention: badRetention.map((entry) => String(entry?.name || 'unknown')),
+    policyFlagsOk,
+  }));
+} catch (err) {
+  process.stdout.write(JSON.stringify({ ok: false, error: String(err && err.message ? err.message : err) }));
+}
+NODE
+)"
+  inventory_ok="$(printf '%s' "$inventory_check" | node -e 'const p=JSON.parse(require("fs").readFileSync(0,"utf8")); process.stdout.write(p.ok ? "true" : "false");')"
+  if [[ "$inventory_ok" == "true" ]]; then
+    add_result "OK" "inventory schema coverage"
+  else
+    add_result "FAIL" "inventory schema coverage (invalid/missing systems, retention, or policy flags)"
   fi
 fi
 
