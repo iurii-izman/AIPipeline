@@ -53,9 +53,25 @@ case "$profile" in
     ;;
 esac
 
+find_app_pid() {
+  pgrep -f "node .*/src/index.js" 2>/dev/null | head -n 1 || true
+}
+
+app_is_healthy() {
+  curl -fsS "http://localhost:3000/health" >/dev/null 2>&1
+}
+
 start_app() {
   if [[ -f "$APP_PID_FILE" ]] && kill -0 "$(cat "$APP_PID_FILE")" 2>/dev/null; then
     echo "app: already running (pid=$(cat "$APP_PID_FILE"))"
+    return
+  fi
+
+  local external_pid=""
+  external_pid="$(find_app_pid)"
+  if [[ -n "$external_pid" ]] && app_is_healthy; then
+    echo "$external_pid" > "$APP_PID_FILE"
+    echo "app: already running (pid=$external_pid, adopted external)"
     return
   fi
 
@@ -69,14 +85,37 @@ start_app() {
   pid="$(cat "$APP_PID_FILE" 2>/dev/null || true)"
   for _ in {1..15}; do
     if [[ -n "$pid" ]] && ! kill -0 "$pid" 2>/dev/null; then
+      local adopted_pid=""
+      adopted_pid="$(find_app_pid)"
+      if [[ -n "$adopted_pid" ]] && app_is_healthy; then
+        echo "$adopted_pid" > "$APP_PID_FILE"
+        echo "app: started (pid=$adopted_pid, adopted external)"
+        return
+      fi
       break
     fi
-    if curl -fsS "http://localhost:3000/health" >/dev/null 2>&1; then
+    if app_is_healthy; then
+      local active_pid=""
+      active_pid="$(find_app_pid)"
+      if [[ -n "$active_pid" ]]; then
+        echo "$active_pid" > "$APP_PID_FILE"
+        pid="$active_pid"
+      fi
       echo "app: started (pid=$pid)"
       return
     fi
     sleep 1
   done
+
+  if app_is_healthy; then
+    local recovered_pid=""
+    recovered_pid="$(find_app_pid)"
+    if [[ -n "$recovered_pid" ]]; then
+      echo "$recovered_pid" > "$APP_PID_FILE"
+      echo "app: started (pid=$recovered_pid, recovered external)"
+      return
+    fi
+  fi
 
   echo "app: failed to become healthy" >&2
   echo "app: last logs:" >&2
@@ -93,7 +132,18 @@ stop_app() {
     fi
     echo "app: stopped"
   else
-    echo "app: not running"
+    local external_pid=""
+    external_pid="$(find_app_pid)"
+    if [[ -n "$external_pid" ]] && kill -0 "$external_pid" 2>/dev/null; then
+      kill "$external_pid" || true
+      sleep 1
+      if kill -0 "$external_pid" 2>/dev/null; then
+        kill -9 "$external_pid" || true
+      fi
+      echo "app: stopped (external process)"
+    else
+      echo "app: not running"
+    fi
   fi
   rm -f "$APP_PID_FILE"
 }

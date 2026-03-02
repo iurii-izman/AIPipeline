@@ -13,13 +13,21 @@ _load() {
   local var="$1" svc="$2" user="$3"
   local val
   # COSMIC/Qt keychain stores "server", not "service"; try both for compat.
-  val=$(secret-tool lookup server "$svc" user "$user" 2>/dev/null) || true
+  val=$(_lookup_secret server "$svc" user "$user") || true
   if [[ -z "$val" ]]; then
-    val=$(secret-tool lookup service "$svc" user "$user" 2>/dev/null) || true
+    val=$(_lookup_secret service "$svc" user "$user") || true
   fi
   if [[ -n "$val" ]]; then
     export "$var=$val"
   fi
+}
+
+_lookup_secret() {
+  if command -v timeout >/dev/null 2>&1; then
+    timeout "${SECRET_LOOKUP_TIMEOUT_SEC:-2}s" secret-tool lookup "$@" 2>/dev/null || true
+    return
+  fi
+  secret-tool lookup "$@" 2>/dev/null || true
 }
 
 # MCP / Cursor
@@ -82,15 +90,15 @@ _load DASHBOARD_ENABLE_ACTIONS aipipeline.dashboard enable-actions
 
 # Compatibility fallbacks for OPENAI_API_KEY if stored with custom attributes.
 if [[ -z "${OPENAI_API_KEY:-}" ]]; then
-  OPENAI_API_KEY="$(secret-tool lookup server openai.com key OPENAI_API_KEY 2>/dev/null || true)"
+  OPENAI_API_KEY="$(_lookup_secret server openai.com key OPENAI_API_KEY)"
   export OPENAI_API_KEY
 fi
 if [[ -z "${OPENAI_API_KEY:-}" ]]; then
-  OPENAI_API_KEY="$(secret-tool lookup service openai.com key OPENAI_API_KEY 2>/dev/null || true)"
+  OPENAI_API_KEY="$(_lookup_secret service openai.com key OPENAI_API_KEY)"
   export OPENAI_API_KEY
 fi
 if [[ -z "${OPENAI_API_KEY:-}" ]]; then
-  OPENAI_API_KEY="$(secret-tool lookup service aipipeline server openai.com key OPENAI_API_KEY 2>/dev/null || true)"
+  OPENAI_API_KEY="$(_lookup_secret service aipipeline server openai.com key OPENAI_API_KEY)"
   export OPENAI_API_KEY
 fi
 

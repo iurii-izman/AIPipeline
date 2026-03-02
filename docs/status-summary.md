@@ -67,6 +67,8 @@
 - Desktop dashboard browser autostart installer added: `scripts/install-dashboard-browser-autostart.sh` (`--disable` to remove)
 - User-level stack watchdog timer installer added: `scripts/install-stack-watchdog-timer.sh` (periodic `stack-control start`, self-heal on app drop)
 - `stack-control` app bootstrap hardened: waits for `/health` readiness and prints last startup logs on failure.
+- `stack-control` app lifecycle hardened for mixed runtime modes: adopts external app PID when healthy and can stop adopted external process.
+- `load-env-from-keyring.sh` hardened with bounded secret lookups (`SECRET_LOOKUP_TIMEOUT_SEC`, default 2s) to avoid startup hangs when keyring backend is slow/locked.
 - `run-n8n.sh` hardened for stuck container state: fallback recreate path on failed `podman start`.
 - Intake/dashboard keyring baseline is now populated (`NOTION_INBOX_DATABASE_ID`, `NOTION_SPECS_DATABASE_ID`, `NOTION_SPEC_TEMPLATE_ID=__NONE__`, `PROJECTS_CONFIG`, `DEFAULT_PROJECT_KEY`)
 - Intake runtime keyring controls are populated (`INTAKE_INGEST_URL`, `INTAKE_INGEST_TOKEN`, `INTAKE_PUBLIC_BASE_URL`, `INTAKE_AUTO_CONVERT=true`, `INTAKE_AUTO_CONVERT_CONFIDENCE=0.90`)
