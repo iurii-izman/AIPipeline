@@ -144,4 +144,18 @@ ensure_secret \
   "auto-convert-confidence" \
   "0.90"
 
+ensure_secret \
+  "DASHBOARD_PUBLIC_LOCAL" \
+  "AIPipeline — Dashboard Public Local" \
+  "aipipeline.dashboard" \
+  "public-local" \
+  "true"
+
+ensure_secret \
+  "DASHBOARD_ENABLE_ACTIONS" \
+  "AIPipeline — Dashboard Enable Actions" \
+  "aipipeline.dashboard" \
+  "enable-actions" \
+  "true"
+
 echo "Bootstrap complete."

@@ -68,6 +68,8 @@
 | Intake Public Base URL (опц.) | `AIPipeline — Intake Public Base URL` | `public-base-url` | `aipipeline.intake` | базовый URL для формирования публичной ссылки на файл | ☑ |
 | Intake Auto Convert (опц.) | `AIPipeline — Intake Auto Convert` | `auto-convert` | `aipipeline.intake` | `true|false` для confidence-gated auto TASK/SPEC | ☑ |
 | Intake Auto Convert Confidence (опц.) | `AIPipeline — Intake Auto Convert Confidence` | `auto-convert-confidence` | `aipipeline.intake` | порог confidence (например `0.90`) | ☑ |
+| Dashboard Public Local (опц.) | `AIPipeline — Dashboard Public Local` | `public-local` | `aipipeline.dashboard` | `true|false`, разрешить `/dashboard` без bearer только на loopback | ☑ |
+| Dashboard Enable Actions (опц.) | `AIPipeline — Dashboard Enable Actions` | `enable-actions` | `aipipeline.dashboard` | `true|false`, включить UI-кнопки `/ops/stack` + `/ops/cursor` (loopback-only) | ☑ |
 | ngrok authtoken (опц.) | `AIPipeline — ngrok` | `aipipeline` | `ngrok.com` | [dashboard.ngrok.com](https://dashboard.ngrok.com/get-started/your-authtoken) — для скрипта `run-n8n-with-ngrok.sh` (Telegram webhook по HTTPS) | ☑ |
 
 Быстрый bootstrap для intake/dashboard keyring entries из `config/projects.json`:
@@ -169,6 +171,10 @@ secret-tool store --label="AIPipeline — Intake Ingest Token" server aipipeline
 secret-tool store --label="AIPipeline — Intake Public Base URL" server aipipeline.intake user public-base-url
 secret-tool store --label="AIPipeline — Intake Auto Convert" server aipipeline.intake user auto-convert
 secret-tool store --label="AIPipeline — Intake Auto Convert Confidence" server aipipeline.intake user auto-convert-confidence
+
+# Dashboard local UI mode + controls
+secret-tool store --label="AIPipeline — Dashboard Public Local" server aipipeline.dashboard user public-local
+secret-tool store --label="AIPipeline — Dashboard Enable Actions" server aipipeline.dashboard user enable-actions
 ```
 
 > **Важно:** CLI-шаблоны выше используют `server` (не `service`), чтобы быть совместимыми с GUI-записями. Если ранее ключи создавались с `service`, скрипт всё равно их найдёт (fallback).

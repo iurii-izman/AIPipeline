@@ -82,6 +82,8 @@ describe("health server", () => {
   const originalIntakeIngestToken = process.env.INTAKE_INGEST_TOKEN;
   const originalIntakeFilesDir = process.env.INTAKE_FILES_DIR;
   const originalTelegramBotToken = process.env.TELEGRAM_BOT_TOKEN;
+  const originalDashboardPublicLocal = process.env.DASHBOARD_PUBLIC_LOCAL;
+  const originalDashboardEnableActions = process.env.DASHBOARD_ENABLE_ACTIONS;
 
   function restoreEnv(name: string, value: string | undefined): void {
     if (value === undefined) {
@@ -104,6 +106,8 @@ describe("health server", () => {
     delete process.env.INTAKE_INGEST_TOKEN;
     delete process.env.INTAKE_FILES_DIR;
     delete process.env.TELEGRAM_BOT_TOKEN;
+    delete process.env.DASHBOARD_PUBLIC_LOCAL;
+    delete process.env.DASHBOARD_ENABLE_ACTIONS;
     vi.restoreAllMocks();
   });
 
@@ -129,6 +133,8 @@ describe("health server", () => {
     restoreEnv("INTAKE_INGEST_TOKEN", originalIntakeIngestToken);
     restoreEnv("INTAKE_FILES_DIR", originalIntakeFilesDir);
     restoreEnv("TELEGRAM_BOT_TOKEN", originalTelegramBotToken);
+    restoreEnv("DASHBOARD_PUBLIC_LOCAL", originalDashboardPublicLocal);
+    restoreEnv("DASHBOARD_ENABLE_ACTIONS", originalDashboardEnableActions);
     resetRateLimiter();
   });
 
@@ -196,6 +202,46 @@ describe("health server", () => {
     expect(String(authorized.headers["content-type"] || "")).toContain("text/html");
     expect(authorized.body).toContain("AIPipeline Dashboard");
     expect(authorized.body).toContain("AIPipeline");
+  });
+
+  it("allows local dashboard access without bearer when DASHBOARD_PUBLIC_LOCAL is enabled", async () => {
+    process.env.STATUS_AUTH_TOKEN = "secret-token";
+    process.env.DASHBOARD_PUBLIC_LOCAL = "true";
+    process.env.PROJECTS_CONFIG = JSON.stringify({
+      projects: [{ key: "aipipeline", label: "AIPipeline" }],
+    });
+    process.env.DEFAULT_PROJECT_KEY = "aipipeline";
+
+    const runningServer = await start(0);
+    server = runningServer;
+    const address = runningServer.address();
+    if (!address || typeof address === "string") throw new Error("Server did not provide numeric address");
+    const port = address.port;
+
+    const response = await request(`http://127.0.0.1:${port}/dashboard`);
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toContain("AIPipeline Dashboard");
+  });
+
+  it("exposes local ops controls only when DASHBOARD_ENABLE_ACTIONS is enabled", async () => {
+    process.env.STATUS_AUTH_TOKEN = "secret-token";
+    process.env.DASHBOARD_PUBLIC_LOCAL = "true";
+    process.env.DASHBOARD_ENABLE_ACTIONS = "true";
+
+    const runningServer = await start(0);
+    server = runningServer;
+    const address = runningServer.address();
+    if (!address || typeof address === "string") throw new Error("Server did not provide numeric address");
+    const port = address.port;
+
+    const stackStatus = await request(`http://127.0.0.1:${port}/ops/stack`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "status", profile: "core" }),
+    });
+    expect(stackStatus.statusCode).toBe(200);
+    expect(stackStatus.body).toContain("\"action\":\"status\"");
+    expect(stackStatus.body).toContain("\"profile\":\"core\"");
   });
 
   it("rate limits health endpoint", async () => {

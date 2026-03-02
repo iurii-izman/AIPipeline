@@ -17,6 +17,24 @@
 ./scripts/stack-control.sh stop full
 ```
 
+Опциональный автозапуск:
+
+```bash
+# запуск профиля после логина (user systemd)
+./scripts/install-stack-autostart-service.sh --profile core
+
+# авто-открытие dashboard в браузере после входа в desktop session
+./scripts/install-dashboard-browser-autostart.sh
+```
+
+Опциональный self-heal watchdog (если app периодически падает):
+
+```bash
+./scripts/install-stack-watchdog-timer.sh --profile core --interval-minutes 1
+# disable:
+# ./scripts/install-stack-watchdog-timer.sh --stop
+```
+
 ## Process-level acceptance checklist
 
 Формализованный скрипт-чеклист:
@@ -260,6 +278,7 @@ export WF5_RBAC_ALLOWED_USERNAMES=\"your_username\"
 2. Быстрая проверка: `./scripts/stack-health-report.sh`
 3. Перед работой с webhook: `./scripts/stack-control.sh status full`
 4. Еженедельный evidence sync: `./scripts/evidence-sync-cycle.sh --profile full`
+5. Автозапуск после логина (опц.): `./scripts/install-stack-autostart-service.sh --profile core` (или `extended/full`)
 
 ## Связанные документы
 

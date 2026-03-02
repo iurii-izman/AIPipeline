@@ -12,6 +12,14 @@ const { context: otelContext, trace, SpanStatusCode } = require("@opentelemetry/
 const { log, correlationIdFromRequest } = require("./logger.js");
 const { getDashboardHtml } = require("./dashboard.js");
 const {
+  canBypassDashboardAuth,
+  dashboardActionsEnabled,
+  isLoopbackAddress,
+  launchAipipelineCursor,
+  runStackControl,
+  getLocalRuntimeStatus,
+} = require("./local-ops.js");
+const {
   appendAiTelemetryEvent,
   appendDlqEvent,
   findDlqEventById,
@@ -422,7 +430,13 @@ function requestHandler(req, res) {
       return;
     }
 
-    if ((url === "/health" || url === "/status" || url === "/dashboard") && !enforceRateLimit(`${remoteAddress}:${url}`)) {
+    if (
+      (url === "/health" ||
+        url === "/status" ||
+        url === "/dashboard" ||
+        url.startsWith("/ops/")) &&
+      !enforceRateLimit(`${remoteAddress}:${url}`)
+    ) {
       res.writeHead(429);
       res.end();
       log("error", "rate limit exceeded", {
@@ -506,14 +520,27 @@ function requestHandler(req, res) {
     }
 
     if (req.method === "GET" && url === "/dashboard") {
-      if (!checkBearerAuth(req, getStatusAuthToken())) {
+      const authOk = checkBearerAuth(req, getStatusAuthToken()) || canBypassDashboardAuth(remoteAddress);
+      if (!authOk) {
         res.writeHead(401);
         res.end();
         return;
       }
       const parsed = new URL(req.url || "/dashboard", "http://localhost");
       const projectKey = parsed.searchParams.get("project") || "";
-      getDashboardHtml(projectKey)
+      const stateFilter = parsed.searchParams.get("state") || "all";
+      const taskLimit = parsed.searchParams.get("tasks") || "";
+      const inboxLimit = parsed.searchParams.get("inbox") || "";
+      const activityLimit = parsed.searchParams.get("activity") || "";
+
+      getDashboardHtml({
+        projectKey,
+        stateFilter,
+        taskLimit,
+        inboxLimit,
+        activityLimit,
+        actionsEnabled: dashboardActionsEnabled(),
+      })
         .then((html) => {
           res.setHeader("Content-Type", "text/html; charset=utf-8");
           res.writeHead(200);
@@ -528,6 +555,87 @@ function requestHandler(req, res) {
             correlationId,
             error: err instanceof Error ? err.message : String(err),
           });
+        });
+      return;
+    }
+
+    if (req.method === "GET" && url === "/ops/status") {
+      if (!isLoopbackAddress(remoteAddress)) {
+        res.writeHead(403);
+        res.end();
+        return;
+      }
+      const authOk = checkBearerAuth(req, getStatusAuthToken()) || canBypassDashboardAuth(remoteAddress);
+      if (!authOk) {
+        res.writeHead(401);
+        res.end();
+        return;
+      }
+      getLocalRuntimeStatus()
+        .then((payload) => {
+          res.setHeader("Content-Type", "application/json");
+          res.writeHead(200);
+          res.end(JSON.stringify({ ok: true, ...payload }));
+        })
+        .catch((err) => {
+          res.setHeader("Content-Type", "application/json");
+          res.writeHead(500);
+          res.end(JSON.stringify({ ok: false, error: err instanceof Error ? err.message : String(err) }));
+        });
+      return;
+    }
+
+    if (req.method === "POST" && url === "/ops/stack") {
+      if (!isLoopbackAddress(remoteAddress)) {
+        res.writeHead(403);
+        res.end();
+        return;
+      }
+      const authOk = checkBearerAuth(req, getStatusAuthToken()) || canBypassDashboardAuth(remoteAddress);
+      if (!authOk || !dashboardActionsEnabled()) {
+        res.writeHead(401);
+        res.end();
+        return;
+      }
+      parseJsonBody(req)
+        .then(async (payload) => {
+          const action = String(payload.action || "");
+          const profile = String(payload.profile || "");
+          const result = await runStackControl(action, profile);
+          res.setHeader("Content-Type", "application/json");
+          res.writeHead(200);
+          res.end(JSON.stringify({ ok: true, ...result }));
+        })
+        .catch((err) => {
+          res.setHeader("Content-Type", "application/json");
+          res.writeHead(400);
+          res.end(JSON.stringify({ ok: false, error: err instanceof Error ? err.message : String(err) }));
+        });
+      return;
+    }
+
+    if (req.method === "POST" && url === "/ops/cursor") {
+      if (!isLoopbackAddress(remoteAddress)) {
+        res.writeHead(403);
+        res.end();
+        return;
+      }
+      const authOk = checkBearerAuth(req, getStatusAuthToken()) || canBypassDashboardAuth(remoteAddress);
+      if (!authOk || !dashboardActionsEnabled()) {
+        res.writeHead(401);
+        res.end();
+        return;
+      }
+      launchAipipelineCursor()
+        .then((result) => {
+          res.setHeader("Content-Type", "application/json");
+          res.writeHead(200);
+          res.end(JSON.stringify(result));
+        })
+        .catch((err) => {
+          res.setHeader("Content-Type", "application/json");
+          res.writeHead(500);
+          res.end(JSON.stringify({ ok: false, error: err instanceof Error ? err.message : String(err) }));
         });
       return;
     }

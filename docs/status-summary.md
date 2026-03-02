@@ -54,9 +54,15 @@
 - WF-5 capture branch now includes optional OpenAI classifier for action suggestion and Telegram `getFile` enrichment for attachment links in Notion Inbox entries
 - WF-5 capture branch now supports app-backed binary ingest (`POST /intake/telegram-file`) and confidence-gated auto-convert (`TASK|SPEC`) when `INTAKE_AUTO_CONVERT=true`
 - App read-only summary route added: `GET /dashboard` (same bearer policy as `/status`)
+- Dashboard UX extended: runtime daemon status panel (`app/n8n/loki/grafana/cloudflared/cursor`) + optional local controls (`/ops/stack`, `/ops/cursor`) behind loopback guard and `DASHBOARD_ENABLE_ACTIONS=true`
 - App intake file endpoints added: `POST /intake/telegram-file` and `GET /intake/files/:id` (bearer-protected, local storage-backed)
 - Project registry baseline added: `config/projects.json` + `scripts/validate-projects-config.js`
 - Keyring bootstrap helper added for intake/dashboard vars: `scripts/bootstrap-intake-dashboard-keyring.sh`
+- User-level stack autostart installer added: `scripts/install-stack-autostart-service.sh` (`core|extended|full`, optional `--enable-linger`)
+- Desktop dashboard browser autostart installer added: `scripts/install-dashboard-browser-autostart.sh` (`--disable` to remove)
+- User-level stack watchdog timer installer added: `scripts/install-stack-watchdog-timer.sh` (periodic `stack-control start`, self-heal on app drop)
+- `stack-control` app bootstrap hardened: waits for `/health` readiness and prints last startup logs on failure.
+- `run-n8n.sh` hardened for stuck container state: fallback recreate path on failed `podman start`.
 - Intake/dashboard keyring baseline is now populated (`NOTION_INBOX_DATABASE_ID`, `NOTION_SPECS_DATABASE_ID`, `NOTION_SPEC_TEMPLATE_ID=__NONE__`, `PROJECTS_CONFIG`, `DEFAULT_PROJECT_KEY`)
 - Intake runtime keyring controls are populated (`INTAKE_INGEST_URL`, `INTAKE_INGEST_TOKEN`, `INTAKE_PUBLIC_BASE_URL`, `INTAKE_AUTO_CONVERT=true`, `INTAKE_AUTO_CONVERT_CONFIDENCE=0.90`)
 - WF-5 RBAC user allowlist is populated from live Telegram activity (`WF5_RBAC_ALLOWED_USER_IDS`, `WF5_RBAC_ALLOWED_USERNAMES`)

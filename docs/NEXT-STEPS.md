@@ -77,6 +77,8 @@
   - WF-6 now includes weekly Inbox NEW reminder (nudges to `/triage`);
   - WF-1/WF-2/WF-3 now support project-topic Telegram routing via `PROJECTS_CONFIG.telegramThreadId` (fallback to default chat);
   - `/dashboard` route добавлен в app (`src/dashboard.js`, auth policy как `/status`);
+  - dashboard control-plane расширен: runtime service status + local daemon actions (`/ops/stack`, `/ops/cursor`) under loopback-only policy;
+  - local browser-friendly mode добавлен: `DASHBOARD_PUBLIC_LOCAL=true` (dashboard without bearer on loopback) + `DASHBOARD_ENABLE_ACTIONS=true` (UI controls);
   - введён project registry SSoT: `config/projects.json` + `node scripts/validate-projects-config.js`.
   - тестовый baseline усилен: `tests/dashboard.test.ts`, `tests/project-registry.test.ts`, расширенные WF-5 callback graph invariants в `tests/e2e/workflow-fixtures.test.ts`.
   - rollout/rollback playbook добавлен: `docs/intake-dashboard-rollout-runbook.md`.
@@ -141,6 +143,9 @@
    - Health report должен показывать `backup retention timer` статус: `./scripts/stack-health-report.sh --markdown`.
    - Cost governance timer: `./scripts/install-cost-governance-timer.sh --calendar daily --days 30 --budget 50`.
    - Online telemetry report timer: `./scripts/install-online-telemetry-report-timer.sh --calendar daily --days 30 --min-events 40`.
+   - Optional stack autostart (desktop login): `./scripts/install-stack-autostart-service.sh --profile core|extended|full [--enable-linger]`.
+   - Optional dashboard browser autostart (desktop login): `./scripts/install-dashboard-browser-autostart.sh` (`--disable` to remove).
+   - Optional stack self-heal watchdog (periodic ensure): `./scripts/install-stack-watchdog-timer.sh --profile core --interval-minutes 1` (`--stop` to remove).
 5. Поддерживать release scorecard v2 в релизном цикле:
    - `./scripts/release-quality-gate.sh --strict-parity --generate-scorecard --version vX.Y.Z --env staging`.
    - Через `.github/workflows/release-gate.yml` запускать `workflow_dispatch` с `generate_scorecard=true` и сохранять artifact `release-scorecard-v2` как release evidence.
