@@ -180,6 +180,8 @@
    - `/projects` + callback `PROJECT_SET`;
    - `/q task|spec|idea ...`;
    - `/capture` + callbacks `Task/Spec/Idea/Move/Archive`.
+   - Для evidence/автопроверки использовать:
+     `source scripts/load-env-from-keyring.sh && ./scripts/check-telegram-uat-evidence.sh --since-minutes 180 --limit 200`
 
 ## Рабочий цикл дальше
 
