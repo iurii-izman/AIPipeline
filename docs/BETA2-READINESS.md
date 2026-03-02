@@ -1,6 +1,6 @@
 # Beta 2 Readiness (Go/No-Go)
 
-Дата: 2026-03-02  
+Дата: 2026-03-02
 Цель релиза: `v0.1.0-beta.2`
 
 ## Текущий статус
@@ -46,4 +46,3 @@
 - Missing release artifacts in GitHub run.
 - DR cadence stale (>30 days).
 - Critical CI/security regression.
-
