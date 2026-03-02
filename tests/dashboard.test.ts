@@ -98,7 +98,7 @@ describe("dashboard renderer", () => {
             }),
         };
       }
-      if (value.includes("/v1/databases/notion-db-1/query")) {
+      if (value.includes("/v1/databases/notion-db-1/query") || value.includes("/v1/data-sources/notion-db-1/query")) {
         return {
           ok: true,
           status: 200,
@@ -130,7 +130,9 @@ describe("dashboard renderer", () => {
     expect(html).toContain("Completion: 50.0% (1/2)");
     expect(html).toContain("https://github.com/iurii-izman/AIPipeline");
     expect(calls.some((v) => v.includes("api.linear.app/graphql"))).toBe(true);
-    expect(calls.some((v) => v.includes("/v1/databases/notion-db-1/query"))).toBe(true);
+    expect(
+      calls.some((v) => v.includes("/v1/databases/notion-db-1/query") || v.includes("/v1/data-sources/notion-db-1/query"))
+    ).toBe(true);
   });
 
   it("renders warning when Linear API key is missing", async () => {
@@ -201,7 +203,7 @@ describe("dashboard renderer", () => {
             }),
         };
       }
-      if (value.includes("/v1/databases/notion-db-1/query")) {
+      if (value.includes("/v1/databases/notion-db-1/query") || value.includes("/v1/data-sources/notion-db-1/query")) {
         return {
           ok: true,
           status: 200,

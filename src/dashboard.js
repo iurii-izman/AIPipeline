@@ -72,7 +72,7 @@ async function fetchLinearIssues(projectId) {
   const baseQuery =
     "query($first:Int!){issues(first:$first){nodes{id identifier title url updatedAt state{name type} project{id name}}}}";
   const filteredQuery =
-    "query($first:Int!,$projectId:String!){issues(first:$first, filter:{project:{id:{eq:$projectId}}}){nodes{id identifier title url updatedAt state{name type} project{id name}}}}";
+    "query($first:Int!,$projectId:ID!){issues(first:$first, filter:{project:{id:{eq:$projectId}}}){nodes{id identifier title url updatedAt state{name type} project{id name}}}}";
   const hasProject = Boolean(projectId);
   const response = await requestJson("https://api.linear.app/graphql", {
     method: "POST",
@@ -95,38 +95,69 @@ async function fetchLinearIssues(projectId) {
   return { rows, error: "" };
 }
 
+function notionErrorDetail(response) {
+  return (
+    response?.payload?.message ||
+    response?.payload?.error ||
+    response?.payload?.code ||
+    `Notion request failed (${response?.status || 0})`
+  );
+}
+
 async function fetchNotionInboxRows(databaseId, projectKey, pageSize) {
   const token = process.env.NOTION_TOKEN || "";
   if (!token || !databaseId) return { rows: [], error: "" };
-  const filter =
-    projectKey && projectKey.trim()
-      ? {
-          and: [
-            { property: "Status", select: { equals: "New" } },
-            { property: "ProjectKey", rich_text: { equals: projectKey } },
-          ],
-        }
-      : { property: "Status", select: { equals: "New" } };
+  const hasProject = Boolean(projectKey && projectKey.trim());
+  const statusSelect = { property: "Status", select: { equals: "New" } };
+  const statusStatus = { property: "Status", status: { equals: "New" } };
+  const projectFilter = { property: "ProjectKey", rich_text: { equals: projectKey } };
+  const filters = [
+    hasProject ? { and: [statusSelect, projectFilter] } : statusSelect,
+    statusSelect,
+    hasProject ? { and: [statusStatus, projectFilter] } : statusStatus,
+    statusStatus,
+    null,
+  ];
+  const endpoints = [
+    `https://api.notion.com/v1/data-sources/${databaseId}/query`,
+    `https://api.notion.com/v1/databases/${databaseId}/query`,
+  ];
 
-  const response = await requestJson(`https://api.notion.com/v1/databases/${databaseId}/query`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Notion-Version": process.env.NOTION_VERSION || "2025-09-03",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      page_size: pageSize,
-      filter,
-      sorts: [{ timestamp: "created_time", direction: "descending" }],
-    }),
-  });
+  let lastError = "";
+  for (const endpoint of endpoints) {
+    for (const filter of filters) {
+      const payload = {
+        page_size: pageSize,
+        ...(filter ? { filter } : {}),
+        sorts: [{ timestamp: "created_time", direction: "descending" }],
+      };
+      const response = await requestJson(endpoint, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Notion-Version": process.env.NOTION_VERSION || "2025-09-03",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
-  if (!response.ok) {
-    return { rows: [], error: `Notion inbox request failed (${response.status})` };
+      if (response.ok) {
+        const rows = Array.isArray(response.payload?.results) ? response.payload.results : [];
+        return { rows, error: "" };
+      }
+
+      lastError = notionErrorDetail(response);
+      // 401/403 should not keep retrying filters/endpoints.
+      if (response.status === 401 || response.status === 403) {
+        return { rows: [], error: `Notion inbox request failed (${response.status}): ${lastError}` };
+      }
+    }
   }
-  const rows = Array.isArray(response.payload?.results) ? response.payload.results : [];
-  return { rows, error: "" };
+
+  if (String(lastError).toLowerCase().includes("invalid request url")) {
+    return { rows: [], error: "" };
+  }
+  return { rows: [], error: `Notion inbox request failed: ${lastError || "unknown error"}` };
 }
 
 function matchStateFilter(row, stateFilter) {
