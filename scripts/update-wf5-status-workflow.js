@@ -224,8 +224,10 @@ const normalizeTemplateId = (value) => {
 const suggestAction = (text) => {
   const raw = String(text || '').toLowerCase();
   if (!raw) return 'IDEA';
-  if (/\b(spec|rfc|design|architecture|adr|proposal|дизайн|спека)\b/.test(raw)) return 'SPEC';
-  if (/\b(todo|task|fix|bug|issue|implement|add|надо|сделать|починить|задач)\b/.test(raw)) return 'TASK';
+  const specHints = ['spec', 'rfc', 'design', 'architecture', 'adr', 'proposal', 'дизайн', 'спека'];
+  const taskHints = ['todo', 'task', 'fix', 'bug', 'issue', 'implement', 'add', 'надо', 'сделать', 'починить', 'задач'];
+  if (specHints.some((hint) => raw.includes(hint))) return 'SPEC';
+  if (taskHints.some((hint) => raw.includes(hint))) return 'TASK';
   return 'IDEA';
 };
 
@@ -278,7 +280,7 @@ if (callbackShortId && db.intakeStore[callbackShortId]) {
 }
 
 const callbackItemText = String(callbackItem?.text || '');
-const callbackTitle = String((callbackItemText || '').split('\n')[0] || ('Inbox item ' + (callbackShortId || shortId || ''))).slice(0, 120);
+const callbackTitle = String((callbackItemText || '').split('\\\\n')[0] || ('Inbox item ' + (callbackShortId || shortId || ''))).slice(0, 120);
 
 return [{ json: {
   command,
