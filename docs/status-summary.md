@@ -16,7 +16,7 @@
 - Stable HTTPS mode: active (Cloudflare Tunnel path documented)
 
 ## Quality Baseline
-- Tests: `83/83` passing
+- Tests: `84/84` passing
 - Coverage: branch `80.44%` (threshold `80%`) pass
 - CI required checks: green
 - Security checks: `npm audit` gate + CodeQL
@@ -58,6 +58,11 @@
   - `release-scorecard-v2`: `https://api.github.com/repos/iurii-izman/AIPipeline/actions/artifacts/5719778500/zip`
   - `release-supply-chain`: `https://api.github.com/repos/iurii-izman/AIPipeline/actions/artifacts/5719778672/zip`
   - `release-ai-ops`: `https://api.github.com/repos/iurii-izman/AIPipeline/actions/artifacts/5719778869/zip`
+- Release Gate refresh (remote, reboot/runtime reliability follow-up): success with scorecard + supply-chain + ai-ops artifacts on `2026-03-02` (head `034a534`, branch `main`)
+  `https://github.com/iurii-izman/AIPipeline/actions/runs/22574392332`
+  - `release-scorecard-v2`: `https://api.github.com/repos/iurii-izman/AIPipeline/actions/artifacts/5720290321/zip`
+  - `release-supply-chain`: `https://api.github.com/repos/iurii-izman/AIPipeline/actions/artifacts/5720290451/zip`
+  - `release-ai-ops`: `https://api.github.com/repos/iurii-izman/AIPipeline/actions/artifacts/5720290568/zip`
 - Git sync state: local `main` and `origin/main` are synchronized
 - IaC baseline: `infra/terraform` + `scripts/check-iac-baseline.sh` + CI job `iac-validate`
 - OTel baseline: `OTEL_ENABLED=true` (или `OTEL_PILOT_ENABLED=true`) + managed exporter policy checks (`otel:check-managed`, `otel:check-coverage`)

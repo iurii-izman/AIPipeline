@@ -8,7 +8,7 @@
 
 | Тег | Версия в package.json | Описание |
 |-----|------------------------|----------|
-| **v0.1.0-beta.2** | 0.1.0-beta.2 | Beta prerelease published: intake/dashboard phase-2 merged, release-gate artifacts refreshed on `main` (latest run `22573170009`) |
+| **v0.1.0-beta.2** | 0.1.0-beta.2 | Beta prerelease published: intake/dashboard phase-2 merged, release-gate artifacts refreshed on `main` (latest run `22574392332`) |
 | v0.1.0-beta.1 | 0.1.0-beta.1 | Beta prerelease published: docs-link integrity gate, governance loops closed, RC rollout evidence attached |
 | **v0.1.0-alpha.2** | 0.1.0-alpha.2 | Альфа 2: audit SSoT, WF-1…WF-7 hardening, strict parity/release gate, docs IA cleanup |
 | v0.1.0-alpha.1 | 0.1.0-alpha.1 | Альфа 1: Day-0 завершён, WF-1…WF-6, GET /health, GET /status |

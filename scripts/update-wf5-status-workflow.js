@@ -94,7 +94,7 @@ const hasVideoNote = Boolean(message.video_note?.file_id);
 const hasAudio = Boolean(message.audio?.file_id);
 const hasPhoto = Array.isArray(message.photo) && message.photo.length > 0;
 const textRaw = String(message.text || message.caption || '').trim();
-const [commandRawOriginal, ...rest] = textRaw.split(/\s+/);
+const [commandRawOriginal, ...rest] = textRaw.split(/\\s+/);
 let commandRaw = String(commandRawOriginal || '').toLowerCase();
 let args = rest.join(' ').trim();
 let callbackAction = '';
@@ -142,7 +142,7 @@ let command = commandRaw;
 if (command === '/task') command = '/create';
 if (command === '/note') command = '/idea';
 if (command === '/q') {
-  const [quickVerbRaw, ...quickRest] = String(args || '').split(/\s+/);
+  const [quickVerbRaw, ...quickRest] = String(args || '').split(/\\s+/);
   const quickVerb = String(quickVerbRaw || '').trim().toLowerCase();
   const quickBody = quickRest.join(' ').trim();
   if (quickVerb === 'task' || quickVerb === 'todo' || quickVerb === 'bug') {
