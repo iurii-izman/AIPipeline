@@ -20,6 +20,7 @@
 - Coverage: branch `80.44%` (threshold `80%`) pass
 - CI required checks: green
 - Security checks: `npm audit` gate + CodeQL
+- SonarCloud (new code gate): `projectStatus=OK` on `2026-03-02` (`new_security_rating=A`, `new_security_hotspots_reviewed=100%`, `new vulnerabilities=0`)
 - GitHub ruleset required checks include: `lint`, `build`, `typecheck`, `test`, `coverage`, `integration`, `e2e-fixtures`, `eval-alpha`, `eval-safety`, `eval-v2`, `sbom`, `iac-validate`, `cost-governance`, `workflow-governance`, `docs-links`, `data-governance-policy`, `security-audit`, `analyze (javascript-typescript)`
 
 ## Operational Baseline
