@@ -8,7 +8,8 @@
 
 | Тег | Версия в package.json | Описание |
 |-----|------------------------|----------|
-| **v0.1.0-beta.1** | 0.1.0-beta.1 | Beta prerelease published: docs-link integrity gate, governance loops closed, RC rollout evidence attached |
+| **v0.1.0-beta.2** | 0.1.0-beta.2 | Beta prerelease published: intake/dashboard phase-2 merged, release-gate artifacts refreshed on `main` |
+| v0.1.0-beta.1 | 0.1.0-beta.1 | Beta prerelease published: docs-link integrity gate, governance loops closed, RC rollout evidence attached |
 | **v0.1.0-alpha.2** | 0.1.0-alpha.2 | Альфа 2: audit SSoT, WF-1…WF-7 hardening, strict parity/release gate, docs IA cleanup |
 | v0.1.0-alpha.1 | 0.1.0-alpha.1 | Альфа 1: Day-0 завершён, WF-1…WF-6, GET /health, GET /status |
 
@@ -98,9 +99,9 @@
      - `npm run workflow:governance`
 
 14. **Beta RC package (recommended)**
-   - RC notes + rollout window: [release-notes/v0.1.0-beta.1-rc.md](release-notes/v0.1.0-beta.1-rc.md)
-   - Next target RC prep: [release-notes/v0.1.0-beta.2-rc.md](release-notes/v0.1.0-beta.2-rc.md)
-   - Release tag: `v0.1.0-beta.1` (prerelease)
+   - RC notes + rollout window: [release-notes/v0.1.0-beta.2-rc.md](release-notes/v0.1.0-beta.2-rc.md)
+   - Previous RC: [release-notes/v0.1.0-beta.1-rc.md](release-notes/v0.1.0-beta.1-rc.md)
+   - Release tag: `v0.1.0-beta.2` (prerelease)
    - После publish обновить evidence links в RC notes.
 
 ---
@@ -108,7 +109,7 @@
 ## Именование тегов
 
 - Альфа: `v0.1.0-alpha.1`, `v0.1.0-alpha.2` …
-- Бета: `v0.1.0-beta.1` …
+- Бета: `v0.1.0-beta.2` …
 - Стабильный: `v0.1.0`, `v0.2.0`, `v1.0.0` …
 
 Версия в `package.json` должна совпадать с тегом (без префикса `v`).

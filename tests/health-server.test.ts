@@ -244,6 +244,128 @@ describe("health server", () => {
     expect(stackStatus.body).toContain("\"profile\":\"core\"");
   });
 
+  it("exposes /dashboard/search with dashboard auth policy", async () => {
+    process.env.STATUS_AUTH_TOKEN = "secret-token";
+    process.env.LINEAR_API_KEY = "linear-test";
+    process.env.NOTION_TOKEN = "notion-test";
+    process.env.PROJECTS_CONFIG = JSON.stringify({
+      projects: [{ key: "aipipeline", label: "AIPipeline", linearProjectId: "lin-proj-1" }],
+    });
+    process.env.DEFAULT_PROJECT_KEY = "aipipeline";
+    global.fetch = vi.fn(async (url: string | URL) => {
+      const value = String(url);
+      if (value.includes("api.linear.app/graphql")) {
+        return {
+          ok: true,
+          status: 200,
+          text: async () =>
+            JSON.stringify({
+              data: {
+                issues: {
+                  nodes: [
+                    {
+                      id: "1",
+                      identifier: "AIP-1",
+                      title: "Demo search item",
+                      url: "https://linear.app/issue/AIP-1",
+                      updatedAt: "2026-03-02T12:00:00.000Z",
+                      state: { name: "Todo", type: "backlog" },
+                      project: { id: "lin-proj-1", name: "AIPipeline" },
+                    },
+                  ],
+                },
+              },
+            }),
+        };
+      }
+      return { ok: true, status: 200, text: async () => JSON.stringify({ results: [] }) };
+    }) as unknown as typeof fetch;
+
+    const runningServer = await start(0);
+    server = runningServer;
+    const address = runningServer.address();
+    if (!address || typeof address === "string") throw new Error("Server did not provide numeric address");
+    const port = address.port;
+
+    const unauthorized = await request(`http://127.0.0.1:${port}/dashboard/search?q=demo`);
+    expect(unauthorized.statusCode).toBe(401);
+
+    const authorized = await request(`http://127.0.0.1:${port}/dashboard/search?q=demo`, {
+      headers: { Authorization: "Bearer secret-token" },
+    });
+    expect(authorized.statusCode).toBe(200);
+    expect(authorized.body).toContain("\"ok\":true");
+    expect(authorized.body).toContain("Demo search item");
+  });
+
+  it("gates /dashboard/create and /dashboard/triage behind local actions flag", async () => {
+    process.env.STATUS_AUTH_TOKEN = "secret-token";
+    process.env.DASHBOARD_PUBLIC_LOCAL = "true";
+    process.env.LINEAR_API_KEY = "linear-test";
+    process.env.NOTION_TOKEN = "notion-test";
+    process.env.PROJECTS_CONFIG = JSON.stringify({
+      projects: [
+        {
+          key: "aipipeline",
+          label: "AIPipeline",
+          linearTeamId: "team-1",
+          linearProjectId: "proj-1",
+          notionInboxDatabaseId: "inbox-db",
+          notionSpecsDatabaseId: "specs-db",
+        },
+      ],
+    });
+    process.env.DEFAULT_PROJECT_KEY = "aipipeline";
+
+    const runningServer = await start(0);
+    server = runningServer;
+    const address = runningServer.address();
+    if (!address || typeof address === "string") throw new Error("Server did not provide numeric address");
+    const port = address.port;
+
+    const disabled = await request(`http://127.0.0.1:${port}/dashboard/create`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ projectKey: "aipipeline", type: "task", title: "Demo" }),
+    });
+    expect(disabled.statusCode).toBe(401);
+
+    process.env.DASHBOARD_ENABLE_ACTIONS = "true";
+    global.fetch = vi.fn(async (url: string | URL) => {
+      const value = String(url);
+      if (value.includes("api.linear.app/graphql")) {
+        return {
+          ok: true,
+          status: 200,
+          text: async () =>
+            JSON.stringify({
+              data: { issueCreate: { issue: { id: "lin-1", identifier: "AIP-99", url: "https://linear.app/issue/AIP-99", title: "Demo" } } },
+            }),
+        };
+      }
+      if (value.includes("/v1/pages/")) {
+        return { ok: true, status: 200, text: async () => JSON.stringify({ id: "page-1" }) };
+      }
+      return { ok: true, status: 200, text: async () => JSON.stringify({ results: [] }) };
+    }) as unknown as typeof fetch;
+
+    const createOk = await request(`http://127.0.0.1:${port}/dashboard/create`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ projectKey: "aipipeline", type: "task", title: "Demo" }),
+    });
+    expect(createOk.statusCode).toBe(200);
+    expect(createOk.body).toContain("\"ok\":true");
+
+    const triageBad = await request(`http://127.0.0.1:${port}/dashboard/triage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ projectKey: "aipipeline", action: "task" }),
+    });
+    expect(triageBad.statusCode).toBe(400);
+    expect(triageBad.body).toContain("intake item was not found");
+  });
+
   it("rate limits health endpoint", async () => {
     process.env.HEALTH_RATE_LIMIT_MAX_REQUESTS = "2";
     const runningServer = await start(0);

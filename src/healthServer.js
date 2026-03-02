@@ -10,7 +10,12 @@ const fs = require("fs");
 const path = require("path");
 const { context: otelContext, trace, SpanStatusCode } = require("@opentelemetry/api");
 const { log, correlationIdFromRequest } = require("./logger.js");
-const { getDashboardHtml } = require("./dashboard.js");
+const {
+  getDashboardHtml,
+  searchDashboard,
+  createDashboardArtifact,
+  triageDashboardIntake,
+} = require("./dashboard.js");
 const {
   canBypassDashboardAuth,
   dashboardActionsEnabled,
@@ -529,6 +534,7 @@ function requestHandler(req, res) {
       const parsed = new URL(req.url || "/dashboard", "http://localhost");
       const projectKey = parsed.searchParams.get("project") || "";
       const stateFilter = parsed.searchParams.get("state") || "all";
+      const query = parsed.searchParams.get("q") || "";
       const taskLimit = parsed.searchParams.get("tasks") || "";
       const inboxLimit = parsed.searchParams.get("inbox") || "";
       const activityLimit = parsed.searchParams.get("activity") || "";
@@ -536,6 +542,7 @@ function requestHandler(req, res) {
       getDashboardHtml({
         projectKey,
         stateFilter,
+        query,
         taskLimit,
         inboxLimit,
         activityLimit,
@@ -555,6 +562,97 @@ function requestHandler(req, res) {
             correlationId,
             error: err instanceof Error ? err.message : String(err),
           });
+        });
+      return;
+    }
+
+    if (req.method === "GET" && url === "/dashboard/search") {
+      const authOk = checkBearerAuth(req, getStatusAuthToken()) || canBypassDashboardAuth(remoteAddress);
+      if (!authOk) {
+        res.writeHead(401);
+        res.end();
+        return;
+      }
+      const parsed = new URL(req.url || "/dashboard/search", "http://localhost");
+      const q = parsed.searchParams.get("q") || "";
+      const projectKey = parsed.searchParams.get("project") || "";
+      const limit = parsed.searchParams.get("limit") || "25";
+      searchDashboard({ q, projectKey, limit })
+        .then((payload) => {
+          res.setHeader("Content-Type", "application/json");
+          res.writeHead(200);
+          res.end(JSON.stringify({ ok: true, ...payload }));
+        })
+        .catch((err) => {
+          res.setHeader("Content-Type", "application/json");
+          res.writeHead(500);
+          res.end(JSON.stringify({ ok: false, error: err instanceof Error ? err.message : String(err), results: [] }));
+        });
+      return;
+    }
+
+    if (req.method === "POST" && url === "/dashboard/create") {
+      if (!isLoopbackAddress(remoteAddress)) {
+        res.writeHead(403);
+        res.end();
+        return;
+      }
+      const authOk = checkBearerAuth(req, getStatusAuthToken()) || canBypassDashboardAuth(remoteAddress);
+      if (!authOk || !dashboardActionsEnabled()) {
+        res.writeHead(401);
+        res.end();
+        return;
+      }
+      parseJsonBody(req)
+        .then(async (payload) => {
+          const result = await createDashboardArtifact(payload || {});
+          res.setHeader("Content-Type", "application/json");
+          res.writeHead(result.ok ? 200 : 400);
+          res.end(JSON.stringify(result));
+          log("info", "dashboard create action", {
+            correlationId,
+            ok: result.ok,
+            projectKey: String(payload?.projectKey || ""),
+            type: String(payload?.type || ""),
+          });
+        })
+        .catch((err) => {
+          res.setHeader("Content-Type", "application/json");
+          res.writeHead(400);
+          res.end(JSON.stringify({ ok: false, error: err instanceof Error ? err.message : String(err) }));
+        });
+      return;
+    }
+
+    if (req.method === "POST" && url === "/dashboard/triage") {
+      if (!isLoopbackAddress(remoteAddress)) {
+        res.writeHead(403);
+        res.end();
+        return;
+      }
+      const authOk = checkBearerAuth(req, getStatusAuthToken()) || canBypassDashboardAuth(remoteAddress);
+      if (!authOk || !dashboardActionsEnabled()) {
+        res.writeHead(401);
+        res.end();
+        return;
+      }
+      parseJsonBody(req)
+        .then(async (payload) => {
+          const result = await triageDashboardIntake(payload || {});
+          res.setHeader("Content-Type", "application/json");
+          res.writeHead(result.ok ? 200 : 400);
+          res.end(JSON.stringify(result));
+          log("info", "dashboard triage action", {
+            correlationId,
+            ok: result.ok,
+            action: String(payload?.action || ""),
+            projectKey: String(payload?.projectKey || ""),
+          });
+        })
+        .catch((err) => {
+          res.setHeader("Content-Type", "application/json");
+          res.writeHead(400);
+          res.end(JSON.stringify({ ok: false, error: err instanceof Error ? err.message : String(err) }));
         });
       return;
     }

@@ -10,6 +10,8 @@ const { getDashboardHtml } = require("../src/dashboard.js") as {
           taskLimit?: number;
           inboxLimit?: number;
           activityLimit?: number;
+          query?: string;
+          actionsEnabled?: boolean;
         }
   ) => Promise<string>;
 };
@@ -223,5 +225,108 @@ describe("dashboard renderer", () => {
     expect(html).toContain("filter: completed");
     expect(html).toContain("AIP-101");
     expect(html).not.toContain("AIP-100");
+  });
+
+  it("renders search results and action controls when enabled", async () => {
+    process.env.LINEAR_API_KEY = "linear-test";
+    process.env.NOTION_TOKEN = "notion-test";
+    process.env.NOTION_VERSION = "2025-09-03";
+    process.env.PROJECTS_CONFIG = JSON.stringify({
+      projects: [
+        {
+          key: "aipipeline",
+          label: "AIPipeline",
+          linearProjectId: "lin-proj-1",
+          notionInboxDatabaseId: "notion-db-1",
+          notionSpecsDatabaseId: "notion-specs-1",
+        },
+      ],
+    });
+    process.env.DEFAULT_PROJECT_KEY = "aipipeline";
+
+    global.fetch = (async (url: string | URL) => {
+      const value = String(url);
+      if (value.includes("api.linear.app/graphql")) {
+        return {
+          ok: true,
+          status: 200,
+          text: async () =>
+            JSON.stringify({
+              data: {
+                issues: {
+                  nodes: [
+                    {
+                      id: "1",
+                      identifier: "AIP-102",
+                      title: "Searchable intake task",
+                      url: "https://linear.app/issue/AIP-102",
+                      updatedAt: "2026-03-02T12:00:00.000Z",
+                      state: { name: "In Progress", type: "started" },
+                      project: { id: "lin-proj-1", name: "AIPipeline" },
+                    },
+                  ],
+                },
+              },
+            }),
+        };
+      }
+      if (value.includes("/v1/databases/notion-db-1/query") || value.includes("/v1/data-sources/notion-db-1/query")) {
+        return {
+          ok: true,
+          status: 200,
+          text: async () =>
+            JSON.stringify({
+              results: [
+                {
+                  id: "page-1",
+                  url: "https://notion.so/inbox-item",
+                  properties: {
+                    Name: {
+                      type: "title",
+                      title: [{ plain_text: "Searchable inbox entry" }],
+                    },
+                  },
+                },
+              ],
+            }),
+        };
+      }
+      if (value.includes("/v1/databases/notion-specs-1/query") || value.includes("/v1/data-sources/notion-specs-1/query")) {
+        return {
+          ok: true,
+          status: 200,
+          text: async () =>
+            JSON.stringify({
+              results: [
+                {
+                  id: "spec-1",
+                  url: "https://notion.so/spec-item",
+                  properties: {
+                    Name: {
+                      type: "title",
+                      title: [{ plain_text: "Searchable spec entry" }],
+                    },
+                  },
+                },
+              ],
+            }),
+        };
+      }
+      throw new Error(`Unexpected fetch URL: ${value}`);
+    }) as typeof fetch;
+
+    const html = await getDashboardHtml({
+      projectKey: "aipipeline",
+      query: "searchable",
+      actionsEnabled: true,
+      taskLimit: 5,
+      inboxLimit: 5,
+      activityLimit: 5,
+    });
+    expect(html).toContain("Search Results");
+    expect(html).toContain("Searchable intake task");
+    expect(html).toContain("Searchable inbox entry");
+    expect(html).toContain("Quick Create");
+    expect(html).toContain("/dashboard/triage");
   });
 });

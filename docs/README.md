@@ -19,6 +19,7 @@
 - [dlq-replay-runbook.md](dlq-replay-runbook.md) — DLQ parking/replay
 - [sentry-db-timeout-cascade-runbook.md](sentry-db-timeout-cascade-runbook.md) — критический incident runbook
 - [intake-dashboard-rollout-runbook.md](intake-dashboard-rollout-runbook.md) — rollout/rollback для WF-5 intake + `/dashboard`
+- [runbook-new-project.md](runbook-new-project.md) — onboarding нового проекта в multi-project registry
 
 ## 3) Platform Setup Guides
 - [keyring-credentials.md](keyring-credentials.md)

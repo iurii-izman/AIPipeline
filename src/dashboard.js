@@ -35,6 +35,7 @@ function normalizeDashboardOptions(optionsOrProjectKey) {
     return {
       projectKey: optionsOrProjectKey,
       stateFilter: "all",
+      query: "",
       taskLimit: 10,
       inboxLimit: 8,
       activityLimit: 8,
@@ -46,6 +47,7 @@ function normalizeDashboardOptions(optionsOrProjectKey) {
   return {
     projectKey: String(options.projectKey || ""),
     stateFilter: normalizeStateFilter(options.stateFilter),
+    query: String(options.query || options.q || "").trim(),
     taskLimit: clampInt(options.taskLimit, 1, 50, 10),
     inboxLimit: clampInt(options.inboxLimit, 1, 25, 8),
     activityLimit: clampInt(options.activityLimit, 1, 25, 8),
@@ -65,6 +67,15 @@ async function requestJson(url, options) {
   return { ok: response.ok, status: response.status, payload };
 }
 
+function notionErrorDetail(response) {
+  return (
+    response?.payload?.message ||
+    response?.payload?.error ||
+    response?.payload?.code ||
+    `Notion request failed (${response?.status || 0})`
+  );
+}
+
 async function fetchLinearIssues(projectId) {
   const apiKey = process.env.LINEAR_API_KEY || "";
   if (!apiKey) return { rows: [], error: "LINEAR_API_KEY is not configured" };
@@ -74,6 +85,7 @@ async function fetchLinearIssues(projectId) {
   const filteredQuery =
     "query($first:Int!,$projectId:ID!){issues(first:$first, filter:{project:{id:{eq:$projectId}}}){nodes{id identifier title url updatedAt state{name type} project{id name}}}}";
   const hasProject = Boolean(projectId);
+
   const response = await requestJson("https://api.linear.app/graphql", {
     method: "POST",
     headers: {
@@ -95,18 +107,49 @@ async function fetchLinearIssues(projectId) {
   return { rows, error: "" };
 }
 
-function notionErrorDetail(response) {
-  return (
-    response?.payload?.message ||
-    response?.payload?.error ||
-    response?.payload?.code ||
-    `Notion request failed (${response?.status || 0})`
-  );
+async function notionRequestWithFallbacks(databaseId, payload, token) {
+  const endpoints = [
+    `https://api.notion.com/v1/data-sources/${databaseId}/query`,
+    `https://api.notion.com/v1/databases/${databaseId}/query`,
+  ];
+
+  let lastError = "";
+  for (const endpoint of endpoints) {
+    const response = await requestJson(endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Notion-Version": process.env.NOTION_VERSION || "2025-09-03",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload || {}),
+    });
+
+    if (response.ok) {
+      return {
+        ok: true,
+        rows: Array.isArray(response.payload?.results) ? response.payload.results : [],
+      };
+    }
+    lastError = notionErrorDetail(response);
+    if (response.status === 401 || response.status === 403) {
+      return { ok: false, rows: [], error: `Notion request failed (${response.status}): ${lastError}` };
+    }
+  }
+
+  return { ok: false, rows: [], error: lastError || "Notion request failed" };
+}
+
+async function fetchNotionRows(databaseId, payload = {}) {
+  const token = process.env.NOTION_TOKEN || "";
+  if (!token || !databaseId) return { rows: [], error: "" };
+  const response = await notionRequestWithFallbacks(databaseId, payload, token);
+  return { rows: response.rows || [], error: response.ok ? "" : `Notion request failed: ${response.error}` };
 }
 
 async function fetchNotionInboxRows(databaseId, projectKey, pageSize) {
-  const token = process.env.NOTION_TOKEN || "";
-  if (!token || !databaseId) return { rows: [], error: "" };
+  if (!process.env.NOTION_TOKEN || !databaseId) return { rows: [], error: "" };
+
   const hasProject = Boolean(projectKey && projectKey.trim());
   const statusSelect = { property: "Status", select: { equals: "New" } };
   const statusStatus = { property: "Status", status: { equals: "New" } };
@@ -118,45 +161,21 @@ async function fetchNotionInboxRows(databaseId, projectKey, pageSize) {
     statusStatus,
     null,
   ];
-  const endpoints = [
-    `https://api.notion.com/v1/data-sources/${databaseId}/query`,
-    `https://api.notion.com/v1/databases/${databaseId}/query`,
-  ];
 
   let lastError = "";
-  for (const endpoint of endpoints) {
-    for (const filter of filters) {
-      const payload = {
-        page_size: pageSize,
-        ...(filter ? { filter } : {}),
-        sorts: [{ timestamp: "created_time", direction: "descending" }],
-      };
-      const response = await requestJson(endpoint, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Notion-Version": process.env.NOTION_VERSION || "2025-09-03",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (response.ok) {
-        const rows = Array.isArray(response.payload?.results) ? response.payload.results : [];
-        return { rows, error: "" };
-      }
-
-      lastError = notionErrorDetail(response);
-      // 401/403 should not keep retrying filters/endpoints.
-      if (response.status === 401 || response.status === 403) {
-        return { rows: [], error: `Notion inbox request failed (${response.status}): ${lastError}` };
-      }
-    }
+  for (const filter of filters) {
+    const payload = {
+      page_size: pageSize,
+      ...(filter ? { filter } : {}),
+      sorts: [{ timestamp: "created_time", direction: "descending" }],
+    };
+    const response = await fetchNotionRows(databaseId, payload);
+    if (!response.error) return { rows: response.rows, error: "" };
+    lastError = response.error;
+    if (/401|403/.test(lastError)) return { rows: [], error: `Notion inbox request failed: ${lastError}` };
   }
 
-  if (String(lastError).toLowerCase().includes("invalid request url")) {
-    return { rows: [], error: "" };
-  }
+  if (String(lastError).toLowerCase().includes("invalid request url")) return { rows: [], error: "" };
   return { rows: [], error: `Notion inbox request failed: ${lastError || "unknown error"}` };
 }
 
@@ -213,6 +232,27 @@ function titleFromNotionRow(row) {
   return "(untitled)";
 }
 
+function rowRichTextValue(row, propertyName) {
+  const prop = row?.properties?.[propertyName];
+  if (!prop) return "";
+  if (prop.type === "rich_text") {
+    return Array.isArray(prop.rich_text) ? prop.rich_text.map((entry) => String(entry?.plain_text || "")).join("") : "";
+  }
+  if (prop.type === "title") {
+    return Array.isArray(prop.title) ? prop.title.map((entry) => String(entry?.plain_text || "")).join("") : "";
+  }
+  if (prop.type === "select") return String(prop.select?.name || "");
+  if (prop.type === "status") return String(prop.status?.name || "");
+  return "";
+}
+
+function rowSummaryText(row) {
+  const title = titleFromNotionRow(row);
+  const status = rowRichTextValue(row, "Status");
+  const project = rowRichTextValue(row, "ProjectKey");
+  return [title, status, project].filter(Boolean).join(" | ");
+}
+
 function aggregateProjectsSummary(projects, rows) {
   return projects.map((project) => {
     const byProject = rows.filter((row) => {
@@ -261,12 +301,332 @@ function buildDashboardHref(options, overrides = {}) {
   const merged = { ...options, ...overrides };
   const params = new URLSearchParams();
   if (merged.projectKey) params.set("project", merged.projectKey);
+  if (merged.query) params.set("q", merged.query);
   if (merged.stateFilter && merged.stateFilter !== "all") params.set("state", merged.stateFilter);
   if (merged.taskLimit !== 10) params.set("tasks", String(merged.taskLimit));
   if (merged.inboxLimit !== 8) params.set("inbox", String(merged.inboxLimit));
   if (merged.activityLimit !== 8) params.set("activity", String(merged.activityLimit));
   const query = params.toString();
   return query ? `/dashboard?${query}` : "/dashboard";
+}
+
+function parseLinearIssueCreate(responsePayload) {
+  const issue = responsePayload?.data?.issueCreate?.issue || null;
+  if (!issue) return null;
+  return {
+    id: String(issue.id || ""),
+    identifier: String(issue.identifier || ""),
+    url: String(issue.url || ""),
+    title: String(issue.title || ""),
+  };
+}
+
+async function createLinearIssueForDashboard({ project, title, body }) {
+  const apiKey = process.env.LINEAR_API_KEY || "";
+  if (!apiKey) return { ok: false, error: "LINEAR_API_KEY is not configured" };
+  if (!project?.linearTeamId) return { ok: false, error: `linearTeamId is missing for project '${project?.key || "unknown"}'` };
+
+  const mutation =
+    "mutation($input: IssueCreateInput!){issueCreate(input:$input){success issue{id identifier url title}}}";
+  const response = await requestJson("https://api.linear.app/graphql", {
+    method: "POST",
+    headers: {
+      Authorization: apiKey,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      query: mutation,
+      variables: {
+        input: {
+          title: String(title || "Inbox item"),
+          description: String(body || ""),
+          teamId: String(project.linearTeamId),
+          ...(project.linearProjectId ? { projectId: String(project.linearProjectId) } : {}),
+        },
+      },
+    }),
+  });
+
+  if (!response.ok || response.payload?.errors?.length) {
+    const detail = response.payload?.errors?.[0]?.message || `Linear issueCreate failed (${response.status})`;
+    return { ok: false, error: detail };
+  }
+
+  const created = parseLinearIssueCreate(response.payload);
+  if (!created) return { ok: false, error: "Linear issueCreate returned no issue" };
+  return {
+    ok: true,
+    id: created.id || created.identifier,
+    artifactUrl: created.url,
+    artifactTitle: created.identifier || created.title || "Linear issue",
+  };
+}
+
+async function notionCreatePageWithFallback({ databaseId, projectKey, title, body, source, artifactType }) {
+  const token = process.env.NOTION_TOKEN || "";
+  if (!token) return { ok: false, error: "NOTION_TOKEN is not configured" };
+  if (!databaseId) return { ok: false, error: "Notion database id is required" };
+
+  const titleContent = String(title || "Inbox item").slice(0, 120);
+  const paragraphBody = String(body || "");
+  const baseChildren = paragraphBody
+    ? [
+        {
+          object: "block",
+          type: "paragraph",
+          paragraph: {
+            rich_text: [{ type: "text", text: { content: paragraphBody.slice(0, 1900) } }],
+          },
+        },
+      ]
+    : [];
+
+  const variants = [
+    {
+      parent: { database_id: databaseId },
+      properties: {
+        Name: { title: [{ type: "text", text: { content: titleContent } }] },
+        ...(projectKey ? { ProjectKey: { rich_text: [{ type: "text", text: { content: String(projectKey) } }] } } : {}),
+        ...(source ? { Source: { select: { name: String(source) } } } : {}),
+        ...(artifactType ? { ArtifactType: { select: { name: String(artifactType) } } } : {}),
+      },
+      ...(baseChildren.length ? { children: baseChildren } : {}),
+    },
+    {
+      parent: { database_id: databaseId },
+      properties: {
+        Title: { title: [{ type: "text", text: { content: titleContent } }] },
+      },
+      ...(baseChildren.length ? { children: baseChildren } : {}),
+    },
+  ];
+
+  let lastError = "";
+  for (const payload of variants) {
+    const response = await requestJson("https://api.notion.com/v1/pages", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Notion-Version": process.env.NOTION_VERSION || "2025-09-03",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    if (response.ok) {
+      return { ok: true, id: String(response.payload?.id || ""), artifactUrl: String(response.payload?.url || "") };
+    }
+    lastError = notionErrorDetail(response);
+  }
+
+  return { ok: false, error: `Notion create page failed: ${lastError}` };
+}
+
+async function notionUpdateStatusWithFallback(pageId, statusValue) {
+  const token = process.env.NOTION_TOKEN || "";
+  if (!token) return { ok: false, error: "NOTION_TOKEN is not configured" };
+  if (!pageId) return { ok: false, error: "notion page id is required" };
+
+  const variants = [{ Status: { status: { name: statusValue } } }, { Status: { select: { name: statusValue } } }];
+  let lastError = "";
+  for (const properties of variants) {
+    const response = await requestJson(`https://api.notion.com/v1/pages/${encodeURIComponent(pageId)}`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Notion-Version": process.env.NOTION_VERSION || "2025-09-03",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ properties }),
+    });
+    if (response.ok) return { ok: true, updatedStatus: statusValue };
+    lastError = notionErrorDetail(response);
+  }
+
+  return { ok: false, error: `Notion update status failed: ${lastError}` };
+}
+
+function normalizeSearchOptions(options = {}) {
+  return {
+    q: String(options.q || options.query || "").trim(),
+    projectKey: String(options.projectKey || options.project || "").trim(),
+    limit: clampInt(options.limit, 1, 100, 25),
+  };
+}
+
+async function searchDashboard(options = {}) {
+  const normalized = normalizeSearchOptions(options);
+  if (!normalized.q) return { ok: true, results: [] };
+
+  const registry = loadProjectRegistry();
+  const selectedProject = getProjectByKey(registry, normalized.projectKey) || (!normalized.projectKey ? resolveDefaultProject(registry) : null);
+  const q = normalized.q.toLowerCase();
+
+  const notionInboxDatabaseId = (selectedProject && selectedProject.notionInboxDatabaseId) || process.env.NOTION_INBOX_DATABASE_ID || "";
+  const notionSpecsDatabaseId = (selectedProject && selectedProject.notionSpecsDatabaseId) || process.env.NOTION_SPECS_DATABASE_ID || "";
+
+  const [linear, inbox, specs] = await Promise.all([
+    fetchLinearIssues(selectedProject?.linearProjectId || ""),
+    fetchNotionRows(notionInboxDatabaseId, { page_size: Math.max(normalized.limit * 2, 30) }),
+    fetchNotionRows(notionSpecsDatabaseId, { page_size: Math.max(normalized.limit * 2, 30) }),
+  ]);
+
+  const results = [];
+  for (const issue of linear.rows || []) {
+    const blob = [issue.identifier, issue.title, issue.state?.name, issue.project?.name].join(" ").toLowerCase();
+    if (!blob.includes(q)) continue;
+    results.push({
+      source: "linear",
+      id: String(issue.id || issue.identifier || ""),
+      title: String(issue.title || "(untitled)"),
+      subtitle: String(issue.identifier || "issue"),
+      url: String(issue.url || ""),
+      projectKey: String(selectedProject?.key || issue.project?.name || ""),
+      updatedAt: String(issue.updatedAt || ""),
+    });
+  }
+  for (const row of inbox.rows || []) {
+    const title = titleFromNotionRow(row);
+    if (![title, rowSummaryText(row)].join(" ").toLowerCase().includes(q)) continue;
+    results.push({
+      source: "notion-inbox",
+      id: String(row?.id || ""),
+      title,
+      subtitle: "Inbox",
+      url: String(row?.url || ""),
+      projectKey: String(selectedProject?.key || rowRichTextValue(row, "ProjectKey") || ""),
+      updatedAt: String(row?.last_edited_time || row?.created_time || ""),
+    });
+  }
+  for (const row of specs.rows || []) {
+    const title = titleFromNotionRow(row);
+    if (![title, rowSummaryText(row)].join(" ").toLowerCase().includes(q)) continue;
+    results.push({
+      source: "notion-spec",
+      id: String(row?.id || ""),
+      title,
+      subtitle: "Spec",
+      url: String(row?.url || ""),
+      projectKey: String(selectedProject?.key || rowRichTextValue(row, "ProjectKey") || ""),
+      updatedAt: String(row?.last_edited_time || row?.created_time || ""),
+    });
+  }
+
+  const sorted = results.sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || ""))).slice(0, normalized.limit);
+  return { ok: true, results: sorted, warnings: [linear.error, inbox.error, specs.error].filter(Boolean) };
+}
+
+async function createDashboardArtifact(options = {}) {
+  const type = String(options.type || "").trim().toLowerCase();
+  const title = String(options.title || "").trim();
+  const body = String(options.body || "").trim();
+  if (!title) return { ok: false, error: "title is required" };
+  if (!["task", "spec", "idea", "note"].includes(type)) return { ok: false, error: "type must be one of: task, spec, idea, note" };
+
+  const registry = loadProjectRegistry();
+  const project = getProjectByKey(registry, options.projectKey) || resolveDefaultProject(registry);
+  if (!project) return { ok: false, error: "project is not configured" };
+
+  if (type === "task") {
+    return createLinearIssueForDashboard({
+      project,
+      title,
+      body: body || `Created from /dashboard/create\n\nProject: ${project.key}`,
+    });
+  }
+
+  if (type === "spec") {
+    return notionCreatePageWithFallback({
+      databaseId: project.notionSpecsDatabaseId || process.env.NOTION_SPECS_DATABASE_ID || "",
+      projectKey: project.key,
+      title,
+      body,
+      source: "Dashboard",
+      artifactType: "Spec",
+    });
+  }
+
+  return notionCreatePageWithFallback({
+    databaseId: project.notionInboxDatabaseId || process.env.NOTION_INBOX_DATABASE_ID || "",
+    projectKey: project.key,
+    title,
+    body,
+    source: "Dashboard",
+    artifactType: type === "note" ? "Note" : "Idea",
+  });
+}
+
+async function findInboxRowByShortId(databaseId, shortId) {
+  if (!databaseId || !shortId) return null;
+  const filters = [
+    { property: "ShortId", rich_text: { equals: String(shortId) } },
+    { property: "ShortId", rich_text: { contains: String(shortId) } },
+  ];
+  for (const filter of filters) {
+    const result = await fetchNotionRows(databaseId, { page_size: 5, filter });
+    if (result.rows.length > 0) return result.rows[0];
+  }
+  return null;
+}
+
+async function triageDashboardIntake(options = {}) {
+  const action = String(options.action || "").trim().toLowerCase();
+  if (!["task", "spec", "idea", "archive"].includes(action)) {
+    return { ok: false, error: "action must be one of: task, spec, idea, archive" };
+  }
+
+  const registry = loadProjectRegistry();
+  const project = getProjectByKey(registry, options.projectKey) || resolveDefaultProject(registry);
+  if (!project) return { ok: false, error: "project is not configured" };
+
+  const inboxDbId = project.notionInboxDatabaseId || process.env.NOTION_INBOX_DATABASE_ID || "";
+  let pageId = String(options.notionPageId || "").trim();
+  let row = null;
+  if (pageId) {
+    row = { id: pageId, properties: {} };
+  } else if (options.intakeItemId) {
+    row = await findInboxRowByShortId(inboxDbId, String(options.intakeItemId));
+    pageId = String(row?.id || "");
+  }
+  if (!pageId) return { ok: false, error: "intake item was not found by notionPageId/intakeItemId" };
+
+  const title = row ? titleFromNotionRow(row) : `Inbox ${String(options.intakeItemId || pageId).slice(0, 8)}`;
+  const body = row ? rowSummaryText(row) : "";
+
+  if (action === "archive") {
+    const update = await notionUpdateStatusWithFallback(pageId, "Archived");
+    return update.ok ? { ok: true, updatedStatus: "Archived", notionPageId: pageId } : update;
+  }
+  if (action === "idea") {
+    const update = await notionUpdateStatusWithFallback(pageId, "Processed");
+    return update.ok ? { ok: true, updatedStatus: "Processed", notionPageId: pageId } : update;
+  }
+
+  const artifact =
+    action === "task"
+      ? await createLinearIssueForDashboard({
+          project,
+          title,
+          body: body || `Created from dashboard triage\n\nSource Notion page: ${pageId}`,
+        })
+      : await notionCreatePageWithFallback({
+          databaseId: project.notionSpecsDatabaseId || process.env.NOTION_SPECS_DATABASE_ID || "",
+          projectKey: project.key,
+          title,
+          body,
+          source: "Dashboard",
+          artifactType: "Spec",
+        });
+  if (!artifact.ok) return artifact;
+
+  const mark = await notionUpdateStatusWithFallback(pageId, "Processed");
+  return {
+    ok: true,
+    artifactUrl: artifact.artifactUrl || "",
+    id: artifact.id || "",
+    updatedStatus: mark.ok ? "Processed" : "",
+    warning: mark.ok ? "" : mark.error || "",
+    notionPageId: pageId,
+  };
 }
 
 function renderDashboardHtml(data) {
@@ -286,7 +646,19 @@ function renderDashboardHtml(data) {
     .map((row) => {
       const title = escapeHtml(titleFromNotionRow(row));
       const url = escapeHtml(String(row?.url || "#"));
-      return `<li><a href="${url}" target="_blank" rel="noreferrer">${title}</a></li>`;
+      const rowId = escapeHtml(String(row?.id || ""));
+      if (!data.options.actionsEnabled) {
+        return `<li><a href="${url}" target="_blank" rel="noreferrer">${title}</a></li>`;
+      }
+      return `<li>
+        <a href="${url}" target="_blank" rel="noreferrer">${title}</a>
+        <span class="actions-inline">
+          <button class="triage-btn" data-action="task" data-page-id="${rowId}" data-project-key="${escapeHtml(data.project?.key || "")}">Task</button>
+          <button class="triage-btn" data-action="spec" data-page-id="${rowId}" data-project-key="${escapeHtml(data.project?.key || "")}">Spec</button>
+          <button class="triage-btn" data-action="idea" data-page-id="${rowId}" data-project-key="${escapeHtml(data.project?.key || "")}">Idea</button>
+          <button class="triage-btn" data-action="archive" data-page-id="${rowId}" data-project-key="${escapeHtml(data.project?.key || "")}">Archive</button>
+        </span>
+      </li>`;
     })
     .join("");
 
@@ -309,9 +681,7 @@ function renderDashboardHtml(data) {
     ...data.projects.map((project) => {
       const selected = data.project?.key === project.key;
       const href = buildDashboardHref(data.options, { projectKey: project.key });
-      return `<a class="tab${selected ? " selected" : ""}" href="${href}">${escapeHtml(
-        `${project.emoji || ""} ${project.label}`.trim()
-      )}</a>`;
+      return `<a class="tab${selected ? " selected" : ""}" href="${href}">${escapeHtml(`${project.emoji || ""} ${project.label}`.trim())}</a>`;
     }),
   ].join("");
 
@@ -336,9 +706,7 @@ function renderDashboardHtml(data) {
   const runtimeRows = Object.entries(data.runtime.services)
     .map(([name, meta]) => {
       const stateClass = meta.running ? "ok" : "bad";
-      return `<tr><td>${escapeHtml(name)}</td><td><span class="pill ${stateClass}">${meta.running ? "running" : "stopped"}</span></td><td>${escapeHtml(
-        meta.detail
-      )}</td></tr>`;
+      return `<tr><td>${escapeHtml(name)}</td><td><span class="pill ${stateClass}">${meta.running ? "running" : "stopped"}</span></td><td>${escapeHtml(meta.detail)}</td></tr>`;
     })
     .join("");
 
@@ -357,7 +725,34 @@ function renderDashboardHtml(data) {
     </div>`
     : "";
 
-  const notices = [data.linear.error, data.inbox.error].filter(Boolean).map((msg) => `<li>${escapeHtml(msg)}</li>`).join("");
+  const createPanel = data.options.actionsEnabled
+    ? `<div class="card">
+      <h2>Quick Create</h2>
+      <form id="quickCreateForm" class="row">
+        <input id="quickCreateTitle" name="title" type="text" placeholder="Title" required />
+        <select id="quickCreateType" name="type">
+          <option value="task">Task</option>
+          <option value="spec">Spec</option>
+          <option value="idea">Idea</option>
+          <option value="note">Note</option>
+        </select>
+        <button type="submit">Create</button>
+      </form>
+    </div>`
+    : "";
+
+  const searchRows = (data.search?.results || [])
+    .map((item) => {
+      const subtitle = escapeHtml([item.source, item.subtitle, item.projectKey].filter(Boolean).join(" · "));
+      return `<li><a href="${escapeHtml(item.url || "#")}" target="_blank" rel="noreferrer">${escapeHtml(item.title || "(untitled)")}</a> <span class="muted">${subtitle}</span></li>`;
+    })
+    .join("");
+
+  const notices = [data.linear.error, data.inbox.error]
+    .concat(Array.isArray(data.search?.warnings) ? data.search.warnings : [])
+    .filter(Boolean)
+    .map((msg) => `<li>${escapeHtml(msg)}</li>`)
+    .join("");
 
   return `<!doctype html>
 <html lang="en">
@@ -396,6 +791,8 @@ function renderDashboardHtml(data) {
     .pill { border-radius: 999px; padding: 2px 8px; font-size: 12px; border: 1px solid transparent; }
     .pill.ok { background: #e6f4ea; color: #1f6b3a; border-color: #b7dfc6; }
     .pill.bad { background: #fdeaea; color: #8a1f17; border-color: #efc4c4; }
+    .actions-inline { margin-left: 8px; display: inline-flex; gap: 6px; }
+    input, select { border: 1px solid #c6d4df; background: #fff; color: #1d3f58; border-radius: 10px; padding: 8px 12px; min-height: 38px; }
     @media (max-width: 680px) { body { padding: 12px; } }
   </style>
 </head>
@@ -405,7 +802,13 @@ function renderDashboardHtml(data) {
       <h1>AIPipeline Dashboard</h1>
       <div class="muted">Updated: ${escapeHtml(data.generatedAt)} · <a href="${escapeHtml(buildDashboardHref(data.options))}">refresh</a></div>
       <div class="row" style="margin-top:10px;">${projectTabs || '<span class="muted">No projects configured</span>'}</div>
+      <form id="dashboardSearchForm" class="row" style="margin-top:10px;">
+        <input id="dashboardSearchInput" type="text" name="q" value="${escapeHtml(data.options.query || "")}" placeholder="Search Linear + Notion" />
+        <button type="submit">Search</button>
+      </form>
     </div>
+
+    ${createPanel}
 
     <div class="card">
       <h2>${escapeHtml(projectTitle)} summary</h2>
@@ -435,9 +838,7 @@ function renderDashboardHtml(data) {
     <div class="card">
       <h2>Open Tasks</h2>
       <div class="row" style="margin-bottom:10px;">${stateTabs}</div>
-      <div class="muted" style="margin-bottom:8px;">Showing ${data.linear.topTasks.length} of ${data.linear.filteredCount} tasks (filter: ${escapeHtml(
-        data.options.stateFilter
-      )}, limit: ${data.options.taskLimit})</div>
+      <div class="muted" style="margin-bottom:8px;">Showing ${data.linear.topTasks.length} of ${data.linear.filteredCount} tasks (filter: ${escapeHtml(data.options.stateFilter)}, limit: ${data.options.taskLimit})</div>
       <table>
         <thead><tr><th>ID</th><th>Title</th><th>State</th></tr></thead>
         <tbody>${taskRows || '<tr><td colspan="3" class="muted">No tasks found.</td></tr>'}</tbody>
@@ -455,6 +856,16 @@ function renderDashboardHtml(data) {
       <div class="muted" style="margin-top:8px;">Count: ${data.inbox.rows.length} (limit: ${data.options.inboxLimit})</div>
     </div>
 
+    ${
+      data.options.query
+        ? `<div class="card">
+      <h2>Search Results</h2>
+      <div class="muted" style="margin-bottom:8px;">Query: ${escapeHtml(data.options.query)} · Results: ${(data.search?.results || []).length}</div>
+      <ul>${searchRows || '<li class="muted">No results.</li>'}</ul>
+    </div>`
+        : ""
+    }
+
     <div class="card">
       <h2>Quick Links</h2>
       <div>${linksHtml || '<span class="muted">No links configured for selected project.</span>'}</div>
@@ -466,7 +877,6 @@ function renderDashboardHtml(data) {
   <script>
     (function () {
       const output = document.getElementById("opsOutput");
-      if (!output) return;
 
       async function postJson(url, payload) {
         const response = await fetch(url, {
@@ -487,10 +897,10 @@ function renderDashboardHtml(data) {
           const profile = button.getAttribute("data-profile");
           try {
             const data = await postJson("/ops/stack", { action, profile });
-            output.textContent = (data.stdout || "OK").trim();
+            if (output) output.textContent = (data.stdout || "OK").trim();
             setTimeout(() => location.reload(), 700);
           } catch (err) {
-            output.textContent = String(err && err.message ? err.message : err);
+            if (output) output.textContent = String(err && err.message ? err.message : err);
           }
         });
       });
@@ -500,10 +910,57 @@ function renderDashboardHtml(data) {
         launchCursor.addEventListener("click", async () => {
           try {
             const data = await postJson("/ops/cursor", {});
-            output.textContent = "Cursor launch requested (pid: " + (data.pid || "n/a") + ")";
+            if (output) output.textContent = "Cursor launch requested (pid: " + (data.pid || "n/a") + ")";
           } catch (err) {
-            output.textContent = String(err && err.message ? err.message : err);
+            if (output) output.textContent = String(err && err.message ? err.message : err);
           }
+        });
+      }
+
+      const quickCreateForm = document.getElementById("quickCreateForm");
+      if (quickCreateForm) {
+        quickCreateForm.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const title = document.getElementById("quickCreateTitle")?.value || "";
+          const type = document.getElementById("quickCreateType")?.value || "task";
+          try {
+            const data = await postJson("/dashboard/create", {
+              projectKey: ${JSON.stringify(String(data.project?.key || ""))},
+              type,
+              title,
+            });
+            if (output) output.textContent = ("Created: " + (data.artifactUrl || data.id || "ok")).trim();
+            setTimeout(() => location.reload(), 700);
+          } catch (err) {
+            if (output) output.textContent = String(err && err.message ? err.message : err);
+          }
+        });
+      }
+
+      document.querySelectorAll("button.triage-btn").forEach((button) => {
+        button.addEventListener("click", async () => {
+          const action = button.getAttribute("data-action");
+          const notionPageId = button.getAttribute("data-page-id");
+          const projectKey = button.getAttribute("data-project-key");
+          try {
+            const data = await postJson("/dashboard/triage", { action, notionPageId, projectKey });
+            if (output) output.textContent = (data.artifactUrl || data.updatedStatus || "OK").trim();
+            setTimeout(() => location.reload(), 700);
+          } catch (err) {
+            if (output) output.textContent = String(err && err.message ? err.message : err);
+          }
+        });
+      });
+
+      const searchForm = document.getElementById("dashboardSearchForm");
+      if (searchForm) {
+        searchForm.addEventListener("submit", (event) => {
+          event.preventDefault();
+          const q = String(document.getElementById("dashboardSearchInput")?.value || "").trim();
+          const url = new URL(window.location.href);
+          if (q) url.searchParams.set("q", q);
+          else url.searchParams.delete("q");
+          window.location.href = url.toString();
         });
       }
     })();
@@ -519,10 +976,11 @@ async function buildDashboardData(options) {
   const notionInboxFallback =
     (effectiveProject && effectiveProject.notionInboxDatabaseId) || process.env.NOTION_INBOX_DATABASE_ID || "";
 
-  const [linear, inbox, runtime] = await Promise.all([
+  const [linear, inbox, runtime, search] = await Promise.all([
     fetchLinearIssues(effectiveProject?.linearProjectId || ""),
     fetchNotionInboxRows(notionInboxFallback, effectiveProject?.key || "", options.inboxLimit),
     getLocalRuntimeStatus(),
+    options.query ? searchDashboard({ q: options.query, projectKey: effectiveProject?.key || "", limit: Math.max(options.taskLimit, 10) }) : Promise.resolve({ ok: true, results: [], warnings: [] }),
   ]);
 
   const linearSummary = buildLinearSummary(linear.rows, options.stateFilter, options.taskLimit);
@@ -536,13 +994,14 @@ async function buildDashboardData(options) {
     runtime,
     linear: { ...linearSummary, error: linear.error },
     inbox,
+    search,
     activity: buildActivityFeed(linearSummary.topTasks, inbox.rows, options.activityLimit),
   };
 }
 
 async function getDashboardHtml(optionsOrProjectKey = "") {
   const options = normalizeDashboardOptions(optionsOrProjectKey);
-  const cacheKey = `dashboard:${options.projectKey || "all"}:${options.stateFilter}:${options.taskLimit}:${options.inboxLimit}:${options.activityLimit}:${options.actionsEnabled ? "actions" : "readonly"}`;
+  const cacheKey = `dashboard:${options.projectKey || "all"}:${options.stateFilter}:${options.query || ""}:${options.taskLimit}:${options.inboxLimit}:${options.activityLimit}:${options.actionsEnabled ? "actions" : "readonly"}`;
   const hit = cache.get(cacheKey);
   const now = Date.now();
   if (hit && now - hit.ts < CACHE_TTL_MS) return hit.html;
@@ -552,4 +1011,9 @@ async function getDashboardHtml(optionsOrProjectKey = "") {
   return html;
 }
 
-module.exports = { getDashboardHtml };
+module.exports = {
+  getDashboardHtml,
+  searchDashboard,
+  createDashboardArtifact,
+  triageDashboardIntake,
+};

@@ -54,7 +54,7 @@ case "$profile" in
 esac
 
 find_app_pid() {
-  pgrep -f "node .*/src/index.js" 2>/dev/null | head -n 1 || true
+  pgrep -f "node( .*)?src/index.js" 2>/dev/null | head -n 1 || true
 }
 
 app_is_healthy() {
@@ -151,7 +151,7 @@ stop_app() {
 app_status() {
   if [[ -f "$APP_PID_FILE" ]] && kill -0 "$(cat "$APP_PID_FILE")" 2>/dev/null; then
     echo "app: running (pid=$(cat "$APP_PID_FILE"))"
-  elif pgrep -f "node .*/src/index.js" >/dev/null 2>&1; then
+  elif pgrep -f "node( .*)?src/index.js" >/dev/null 2>&1; then
     echo "app: running (external process)"
   elif curl -fsS "http://localhost:3000/health" >/dev/null 2>&1; then
     echo "app: running (http probe)"

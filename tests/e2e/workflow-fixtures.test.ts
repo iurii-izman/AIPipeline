@@ -127,6 +127,25 @@ describe("e2e/workflow fixtures baseline", () => {
     expect(body).toContain("length <= 64");
   });
 
+  it("WF-5 projects command exposes inline PROJECT_SET callback buttons", () => {
+    const wf5 = loadWorkflow("wf-5-status.json");
+    const setProjects = nodeByName(wf5, "Set /projects");
+    const code = String((setProjects?.parameters || {}).jsCode || "");
+    expect(code).toContain("inline_keyboard");
+    expect(code).toContain("a=PROJECT_SET&p=");
+    expect(code).toContain("replyMarkup");
+  });
+
+  it("WF-5 extract command supports /q alias and forwarded metadata enrichment", () => {
+    const wf5 = loadWorkflow("wf-5-status.json");
+    const extract = nodeByName(wf5, "Extract command");
+    const code = String((extract?.parameters || {}).jsCode || "");
+    expect(code).toContain("if (command === '/q')");
+    expect(code).toContain("quickVerb === 'task'");
+    expect(code).toContain("callbackAction === 'PROJECT_SET'");
+    expect(code).toContain("forwardedFromName");
+  });
+
   it("WF-5 triage command routes to inline actions", () => {
     const wf5 = loadWorkflow("wf-5-status.json");
     const names = nodeNames(wf5);

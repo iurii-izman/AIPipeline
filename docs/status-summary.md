@@ -4,10 +4,10 @@
 
 ## Snapshot
 - Stage: `late-alpha / early-MVP`
-- Release: `v0.1.0-beta.1` (beta prerelease published)
+- Release: `v0.1.0-beta.2` (beta prerelease published)
 - Branch model: `main` as canonical branch
 - Latest major execution: merged PR #26 (2026-03-02)
-- Docs inventory: `83` files in `docs/`
+- Docs inventory: `86` files in `docs/`
 
 ## Delivery State
 - Day-0 and Phases 2–4: completed
@@ -16,7 +16,7 @@
 - Stable HTTPS mode: active (Cloudflare Tunnel path documented)
 
 ## Quality Baseline
-- Tests: `78/78` passing
+- Tests: `83/83` passing
 - Coverage: branch `80.44%` (threshold `80%`) pass
 - CI required checks: green
 - Security checks: `npm audit` gate + CodeQL
@@ -35,7 +35,8 @@
 - Cost governance timer: `aipipeline-cost-governance.timer` installed/enabled
 - Online telemetry report timer: `aipipeline-online-telemetry-report.timer` installed/enabled
 - Local release gate (strict + scorecard): pass
-  `./scripts/release-quality-gate.sh --strict-parity --generate-scorecard --version v0.1.0-alpha.2 --env staging`
+  `./scripts/release-quality-gate.sh --strict-parity --generate-scorecard --version v0.1.0-beta.2 --env staging`
+  Latest scorecard: `.out/releases/release-scorecard-v2-v0.1.0-beta.2-staging-20260302-123724.md`
 - CI (remote): success with extended jobs (`eval-v2`, telemetry volume check, `iac-validate`, `cost-governance`, `sbom+provenance verify`)
   `https://github.com/iurii-izman/AIPipeline/actions/runs/22553227323`
 - Release Gate (remote): success with scorecard + supply-chain + ai-ops artifacts
@@ -55,11 +56,13 @@
 - WF-7 replay path: без `workflow staticData`, orchestration через app durable replay API
 - WF-5 privileged commands: RBAC allowlist (`WF5_RBAC_ALLOWED_CHAT_IDS`, `WF5_RBAC_ALLOWED_USER_IDS`, `WF5_RBAC_ALLOWED_USERNAMES`)
 - WF-5 intake/multi-project baseline added: `/project`, `/projects`, `/links`, `/activity`, `/progress`, `/inbox`, `/triage`, `/spec`, `/idea`, `/task` alias, callback actions (`TASK/SPEC/IDEA/MOVE/ARCHIVE`) with `answerCallbackQuery` + `editMessageText`, free-text/file/voice capture path with action suggestion
+- WF-5 UX polish added: `/q` alias routing (`task/spec/idea/capture`), `/projects` inline keyboard (`PROJECT_SET` callback), and forwarded-message enrichment fields in intake context
 - WF-5 callback conversion hardened: action context resolved from intake item state, callback outcomes mark intake as `triaged` and persist artifact links in static store (`linearUrl/specUrl/ideaUrl`)
 - WF-5 capture branch now includes optional OpenAI classifier for action suggestion and Telegram `getFile` enrichment for attachment links in Notion Inbox entries
 - WF-5 capture branch now supports app-backed binary ingest (`POST /intake/telegram-file`) and confidence-gated auto-convert (`TASK|SPEC`) when `INTAKE_AUTO_CONVERT=true`
 - App read-only summary route added: `GET /dashboard` (same bearer policy as `/status`)
 - Dashboard UX extended: runtime daemon status panel (`app/n8n/loki/grafana/cloudflared/cursor`) + optional local controls (`/ops/stack`, `/ops/cursor`) behind loopback guard and `DASHBOARD_ENABLE_ACTIONS=true`
+- Dashboard action-plane v1 added: `POST /dashboard/triage`, `POST /dashboard/create`, `GET /dashboard/search` + quick-create/search/triage controls in `/dashboard` UI (loopback + action-flag guarded for write paths)
 - App intake file endpoints added: `POST /intake/telegram-file` and `GET /intake/files/:id` (bearer-protected, local storage-backed)
 - Project registry baseline added: `config/projects.json` + `scripts/validate-projects-config.js`
 - Keyring bootstrap helper added for intake/dashboard vars: `scripts/bootstrap-intake-dashboard-keyring.sh`
@@ -119,4 +122,5 @@
 - Full audit + roadmap: [project-audit-and-roadmap.md](project-audit-and-roadmap.md)
 - Strategy v2: [strategic-vision-and-tooling.md](strategic-vision-and-tooling.md)
 - Execution history: [changelog.md](changelog.md)
+- Multi-project onboarding: [runbook-new-project.md](runbook-new-project.md)
 - Archive of completed/legacy docs: [archive/README.md](archive/README.md)

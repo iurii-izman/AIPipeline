@@ -21,19 +21,40 @@ function toProjects(root) {
 
 function validateProject(project, index) {
   const errors = [];
+  const requiredString = (field) => {
+    const value = String(project?.[field] || "").trim();
+    if (!value) errors.push(`projects[${index}].${field} is required`);
+    return value;
+  };
+
   const key = String(project?.key || "").trim();
   if (!key) errors.push(`projects[${index}].key is required`);
   const label = String(project?.label || "").trim();
   if (!label) errors.push(`projects[${index}].label is required`);
+  requiredString("emoji");
+  requiredString("linearProjectId");
+  requiredString("linearTeamId");
+  requiredString("notionInboxDatabaseId");
+  requiredString("notionSpecsDatabaseId");
+  requiredString("notionSpecTemplateId");
 
   const links = project?.links;
   if (links !== undefined && (typeof links !== "object" || Array.isArray(links))) {
     errors.push(`projects[${index}].links must be an object when provided`);
+  } else if (!links) {
+    errors.push(`projects[${index}].links is required`);
+  } else {
+    for (const keyName of ["linear", "notion", "github"]) {
+      const value = String(links?.[keyName] || "").trim();
+      if (!value) errors.push(`projects[${index}].links.${keyName} is required`);
+    }
   }
 
   const thread = project?.telegramThreadId;
-  if (thread !== undefined && thread !== null && String(thread).trim() && !/^-?\d+$/.test(String(thread).trim())) {
-    errors.push(`projects[${index}].telegramThreadId must be numeric-like when provided`);
+  if (thread === undefined || thread === null || String(thread).trim() === "") {
+    errors.push(`projects[${index}].telegramThreadId is required`);
+  } else if (!/^-?\d+$/.test(String(thread).trim())) {
+    errors.push(`projects[${index}].telegramThreadId must be numeric-like`);
   }
   return errors;
 }

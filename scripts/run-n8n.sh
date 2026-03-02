@@ -12,6 +12,18 @@ VOLUME_NAME="${N8N_VOLUME:-n8n_data}"
 CONTAINER_NAME="${N8N_CONTAINER:-n8n}"
 IMAGE="${N8N_IMAGE:-docker.io/n8nio/n8n}"
 
+resolve_webhook_url() {
+  if [[ -n "${WEBHOOK_URL:-}" ]]; then
+    echo "${WEBHOOK_URL%/}/"
+    return
+  fi
+  if [[ -n "${CLOUDFLARE_PUBLIC_BASE_URL:-}" ]]; then
+    echo "${CLOUDFLARE_PUBLIC_BASE_URL%/}/"
+    return
+  fi
+  echo "http://localhost:5678/"
+}
+
 if ! podman volume exists "$VOLUME_NAME" 2>/dev/null; then
   podman volume create "$VOLUME_NAME"
 fi
@@ -22,6 +34,29 @@ if [[ -z "$USER" || -z "$PASS" ]]; then
   echo "Set N8N_BASIC_AUTH_USER and N8N_BASIC_AUTH_PASSWORD (keyring: server n8n, user aipipeline / aipipeline-password). See docs/n8n-setup-step-by-step.md" >&2
   exit 1
 fi
+
+WEBHOOK_URL_VALUE="$(resolve_webhook_url)"
+EDITOR_BASE_URL_VALUE="${WEBHOOK_URL_VALUE%/}"
+
+ensure_container_env_match() {
+  if ! podman ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+    return 0
+  fi
+
+  local current_webhook
+  current_webhook="$(podman inspect "$CONTAINER_NAME" --format '{{range .Config.Env}}{{println .}}{{end}}' | sed -n 's/^WEBHOOK_URL=//p' | head -n 1)"
+  if [[ "$current_webhook" == "$WEBHOOK_URL_VALUE" ]]; then
+    return 0
+  fi
+
+  echo "Container $CONTAINER_NAME webhook URL mismatch:"
+  echo "  current: ${current_webhook:-<unset>}"
+  echo "  target : $WEBHOOK_URL_VALUE"
+  echo "Recreating container to apply webhook URL..."
+  podman rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+}
+
+ensure_container_env_match
 
 if podman ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
   if ! podman ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
@@ -51,7 +86,8 @@ podman run -d \
   -e N8N_BASIC_AUTH_USER="$USER" \
   -e N8N_BASIC_AUTH_PASSWORD="$PASS" \
   -e N8N_BLOCK_ENV_ACCESS_IN_NODE=false \
-  -e "WEBHOOK_URL=${WEBHOOK_URL:-http://localhost:5678/}" \
+  -e "WEBHOOK_URL=$WEBHOOK_URL_VALUE" \
+  -e "N8N_EDITOR_BASE_URL=$EDITOR_BASE_URL_VALUE" \
   ${LINEAR_API_KEY:+-e LINEAR_API_KEY="$LINEAR_API_KEY"} \
   ${LINEAR_TEAM_ID:+-e LINEAR_TEAM_ID="$LINEAR_TEAM_ID"} \
   ${NOTION_TOKEN:+-e NOTION_TOKEN="$NOTION_TOKEN"} \

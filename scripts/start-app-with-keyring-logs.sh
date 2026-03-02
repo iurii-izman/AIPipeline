@@ -15,4 +15,4 @@ source scripts/load-env-from-keyring.sh
 : > "$LOG_FILE"
 
 echo "Starting app with log file: $LOG_FILE"
-PORT="${PORT:-3000}" npm start 2>&1 | tee -a "$LOG_FILE"
+PORT="${PORT:-3000}" node "$ROOT_DIR/src/index.js" 2>&1 | tee -a "$LOG_FILE"

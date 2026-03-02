@@ -81,7 +81,240 @@ const workflow = {
       typeVersion: 2,
       position: [220, 0],
       parameters: {
-        jsCode: `const db = $getWorkflowStaticData('global');\nif (!db.projectContext) db.projectContext = {};\nif (!db.intakeStore) db.intakeStore = {};\n\nconst callback = $json.callback_query || null;\nconst message = callback?.message || $json.message || {};\nconst from = callback?.from || $json.message?.from || {};\nconst hasDocument = Boolean(message.document?.file_id);\nconst hasVoice = Boolean(message.voice?.file_id);\nconst hasVideoNote = Boolean(message.video_note?.file_id);\nconst hasAudio = Boolean(message.audio?.file_id);\nconst hasPhoto = Array.isArray(message.photo) && message.photo.length > 0;\nconst textRaw = String(message.text || message.caption || '').trim();\nconst [commandRawOriginal, ...rest] = textRaw.split(/\\s+/);\nlet commandRaw = String(commandRawOriginal || '').toLowerCase();\nlet args = rest.join(' ').trim();\nlet callbackAction = '';\nlet callbackShortId = '';\nlet callbackArg = '';\n\nconst attachmentParts = [];\nif (hasDocument) attachmentParts.push('document:' + String(message.document?.file_name || message.document?.mime_type || message.document?.file_id || 'file'));\nif (hasPhoto) attachmentParts.push('photo:' + String(message.photo?.[message.photo.length - 1]?.file_id || 'image'));\nif (hasVoice) attachmentParts.push('voice:' + String(message.voice?.duration || 0) + 's');\nif (hasVideoNote) attachmentParts.push('video_note:' + String(message.video_note?.duration || 0) + 's');\nif (hasAudio) attachmentParts.push('audio:' + String(message.audio?.title || message.audio?.file_name || message.audio?.file_id || 'track'));\nconst attachmentSummary = attachmentParts.length ? ('Attachments: ' + attachmentParts.join(', ')) : '';\nconst inferredCaptureText = textRaw || attachmentSummary || '';\n\nconst primaryPhoto = hasPhoto ? message.photo[message.photo.length - 1] : null;\nconst primaryFileId = String(message.document?.file_id || message.voice?.file_id || message.audio?.file_id || message.video_note?.file_id || primaryPhoto?.file_id || '');\nconst primaryFileKind = hasDocument ? 'document' : (hasVoice ? 'voice' : (hasAudio ? 'audio' : (hasVideoNote ? 'video_note' : (hasPhoto ? 'photo' : ''))));\n\nif (callback) {\n  const params = new URLSearchParams(String(callback.data || ''));\n  callbackAction = String(params.get('a') || '').toUpperCase();\n  callbackShortId = String(params.get('i') || '').trim();\n  callbackArg = String(params.get('p') || '').trim();\n  if (!callbackArg && callbackAction.startsWith('MOVE:')) {\n    callbackArg = callbackAction.slice(5).trim();\n    callbackAction = 'MOVE';\n  }\n  commandRaw = '/callback';\n  args = '';\n} else if (!commandRaw.startsWith('/')) {\n  if (inferredCaptureText) {\n    commandRaw = '/capture';\n    args = inferredCaptureText;\n  } else {\n    commandRaw = '';\n    args = '';\n  }\n}\n\nlet command = commandRaw;\nif (command === '/task') command = '/create';\nif (command === '/note') command = '/idea';\n\nlet projectHint = '';\nif (command.includes(':')) {\n  const idx = command.indexOf(':');\n  projectHint = command.slice(idx + 1).trim();\n  command = command.slice(0, idx);\n}\n\nconst username = String(from.username || '');\nconst userId = String(from.id || '');\nconst chatId = String(message.chat?.id || callback?.message?.chat?.id || '');\nconst chatType = String(message.chat?.type || callback?.message?.chat?.type || '');\nconst messageId = String(message.message_id || '');\nconst threadId = String(message.message_thread_id || '');\nconst updateId = String($json.update_id || callback?.id || '');\nconst contextKey = chatId + ':' + userId;\n\nlet projects = [];\ntry {\n  const parsed = JSON.parse(String($env.PROJECTS_CONFIG || '{\"projects\":[]}'));\n  projects = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.projects) ? parsed.projects : []);\n} catch {\n  projects = [];\n}\nconst byKey = new Map(projects.map((p) => [String(p.key || '').toLowerCase(), p]));\nconst byThread = new Map(projects.filter((p) => p.telegramThreadId !== undefined && p.telegramThreadId !== null && String(p.telegramThreadId || '').trim() !== '').map((p) => [String(p.telegramThreadId), p]));\nconst sticky = String(db.projectContext[contextKey] || '');\nconst threadProject = byThread.get(threadId);\nlet activeProject = null;\nif (projectHint && byKey.has(projectHint.toLowerCase())) activeProject = byKey.get(projectHint.toLowerCase());\nif (!activeProject && threadProject) activeProject = threadProject;\nif (!activeProject && sticky && byKey.has(sticky.toLowerCase())) activeProject = byKey.get(sticky.toLowerCase());\nif (!activeProject && $env.DEFAULT_PROJECT_KEY && byKey.has(String($env.DEFAULT_PROJECT_KEY).toLowerCase())) activeProject = byKey.get(String($env.DEFAULT_PROJECT_KEY).toLowerCase());\nif (!activeProject && projects.length) activeProject = projects[0];\n\nif (command === '/project' && args) {\n  const key = args.trim().toLowerCase();\n  if (byKey.has(key)) {\n    db.projectContext[contextKey] = key;\n    activeProject = byKey.get(key);\n  }\n}\n\nconst normalizeTemplateId = (value) => {\n  const v = String(value || '').trim();\n  if (!v) return '';\n  if (/^(none|__none__|n\\/a)$/i.test(v)) return '';\n  return v;\n};\nconst suggestAction = (text) => {\n  const raw = String(text || '').toLowerCase();\n  if (!raw) return 'IDEA';\n  if (/\\b(spec|rfc|design|architecture|adr|proposal|дизайн|спека)\\b/.test(raw)) return 'SPEC';\n  if (/\\b(todo|task|fix|bug|issue|implement|add|надо|сделать|починить|задач)\\b/.test(raw)) return 'TASK';\n  return 'IDEA';\n};\n\nconst projectKey = activeProject ? String(activeProject.key || '') : '';\nconst projectLabel = activeProject ? String(activeProject.label || projectKey) : '';\nconst notionInboxDatabaseId = String((activeProject && activeProject.notionInboxDatabaseId) || $env.NOTION_INBOX_DATABASE_ID || '');\nconst notionSpecsDatabaseId = String((activeProject && activeProject.notionSpecsDatabaseId) || $env.NOTION_SPECS_DATABASE_ID || '');\nconst notionSpecTemplateId = normalizeTemplateId((activeProject && activeProject.notionSpecTemplateId) || $env.NOTION_SPEC_TEMPLATE_ID || '');\nconst linearProjectId = String((activeProject && activeProject.linearProjectId) || '');\nconst linearTeamId = String((activeProject && activeProject.linearTeamId) || $env.LINEAR_TEAM_ID || '');\n\nconst shortId = args\n  ? ('k' + Buffer.from(chatId + ':' + messageId + ':' + args.slice(0, 24)).toString('base64').replace(/[^a-z0-9]/gi, '').slice(0, 10).toLowerCase())\n  : '';\nconst suggestedAction = suggestAction(args || inferredCaptureText);\nconst artifactType = hasVoice || hasVideoNote ? 'Voice' : (hasDocument ? 'Document' : (hasPhoto ? 'Photo' : (hasAudio ? 'Audio' : 'Text')));\n\nif (command === '/capture' && shortId) {\n  db.intakeStore[shortId] = {\n    id: shortId,\n    chatId,\n    messageId,\n    threadId,\n    text: args,\n    projectKey,\n    projectLabel,\n    linearTeamId,\n    linearProjectId,\n    notionInboxDatabaseId,\n    notionSpecsDatabaseId,\n    notionSpecTemplateId,\n    createdAt: Date.now(),\n    createdBy: username || userId,\n    source: 'telegram',\n    status: 'new',\n    artifactType,\n    suggestedAction,\n    attachmentSummary,\n    primaryFileId,\n    primaryFileKind,\n  };\n}\n\nlet callbackItem = null;\nif (callbackShortId && db.intakeStore[callbackShortId]) {\n  callbackItem = db.intakeStore[callbackShortId];\n}\n\nconst callbackItemText = String(callbackItem?.text || '');\nconst callbackTitle = String((callbackItemText || '').split('\\n')[0] || ('Inbox item ' + (callbackShortId || shortId || ''))).slice(0, 120);\n\nreturn [{ json: {\n  command,\n  args,\n  username,\n  userId,\n  chatId,\n  chatType,\n  messageId,\n  updateId,\n  raw: textRaw,\n  threadId,\n  callbackAction,\n  callbackShortId,\n  callbackArg,\n  callbackQueryId: String(callback?.id || ''),\n  callbackMessageId: String(callback?.message?.message_id || ''),\n  callbackChatId: String(callback?.message?.chat?.id || ''),\n  projectHint,\n  projectKey,\n  projectLabel,\n  linearProjectId,\n  linearTeamId,\n  notionInboxDatabaseId,\n  notionSpecsDatabaseId,\n  notionSpecTemplateId,\n  shortId,\n  projects,\n  stickyProjectKey: String(db.projectContext[contextKey] || ''),\n  callbackItemText,\n  callbackTitle,\n  callbackItem,\n  suggestedAction,\n  artifactType,\n  attachmentSummary,\n  primaryFileId,\n  primaryFileKind,\n} }];`,
+        jsCode: `const db = $getWorkflowStaticData('global');
+if (!db.projectContext) db.projectContext = {};
+if (!db.intakeStore) db.intakeStore = {};
+
+const callback = $json.callback_query || null;
+const message = callback?.message || $json.message || {};
+const from = callback?.from || $json.message?.from || {};
+const hasDocument = Boolean(message.document?.file_id);
+const hasVoice = Boolean(message.voice?.file_id);
+const hasVideoNote = Boolean(message.video_note?.file_id);
+const hasAudio = Boolean(message.audio?.file_id);
+const hasPhoto = Array.isArray(message.photo) && message.photo.length > 0;
+const textRaw = String(message.text || message.caption || '').trim();
+const [commandRawOriginal, ...rest] = textRaw.split(/\s+/);
+let commandRaw = String(commandRawOriginal || '').toLowerCase();
+let args = rest.join(' ').trim();
+let callbackAction = '';
+let callbackShortId = '';
+let callbackArg = '';
+
+const attachmentParts = [];
+if (hasDocument) attachmentParts.push('document:' + String(message.document?.file_name || message.document?.mime_type || message.document?.file_id || 'file'));
+if (hasPhoto) attachmentParts.push('photo:' + String(message.photo?.[message.photo.length - 1]?.file_id || 'image'));
+if (hasVoice) attachmentParts.push('voice:' + String(message.voice?.duration || 0) + 's');
+if (hasVideoNote) attachmentParts.push('video_note:' + String(message.video_note?.duration || 0) + 's');
+if (hasAudio) attachmentParts.push('audio:' + String(message.audio?.title || message.audio?.file_name || message.audio?.file_id || 'track'));
+const attachmentSummary = attachmentParts.length ? ('Attachments: ' + attachmentParts.join(', ')) : '';
+const inferredCaptureText = textRaw || attachmentSummary || '';
+
+const primaryPhoto = hasPhoto ? message.photo[message.photo.length - 1] : null;
+const primaryFileId = String(message.document?.file_id || message.voice?.file_id || message.audio?.file_id || message.video_note?.file_id || primaryPhoto?.file_id || '');
+const primaryFileKind = hasDocument ? 'document' : (hasVoice ? 'voice' : (hasAudio ? 'audio' : (hasVideoNote ? 'video_note' : (hasPhoto ? 'photo' : ''))));
+const forwardedFromName = String(message.forward_from?.username || message.forward_from?.first_name || message.forward_origin?.sender_user?.username || message.forward_origin?.sender_user?.first_name || message.forward_origin?.chat?.title || '');
+const forwardedAt = String(message.forward_date || message.forward_origin?.date || '');
+const isForwarded = Boolean(forwardedFromName || forwardedAt || message.forward_origin || message.forward_from);
+
+if (callback) {
+  const params = new URLSearchParams(String(callback.data || ''));
+  callbackAction = String(params.get('a') || '').toUpperCase();
+  callbackShortId = String(params.get('i') || '').trim();
+  callbackArg = String(params.get('p') || '').trim();
+  if (!callbackArg && callbackAction.startsWith('MOVE:')) {
+    callbackArg = callbackAction.slice(5).trim();
+    callbackAction = 'MOVE';
+  }
+  commandRaw = '/callback';
+  args = '';
+} else if (!commandRaw.startsWith('/')) {
+  if (inferredCaptureText) {
+    commandRaw = '/capture';
+    args = inferredCaptureText;
+  } else {
+    commandRaw = '';
+    args = '';
+  }
+}
+
+let command = commandRaw;
+if (command === '/task') command = '/create';
+if (command === '/note') command = '/idea';
+if (command === '/q') {
+  const [quickVerbRaw, ...quickRest] = String(args || '').split(/\s+/);
+  const quickVerb = String(quickVerbRaw || '').trim().toLowerCase();
+  const quickBody = quickRest.join(' ').trim();
+  if (quickVerb === 'task' || quickVerb === 'todo' || quickVerb === 'bug') {
+    command = '/create';
+    args = quickBody;
+  } else if (quickVerb === 'spec' || quickVerb === 'rfc') {
+    command = '/spec';
+    args = quickBody;
+  } else if (quickVerb === 'idea' || quickVerb === 'note') {
+    command = '/idea';
+    args = quickBody;
+  } else {
+    command = '/capture';
+    args = String(args || inferredCaptureText || '').trim();
+  }
+}
+
+let projectHint = '';
+if (command.includes(':')) {
+  const idx = command.indexOf(':');
+  projectHint = command.slice(idx + 1).trim();
+  command = command.slice(0, idx);
+}
+
+const username = String(from.username || '');
+const userId = String(from.id || '');
+const chatId = String(message.chat?.id || callback?.message?.chat?.id || '');
+const chatType = String(message.chat?.type || callback?.message?.chat?.type || '');
+const messageId = String(message.message_id || '');
+const threadId = String(message.message_thread_id || '');
+const updateId = String($json.update_id || callback?.id || '');
+const contextKey = chatId + ':' + userId;
+
+let projects = [];
+try {
+  const parsed = JSON.parse(String($env.PROJECTS_CONFIG || '{"projects":[]}'));
+  projects = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.projects) ? parsed.projects : []);
+} catch {
+  projects = [];
+}
+const byKey = new Map(projects.map((p) => [String(p.key || '').toLowerCase(), p]));
+const byThread = new Map(projects.filter((p) => p.telegramThreadId !== undefined && p.telegramThreadId !== null && String(p.telegramThreadId || '').trim() !== '').map((p) => [String(p.telegramThreadId), p]));
+const sticky = String(db.projectContext[contextKey] || '');
+const threadProject = byThread.get(threadId);
+let activeProject = null;
+if (projectHint && byKey.has(projectHint.toLowerCase())) activeProject = byKey.get(projectHint.toLowerCase());
+if (!activeProject && threadProject) activeProject = threadProject;
+if (!activeProject && sticky && byKey.has(sticky.toLowerCase())) activeProject = byKey.get(sticky.toLowerCase());
+if (!activeProject && $env.DEFAULT_PROJECT_KEY && byKey.has(String($env.DEFAULT_PROJECT_KEY).toLowerCase())) activeProject = byKey.get(String($env.DEFAULT_PROJECT_KEY).toLowerCase());
+if (!activeProject && projects.length) activeProject = projects[0];
+
+if (command === '/project' && args) {
+  const key = args.trim().toLowerCase();
+  if (byKey.has(key)) {
+    db.projectContext[contextKey] = key;
+    activeProject = byKey.get(key);
+  }
+}
+if (callbackAction === 'PROJECT_SET' && callbackArg) {
+  const key = callbackArg.trim().toLowerCase();
+  if (byKey.has(key)) {
+    db.projectContext[contextKey] = key;
+    activeProject = byKey.get(key);
+    callbackAction = 'PROJECT_SET';
+  }
+}
+
+const normalizeTemplateId = (value) => {
+  const v = String(value || '').trim();
+  if (!v) return '';
+  if (/^(none|__none__|n\/a)$/i.test(v)) return '';
+  return v;
+};
+const suggestAction = (text) => {
+  const raw = String(text || '').toLowerCase();
+  if (!raw) return 'IDEA';
+  if (/\b(spec|rfc|design|architecture|adr|proposal|дизайн|спека)\b/.test(raw)) return 'SPEC';
+  if (/\b(todo|task|fix|bug|issue|implement|add|надо|сделать|починить|задач)\b/.test(raw)) return 'TASK';
+  return 'IDEA';
+};
+
+const projectKey = activeProject ? String(activeProject.key || '') : '';
+const projectLabel = activeProject ? String(activeProject.label || projectKey) : '';
+const notionInboxDatabaseId = String((activeProject && activeProject.notionInboxDatabaseId) || $env.NOTION_INBOX_DATABASE_ID || '');
+const notionSpecsDatabaseId = String((activeProject && activeProject.notionSpecsDatabaseId) || $env.NOTION_SPECS_DATABASE_ID || '');
+const notionSpecTemplateId = normalizeTemplateId((activeProject && activeProject.notionSpecTemplateId) || $env.NOTION_SPEC_TEMPLATE_ID || '');
+const linearProjectId = String((activeProject && activeProject.linearProjectId) || '');
+const linearTeamId = String((activeProject && activeProject.linearTeamId) || $env.LINEAR_TEAM_ID || '');
+
+const shortId = args
+  ? ('k' + Buffer.from(chatId + ':' + messageId + ':' + args.slice(0, 24)).toString('base64').replace(/[^a-z0-9]/gi, '').slice(0, 10).toLowerCase())
+  : '';
+const suggestedAction = suggestAction(args || inferredCaptureText);
+const artifactType = hasVoice || hasVideoNote ? 'Voice' : (hasDocument ? 'Document' : (hasPhoto ? 'Photo' : (hasAudio ? 'Audio' : 'Text')));
+
+if (command === '/capture' && shortId) {
+  db.intakeStore[shortId] = {
+    id: shortId,
+    chatId,
+    messageId,
+    threadId,
+    text: args,
+    projectKey,
+    projectLabel,
+    linearTeamId,
+    linearProjectId,
+    notionInboxDatabaseId,
+    notionSpecsDatabaseId,
+    notionSpecTemplateId,
+    createdAt: Date.now(),
+    createdBy: username || userId,
+    source: 'telegram',
+    status: 'new',
+    artifactType,
+    suggestedAction,
+    attachmentSummary,
+    primaryFileId,
+    primaryFileKind,
+    isForwarded,
+    forwardedFromName,
+    forwardedAt,
+  };
+}
+
+let callbackItem = null;
+if (callbackShortId && db.intakeStore[callbackShortId]) {
+  callbackItem = db.intakeStore[callbackShortId];
+}
+
+const callbackItemText = String(callbackItem?.text || '');
+const callbackTitle = String((callbackItemText || '').split('\n')[0] || ('Inbox item ' + (callbackShortId || shortId || ''))).slice(0, 120);
+
+return [{ json: {
+  command,
+  args,
+  username,
+  userId,
+  chatId,
+  chatType,
+  messageId,
+  updateId,
+  raw: textRaw,
+  threadId,
+  callbackAction,
+  callbackShortId,
+  callbackArg,
+  callbackQueryId: String(callback?.id || ''),
+  callbackMessageId: String(callback?.message?.message_id || ''),
+  callbackChatId: String(callback?.message?.chat?.id || ''),
+  projectHint,
+  projectKey,
+  projectLabel,
+  linearProjectId,
+  linearTeamId,
+  notionInboxDatabaseId,
+  notionSpecsDatabaseId,
+  notionSpecTemplateId,
+  shortId,
+  projects,
+  stickyProjectKey: String(db.projectContext[contextKey] || ''),
+  callbackItemText,
+  callbackTitle,
+  callbackItem,
+  suggestedAction,
+  artifactType,
+  attachmentSummary,
+  primaryFileId,
+  primaryFileKind,
+  isForwarded,
+  forwardedFromName,
+  forwardedAt,
+} }];`,
       },
     },
     {
@@ -130,7 +363,7 @@ const workflow = {
       typeVersion: 2,
       position: [1100, -200],
       parameters: {
-        jsCode: `const action = String($json.callbackAction || 'UNKNOWN');\nconst shortId = String($json.callbackShortId || '');\nconst project = String($json.projectKey || 'all');\nconst text = shortId\n  ? ('✅ Intake action: *' + action + '*\\nID: ' + shortId + '\\nProject: ' + project)\n  : ('⚠️ Callback payload is invalid.');\nreturn [{ json: { ...$json, text } }];`,
+        jsCode: `const action = String($json.callbackAction || 'UNKNOWN');\nconst shortId = String($json.callbackShortId || '');\nconst callbackArg = String($json.callbackArg || '');\nconst project = String($json.projectKey || callbackArg || 'all');\nconst text = action === 'PROJECT_SET'\n  ? ('✅ Active project set: *' + project + '*')\n  : (shortId\n    ? ('✅ Intake action: *' + action + '*\\nID: ' + shortId + '\\nProject: ' + project)\n    : ('⚠️ Callback payload is invalid.'));\nreturn [{ json: { ...$json, text } }];`,
       },
     },
     {
@@ -653,7 +886,7 @@ const workflow = {
       typeVersion: 2,
       position: [2420, 360],
       parameters: {
-        jsCode: `const projects = Array.isArray($json.projects) ? $json.projects : [];\nif (!projects.length) return [{ json: { text: '📁 No projects configured. Add PROJECTS_CONFIG.' } }];\nconst lines = projects.map((p) => '• ' + p.key + ' — ' + (p.label || p.key));\nreturn [{ json: { text: '📁 *Projects*\\n' + lines.join('\\n') } }];`,
+        jsCode: `const projects = Array.isArray($json.projects) ? $json.projects : [];\nif (!projects.length) return [{ json: { text: '📁 No projects configured. Add PROJECTS_CONFIG.' } }];\nconst current = String($json.projectKey || '').toLowerCase();\nconst lines = projects.map((p) => ((String(p.key || '').toLowerCase() === current ? '✅ ' : '• ') + p.key + ' — ' + (p.label || p.key)));\nconst keyboard = projects.slice(0, 12).map((p) => ([{ text: ((String(p.key || '').toLowerCase() === current ? '✅ ' : '') + String((p.emoji || '') ? (p.emoji + ' ') : '') + (p.label || p.key)).slice(0, 28), callback_data: 'a=PROJECT_SET&p=' + String(p.key || '') }])).filter((row) => String(row?.[0]?.callback_data || '').length <= 64);\nreturn [{ json: { text: '📁 *Projects*\\n' + lines.join('\\n'), replyMarkup: { inline_keyboard: keyboard } } }];`,
       },
     },
     {
@@ -1644,7 +1877,7 @@ const workflow = {
         operation: "sendMessage",
         chatId: "={{ $('Extract command').first().json.chatId || $('Extract command').first().json.callbackChatId }}",
         text: "={{ $json.text || JSON.stringify($json, null, 2) }}",
-        additionalFields: { parse_mode: "Markdown" },
+        additionalFields: { parse_mode: "Markdown", replyMarkup: "={{ $json.replyMarkup ? JSON.stringify($json.replyMarkup) : undefined }}" },
       },
       credentials: { telegramApi: { name: "AIPipeline Telegram" } },
     },
