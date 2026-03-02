@@ -1877,16 +1877,18 @@ return [{ json: {
     {
       id: "telegram-send",
       name: "Telegram Send",
-      type: "n8n-nodes-base.telegram",
-      typeVersion: 1.2,
+      type: "n8n-nodes-base.httpRequest",
+      typeVersion: 4.2,
       position: [3320, 320],
       parameters: {
-        operation: "sendMessage",
-        chatId: "={{ $('Extract command').first().json.chatId || $('Extract command').first().json.callbackChatId }}",
-        text: "={{ $json.text || JSON.stringify($json, null, 2) }}",
-        additionalFields: { parse_mode: "Markdown", replyMarkup: "={{ $json.replyMarkup ? JSON.stringify($json.replyMarkup) : undefined }}" },
+        method: "POST",
+        url: "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
+        sendBody: true,
+        specifyBody: "json",
+        jsonBody:
+          "={{ { chat_id: $('Extract command').first().json.chatId || $('Extract command').first().json.callbackChatId, message_thread_id: Number($('Extract command').first().json.threadId || 0) || undefined, text: $json.text || JSON.stringify($json, null, 2), parse_mode: 'Markdown', ...( $json.replyMarkup ? { reply_markup: $json.replyMarkup } : {} ) } }}",
+        options: {},
       },
-      credentials: { telegramApi: { name: "AIPipeline Telegram" } },
     },
     {
       id: "assess-telegram-send",
