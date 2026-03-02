@@ -255,6 +255,25 @@ function getIntakeStorageDir() {
   return path.resolve(process.cwd(), ".runtime-logs/intake-files");
 }
 
+function appendAuditEvent(action, status, details = {}) {
+  try {
+    const logDir = path.resolve(process.cwd(), ".runtime-logs");
+    const logFile = path.join(logDir, "audit.log");
+    fs.mkdirSync(logDir, { recursive: true });
+    const payload = {
+      eventType: "audit",
+      ts: new Date().toISOString(),
+      action: String(action || "unknown_action"),
+      status: String(status || "success"),
+      actor: process.env.USER || process.env.USERNAME || "unknown",
+      details: details && typeof details === "object" ? details : { value: String(details || "") },
+    };
+    fs.appendFileSync(logFile, `${JSON.stringify(payload)}\n`, "utf8");
+  } catch (err) {
+    log("error", "audit append failed", { error: err instanceof Error ? err.message : String(err) });
+  }
+}
+
 function safeFileSegment(value, fallback = "file") {
   const cleaned = String(value || "")
     .replace(/[^a-zA-Z0-9._-]/g, "_")
@@ -615,11 +634,23 @@ function requestHandler(req, res) {
             projectKey: String(payload?.projectKey || ""),
             type: String(payload?.type || ""),
           });
+          appendAuditEvent("dashboard.create", result.ok ? "success" : "failed", {
+            correlationId,
+            ok: result.ok,
+            projectKey: String(payload?.projectKey || ""),
+            type: String(payload?.type || ""),
+            artifactUrl: String(result?.artifactUrl || ""),
+            error: String(result?.error || ""),
+          });
         })
         .catch((err) => {
           res.setHeader("Content-Type", "application/json");
           res.writeHead(400);
           res.end(JSON.stringify({ ok: false, error: err instanceof Error ? err.message : String(err) }));
+          appendAuditEvent("dashboard.create", "failed", {
+            correlationId,
+            error: err instanceof Error ? err.message : String(err),
+          });
         });
       return;
     }
@@ -648,11 +679,25 @@ function requestHandler(req, res) {
             action: String(payload?.action || ""),
             projectKey: String(payload?.projectKey || ""),
           });
+          appendAuditEvent("dashboard.triage", result.ok ? "success" : "failed", {
+            correlationId,
+            ok: result.ok,
+            action: String(payload?.action || ""),
+            projectKey: String(payload?.projectKey || ""),
+            intakeItemId: String(payload?.intakeItemId || ""),
+            notionPageId: String(payload?.notionPageId || ""),
+            artifactUrl: String(result?.artifactUrl || ""),
+            error: String(result?.error || ""),
+          });
         })
         .catch((err) => {
           res.setHeader("Content-Type", "application/json");
           res.writeHead(400);
           res.end(JSON.stringify({ ok: false, error: err instanceof Error ? err.message : String(err) }));
+          appendAuditEvent("dashboard.triage", "failed", {
+            correlationId,
+            error: err instanceof Error ? err.message : String(err),
+          });
         });
       return;
     }
