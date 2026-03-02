@@ -80,6 +80,7 @@
   - dashboard control-plane расширен: runtime service status + local daemon actions (`/ops/stack`, `/ops/cursor`) under loopback-only policy;
   - WF-5 UX polish: `/q` alias, `/projects` inline keyboard (`PROJECT_SET`) и enrichment пересланных сообщений;
   - dashboard action-plane v1: `POST /dashboard/triage`, `POST /dashboard/create`, `GET /dashboard/search` + UI controls (quick-create/triage/search);
+  - Notion query compatibility for dashboard hardened: auto-resolve `database_id -> data_source_id` for query path;
   - local browser-friendly mode добавлен: `DASHBOARD_PUBLIC_LOCAL=true` (dashboard without bearer on loopback) + `DASHBOARD_ENABLE_ACTIONS=true` (UI controls);
   - введён project registry SSoT: `config/projects.json` + `node scripts/validate-projects-config.js`.
   - multi-project onboarding runbook добавлен: `docs/runbook-new-project.md`.
@@ -125,10 +126,10 @@
    - запускать GitHub workflow `Release Gate` с inputs `generate_scorecard=true`, `version=vX.Y.Z`, `target_env=staging|production`;
    - проверять upload artifact `release-scorecard-v2` в run summary;
    - фиксировать ссылки на artifacts (`release-scorecard-v2`, `release-supply-chain`, `release-ai-ops`) в архивном closure snapshot.
-   - последний подтверждённый прогон: `2026-03-02`, run `22570495028` (success), artifacts:
-     - `release-scorecard-v2`: `5718661621`
-     - `release-supply-chain`: `5718661782`
-     - `release-ai-ops`: `5718661937`
+  - последний подтверждённый прогон: `2026-03-02`, run `22572368070` (success), artifacts:
+    - `release-scorecard-v2`: `5719444559`
+    - `release-supply-chain`: `5719444809`
+    - `release-ai-ops`: `5719445031`
    - учитывать, что в GitHub-hosted runner gate использует `--skip-dr-cadence` (локальный DR cadence остается обязательным в ops цикле).
 1. Поддерживать rotation/валидность hardening env в keyring и runtime (`STATUS_AUTH_TOKEN`, `GITHUB_WEBHOOK_SECRET`, `SENTRY_WEBHOOK_SECRET`, `MODEL_CLASSIFIER_MODE`, `MODEL_KILL_SWITCH`); bootstrap: `./scripts/bootstrap-hardening-env-keyring.sh`.
    - Intake/dashboard keyring entries уже заполнены и проходят `./scripts/health-check-env.sh`:

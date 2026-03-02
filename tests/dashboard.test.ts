@@ -100,7 +100,18 @@ describe("dashboard renderer", () => {
             }),
         };
       }
-      if (value.includes("/v1/databases/notion-db-1/query") || value.includes("/v1/data_sources/notion-db-1/query")) {
+      if (value.includes("/v1/databases/notion-db-1") && !value.includes("/query")) {
+        return {
+          ok: true,
+          status: 200,
+          text: async () =>
+            JSON.stringify({
+              id: "notion-db-1",
+              data_sources: [{ id: "notion-ds-1" }],
+            }),
+        };
+      }
+      if (value.includes("/v1/databases/notion-db-1/query") || value.includes("/v1/data_sources/notion-ds-1/query")) {
         return {
           ok: true,
           status: 200,
@@ -133,7 +144,7 @@ describe("dashboard renderer", () => {
     expect(html).toContain("https://github.com/iurii-izman/AIPipeline");
     expect(calls.some((v) => v.includes("api.linear.app/graphql"))).toBe(true);
     expect(
-      calls.some((v) => v.includes("/v1/databases/notion-db-1/query") || v.includes("/v1/data_sources/notion-db-1/query"))
+      calls.some((v) => v.includes("/v1/databases/notion-db-1/query") || v.includes("/v1/data_sources/notion-ds-1/query"))
     ).toBe(true);
   });
 
@@ -205,7 +216,18 @@ describe("dashboard renderer", () => {
             }),
         };
       }
-      if (value.includes("/v1/databases/notion-db-1/query") || value.includes("/v1/data_sources/notion-db-1/query")) {
+      if (value.includes("/v1/databases/notion-db-1") && !value.includes("/query")) {
+        return {
+          ok: true,
+          status: 200,
+          text: async () =>
+            JSON.stringify({
+              id: "notion-db-1",
+              data_sources: [{ id: "notion-ds-1" }],
+            }),
+        };
+      }
+      if (value.includes("/v1/databases/notion-db-1/query") || value.includes("/v1/data_sources/notion-ds-1/query")) {
         return {
           ok: true,
           status: 200,
@@ -270,7 +292,29 @@ describe("dashboard renderer", () => {
             }),
         };
       }
-      if (value.includes("/v1/databases/notion-db-1/query") || value.includes("/v1/data_sources/notion-db-1/query")) {
+      if (value.includes("/v1/databases/notion-db-1") && !value.includes("/query")) {
+        return {
+          ok: true,
+          status: 200,
+          text: async () =>
+            JSON.stringify({
+              id: "notion-db-1",
+              data_sources: [{ id: "notion-ds-1" }],
+            }),
+        };
+      }
+      if (value.includes("/v1/databases/notion-specs-1") && !value.includes("/query")) {
+        return {
+          ok: true,
+          status: 200,
+          text: async () =>
+            JSON.stringify({
+              id: "notion-specs-1",
+              data_sources: [{ id: "notion-ds-specs-1" }],
+            }),
+        };
+      }
+      if (value.includes("/v1/databases/notion-db-1/query") || value.includes("/v1/data_sources/notion-ds-1/query")) {
         return {
           ok: true,
           status: 200,
@@ -291,7 +335,7 @@ describe("dashboard renderer", () => {
             }),
         };
       }
-      if (value.includes("/v1/databases/notion-specs-1/query") || value.includes("/v1/data_sources/notion-specs-1/query")) {
+      if (value.includes("/v1/databases/notion-specs-1/query") || value.includes("/v1/data_sources/notion-ds-specs-1/query")) {
         return {
           ok: true,
           status: 200,
@@ -328,5 +372,95 @@ describe("dashboard renderer", () => {
     expect(html).toContain("Searchable inbox entry");
     expect(html).toContain("Quick Create");
     expect(html).toContain("/dashboard/triage");
+  });
+
+  it("renders multi-project tabs and supports selecting secondary project", async () => {
+    process.env.LINEAR_API_KEY = "linear-test";
+    process.env.NOTION_TOKEN = "notion-test";
+    process.env.NOTION_VERSION = "2025-09-03";
+    process.env.PROJECTS_CONFIG = JSON.stringify({
+      projects: [
+        {
+          key: "aipipeline",
+          label: "AIPipeline",
+          emoji: "🔧",
+          linearProjectId: "lin-proj-1",
+          linearTeamId: "lin-team-1",
+          notionInboxDatabaseId: "notion-db-1",
+          notionSpecsDatabaseId: "notion-specs-1",
+          notionSpecTemplateId: "__NONE__",
+          telegramThreadId: "6",
+          links: { linear: "https://linear.app/aipipeline", notion: "https://notion.so/aip", github: "https://github.com/iurii-izman/AIPipeline" },
+        },
+        {
+          key: "sandbox",
+          label: "Sandbox",
+          emoji: "🧪",
+          linearProjectId: "lin-proj-2",
+          linearTeamId: "lin-team-1",
+          notionInboxDatabaseId: "notion-db-2",
+          notionSpecsDatabaseId: "notion-specs-2",
+          notionSpecTemplateId: "__NONE__",
+          telegramThreadId: "7",
+          links: { linear: "https://linear.app/sandbox", notion: "https://notion.so/sandbox", github: "https://github.com/iurii-izman/AIPipeline" },
+        },
+      ],
+    });
+    process.env.DEFAULT_PROJECT_KEY = "aipipeline";
+
+    global.fetch = (async (url: string | URL) => {
+      const value = String(url);
+      if (value.includes("api.linear.app/graphql")) {
+        return {
+          ok: true,
+          status: 200,
+          text: async () =>
+            JSON.stringify({
+              data: {
+                issues: {
+                  nodes: [
+                    {
+                      id: "s1",
+                      identifier: "SBX-1",
+                      title: "Sandbox task",
+                      url: "https://linear.app/issue/SBX-1",
+                      updatedAt: "2026-03-02T12:00:00.000Z",
+                      state: { name: "Todo", type: "backlog" },
+                      project: { id: "lin-proj-2", name: "Sandbox" },
+                    },
+                  ],
+                },
+              },
+            }),
+        };
+      }
+      if (value.includes("/v1/databases/notion-db-1") && !value.includes("/query")) {
+        return { ok: true, status: 200, text: async () => JSON.stringify({ id: "notion-db-1", data_sources: [{ id: "notion-ds-1" }] }) };
+      }
+      if (value.includes("/v1/databases/notion-specs-1") && !value.includes("/query")) {
+        return { ok: true, status: 200, text: async () => JSON.stringify({ id: "notion-specs-1", data_sources: [{ id: "notion-ds-specs-1" }] }) };
+      }
+      if (value.includes("/v1/databases/notion-db-2") && !value.includes("/query")) {
+        return { ok: true, status: 200, text: async () => JSON.stringify({ id: "notion-db-2", data_sources: [{ id: "notion-ds-2" }] }) };
+      }
+      if (value.includes("/v1/databases/notion-specs-2") && !value.includes("/query")) {
+        return { ok: true, status: 200, text: async () => JSON.stringify({ id: "notion-specs-2", data_sources: [{ id: "notion-ds-specs-2" }] }) };
+      }
+      if (
+        value.includes("/v1/data_sources/notion-ds-1/query") ||
+        value.includes("/v1/data_sources/notion-ds-specs-1/query") ||
+        value.includes("/v1/data_sources/notion-ds-2/query") ||
+        value.includes("/v1/data_sources/notion-ds-specs-2/query")
+      ) {
+        return { ok: true, status: 200, text: async () => JSON.stringify({ results: [] }) };
+      }
+      throw new Error(`Unexpected fetch URL: ${value}`);
+    }) as typeof fetch;
+
+    const html = await getDashboardHtml({ projectKey: "sandbox", taskLimit: 5, inboxLimit: 5, activityLimit: 5 });
+    expect(html).toContain("🔧 AIPipeline");
+    expect(html).toContain("🧪 Sandbox");
+    expect(html).toContain('href="/dashboard?project=sandbox');
+    expect(html).toContain("SBX-1");
   });
 });

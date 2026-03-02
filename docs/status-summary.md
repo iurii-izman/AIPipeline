@@ -48,6 +48,11 @@
   - `release-scorecard-v2`: `https://api.github.com/repos/iurii-izman/AIPipeline/actions/artifacts/5718661621/zip`
   - `release-supply-chain`: `https://api.github.com/repos/iurii-izman/AIPipeline/actions/artifacts/5718661782/zip`
   - `release-ai-ops`: `https://api.github.com/repos/iurii-izman/AIPipeline/actions/artifacts/5718661937/zip`
+- Release Gate refresh (remote, action-plane follow-up): success with scorecard + supply-chain + ai-ops artifacts on `2026-03-02` (head `0d26c1c`, branch `main`)
+  `https://github.com/iurii-izman/AIPipeline/actions/runs/22572368070`
+  - `release-scorecard-v2`: `https://api.github.com/repos/iurii-izman/AIPipeline/actions/artifacts/5719444559/zip`
+  - `release-supply-chain`: `https://api.github.com/repos/iurii-izman/AIPipeline/actions/artifacts/5719444809/zip`
+  - `release-ai-ops`: `https://api.github.com/repos/iurii-izman/AIPipeline/actions/artifacts/5719445031/zip`
 - Git sync state: local `main` and `origin/main` are synchronized
 - IaC baseline: `infra/terraform` + `scripts/check-iac-baseline.sh` + CI job `iac-validate`
 - OTel baseline: `OTEL_ENABLED=true` (или `OTEL_PILOT_ENABLED=true`) + managed exporter policy checks (`otel:check-managed`, `otel:check-coverage`)
@@ -63,6 +68,8 @@
 - App read-only summary route added: `GET /dashboard` (same bearer policy as `/status`)
 - Dashboard UX extended: runtime daemon status panel (`app/n8n/loki/grafana/cloudflared/cursor`) + optional local controls (`/ops/stack`, `/ops/cursor`) behind loopback guard and `DASHBOARD_ENABLE_ACTIONS=true`
 - Dashboard action-plane v1 added: `POST /dashboard/triage`, `POST /dashboard/create`, `GET /dashboard/search` + quick-create/search/triage controls in `/dashboard` UI (loopback + action-flag guarded for write paths)
+- Dashboard Notion query path hardened: automatic `database_id -> data_source_id` resolution for query operations (no `Invalid request URL` warnings in `/dashboard/search`)
+- Multi-project scale-readiness validated with automated 2-project dashboard scenario (`tests/dashboard.test.ts`)
 - App intake file endpoints added: `POST /intake/telegram-file` and `GET /intake/files/:id` (bearer-protected, local storage-backed)
 - Project registry baseline added: `config/projects.json` + `scripts/validate-projects-config.js`
 - Keyring bootstrap helper added for intake/dashboard vars: `scripts/bootstrap-intake-dashboard-keyring.sh`

@@ -76,6 +76,8 @@ function notionErrorDetail(response) {
   );
 }
 
+const notionDataSourceCache = new Map();
+
 function normalizeNotionId(value) {
   const raw = String(value || "").trim();
   if (!raw) return "";
@@ -83,6 +85,25 @@ function normalizeNotionId(value) {
   if (uuidLike) return uuidLike[0];
   if (raw.startsWith("collection://")) return raw.replace("collection://", "").trim();
   return raw;
+}
+
+async function resolveNotionDataSourceId(id, token) {
+  const normalized = normalizeNotionId(id);
+  if (!normalized) return "";
+  if (notionDataSourceCache.has(normalized)) return notionDataSourceCache.get(normalized);
+
+  const metaResponse = await requestJson(`https://api.notion.com/v1/databases/${normalized}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Notion-Version": process.env.NOTION_VERSION || "2025-09-03",
+      "Content-Type": "application/json",
+    },
+  });
+
+  const resolved = normalizeNotionId(metaResponse?.payload?.data_sources?.[0]?.id || normalized);
+  notionDataSourceCache.set(normalized, resolved);
+  return resolved;
 }
 
 async function fetchLinearIssues(projectId) {
@@ -119,12 +140,14 @@ async function fetchLinearIssues(projectId) {
 async function notionRequestWithFallbacks(databaseId, payload, token) {
   const normalizedDatabaseId = normalizeNotionId(databaseId);
   if (!normalizedDatabaseId) return { ok: false, rows: [], error: "Notion database id is not configured" };
+  const queryId = await resolveNotionDataSourceId(normalizedDatabaseId, token);
   const endpoints = [
-    `https://api.notion.com/v1/data_sources/${normalizedDatabaseId}/query`,
+    `https://api.notion.com/v1/data_sources/${queryId}/query`,
     `https://api.notion.com/v1/databases/${normalizedDatabaseId}/query`,
   ];
 
   let lastError = "";
+  let preferredError = "";
   for (const endpoint of endpoints) {
     const response = await requestJson(endpoint, {
       method: "POST",
@@ -143,12 +166,15 @@ async function notionRequestWithFallbacks(databaseId, payload, token) {
       };
     }
     lastError = notionErrorDetail(response);
+    if (lastError && !/invalid request url/i.test(String(lastError))) {
+      preferredError = lastError;
+    }
     if (response.status === 401 || response.status === 403) {
       return { ok: false, rows: [], error: `Notion request failed (${response.status}): ${lastError}` };
     }
   }
 
-  return { ok: false, rows: [], error: lastError || "Notion request failed" };
+  return { ok: false, rows: [], error: preferredError || lastError || "Notion request failed" };
 }
 
 async function fetchNotionRows(databaseId, payload = {}) {
