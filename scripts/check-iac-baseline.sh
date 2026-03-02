@@ -67,6 +67,11 @@ if [[ -z "$report_file" ]]; then
   report_file="$REPO_ROOT/.out/iac/iac-plan-report.json"
 fi
 
+# Normalize report path before changing working directory.
+if [[ "$report_file" != /* ]]; then
+  report_file="$REPO_ROOT/$report_file"
+fi
+
 mkdir -p "$(dirname "$report_file")"
 tmp_results="$(mktemp)"
 plan_artifacts_dir="$REPO_ROOT/.out/iac/plans"

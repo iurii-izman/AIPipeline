@@ -10,6 +10,7 @@ set -euo pipefail
 strict=false
 require_token=false
 branch="${GITHUB_REF_NAME:-${GITHUB_HEAD_REF:-}}"
+head_ref="${GITHUB_HEAD_REF:-}"
 host_url="${SONAR_HOST_URL:-https://sonarcloud.io}"
 
 while [[ $# -gt 0 ]]; do
@@ -56,14 +57,52 @@ if [[ -z "${SONAR_TOKEN:-}" ]]; then
 fi
 
 query_url="${host_url%/}/api/qualitygates/project_status?projectKey=${project_key}&organization=${organization}"
-if [[ -n "$branch" ]]; then
-  query_url+="&branch=${branch}"
-fi
 
 tmp_json="$(mktemp)"
 trap 'rm -f "$tmp_json"' EXIT
 
-if ! curl -fsS -u "${SONAR_TOKEN}:" "$query_url" > "$tmp_json"; then
+url_encode() {
+  node -e 'console.log(encodeURIComponent(process.argv[1] || ""))' "$1"
+}
+
+build_query_url() {
+  local mode="$1"
+  local value="${2:-}"
+  local base="${host_url%/}/api/qualitygates/project_status?projectKey=$(url_encode "$project_key")&organization=$(url_encode "$organization")"
+  if [[ "$mode" == "branch" && -n "$value" ]]; then
+    base+="&branch=$(url_encode "$value")"
+  elif [[ "$mode" == "pr" && -n "$value" ]]; then
+    base+="&pullRequest=$(url_encode "$value")"
+  fi
+  printf '%s\n' "$base"
+}
+
+pr_number=""
+if [[ "${GITHUB_REF_NAME:-}" =~ ^([0-9]+)/merge$ ]]; then
+  pr_number="${BASH_REMATCH[1]}"
+fi
+
+declare -a attempts=()
+if [[ -n "$pr_number" ]]; then
+  attempts+=("$(build_query_url pr "$pr_number")")
+fi
+if [[ -n "$head_ref" ]]; then
+  attempts+=("$(build_query_url branch "$head_ref")")
+fi
+if [[ -n "$branch" && "$branch" != "$head_ref" ]]; then
+  attempts+=("$(build_query_url branch "$branch")")
+fi
+attempts+=("$(build_query_url none "")")
+
+sonar_query_ok=false
+for candidate in "${attempts[@]}"; do
+  if curl -fsS -u "${SONAR_TOKEN}:" "$candidate" > "$tmp_json"; then
+    sonar_query_ok=true
+    break
+  fi
+done
+
+if [[ "$sonar_query_ok" != "true" ]]; then
   echo "Failed to query Sonar quality gate" >&2
   exit 1
 fi
