@@ -69,9 +69,9 @@ async function getLocalRuntimeStatus() {
     execFileAsync("./scripts/stack-control.sh", ["status", "full"], { cwd: process.cwd() })
       .then((result) => parseStackStatusOutput(result.stdout))
       .catch(() => ({ app: false, n8n: false, observability: false, cloudflared: false, raw: "" })),
-    checkHttp("http://localhost:5678/healthz", [200]),
-    checkHttp("http://localhost:3100/ready", [200]),
-    checkHttp("http://localhost:3001/api/health", [200]),
+    checkHttp("http://127.0.0.1:5678/healthz", [200]),
+    checkHttp("http://127.0.0.1:3100/ready", [200]),
+    checkHttp("http://127.0.0.1:3001/api/health", [200]),
     checkProcess("cursor|Cursor"),
   ]);
 
@@ -80,7 +80,10 @@ async function getLocalRuntimeStatus() {
     services: {
       app: { running: stackStatus.app, detail: stackStatus.app ? "running" : "stopped" },
       n8n: { running: stackStatus.n8n && n8nHealth.ok, detail: n8nHealth.ok ? "healthy" : "unreachable" },
-      loki: { running: lokiReady.ok, detail: lokiReady.ok ? "ready" : "not ready" },
+      loki: {
+        running: lokiReady.ok || lokiReady.statusCode === 503,
+        detail: lokiReady.ok ? "ready" : lokiReady.statusCode === 503 ? "warming up" : "not ready",
+      },
       grafana: { running: grafanaHealth.ok, detail: grafanaHealth.ok ? "healthy" : "not ready" },
       cloudflared: { running: stackStatus.cloudflared, detail: stackStatus.cloudflared ? "running" : "stopped" },
       cursor: { running: cursorRunning, detail: cursorRunning ? "running" : "not running" },

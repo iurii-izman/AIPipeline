@@ -3,7 +3,7 @@
 # Profiles:
 #   core      = app + n8n
 #   extended  = core + observability stack
-#   full      = extended + cloudflared check/status (does not auto-start)
+#   full      = extended + cloudflared ensure/status
 #
 # Usage:
 #   ./scripts/stack-control.sh start [core|extended|full]
@@ -58,7 +58,7 @@ find_app_pid() {
 }
 
 app_is_healthy() {
-  curl -fsS "http://localhost:3000/health" >/dev/null 2>&1
+  curl -fsS "http://127.0.0.1:3000/health" >/dev/null 2>&1
 }
 
 start_app() {
@@ -153,7 +153,7 @@ app_status() {
     echo "app: running (pid=$(cat "$APP_PID_FILE"))"
   elif pgrep -f "node( .*)?src/index.js" >/dev/null 2>&1; then
     echo "app: running (external process)"
-  elif curl -fsS "http://localhost:3000/health" >/dev/null 2>&1; then
+  elif curl -fsS "http://127.0.0.1:3000/health" >/dev/null 2>&1; then
     echo "app: running (http probe)"
   else
     echo "app: stopped"
@@ -216,6 +216,20 @@ cloudflared_status() {
   fi
 }
 
+start_cloudflared() {
+  if pgrep -f "cloudflared.*tunnel.*--token" >/dev/null 2>&1; then
+    echo "cloudflared: already running"
+    return
+  fi
+
+  if systemctl --user list-unit-files | grep -q '^aipipeline-cloudflared.service'; then
+    systemctl --user start aipipeline-cloudflared.service >/dev/null 2>&1 || true
+    sleep 1
+  fi
+
+  cloudflared_status
+}
+
 do_start() {
   start_app
   start_n8n
@@ -223,7 +237,7 @@ do_start() {
     start_observability
   fi
   if [[ "$is_full" == "true" ]]; then
-    cloudflared_status
+    start_cloudflared
   fi
 }
 

@@ -34,15 +34,38 @@ ensure_volume() {
   fi
 }
 
+container_running() {
+  local name="$1"
+  podman ps --format '{{.Names}}' | grep -qx "$name"
+}
+
+container_exists() {
+  local name="$1"
+  podman container exists "$name" >/dev/null 2>&1
+}
+
+ensure_container_started() {
+  local name="$1"
+  shift
+
+  if container_running "$name"; then
+    return
+  fi
+
+  if container_exists "$name"; then
+    podman start "$name" >/dev/null
+    return
+  fi
+
+  podman run -d --name "$name" --restart unless-stopped "$@" >/dev/null
+}
+
 start_stack() {
   ensure_network
   ensure_volume "$LOKI_VOLUME"
   ensure_volume "$GRAFANA_VOLUME"
 
-  podman rm -f "$LOKI_CONTAINER" "$PROMTAIL_CONTAINER" "$GRAFANA_CONTAINER" >/dev/null 2>&1 || true
-
-  podman run -d \
-    --name "$LOKI_CONTAINER" \
+  ensure_container_started "$LOKI_CONTAINER" \
     --network "$NETWORK_NAME" \
     -p 3100:3100 \
     -v "$OBS_DIR/loki-config.yaml:/etc/loki/config.yaml:Z" \
@@ -50,16 +73,14 @@ start_stack() {
     docker.io/grafana/loki:3.0.0 \
     -config.file=/etc/loki/config.yaml
 
-  podman run -d \
-    --name "$PROMTAIL_CONTAINER" \
+  ensure_container_started "$PROMTAIL_CONTAINER" \
     --network "$NETWORK_NAME" \
     -v "$OBS_DIR/promtail-config.yaml:/etc/promtail/config.yaml:Z" \
     -v "$LOG_DIR:/var/log/aipipeline:Z" \
     docker.io/grafana/promtail:3.0.0 \
     -config.file=/etc/promtail/config.yaml
 
-  podman run -d \
-    --name "$GRAFANA_CONTAINER" \
+  ensure_container_started "$GRAFANA_CONTAINER" \
     --network "$NETWORK_NAME" \
     -p 3001:3000 \
     -e GF_SECURITY_ADMIN_USER=admin \

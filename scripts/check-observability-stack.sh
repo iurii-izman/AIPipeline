@@ -5,14 +5,14 @@ set -euo pipefail
 
 ok=true
 
-if curl -fsS http://localhost:3100/ready >/dev/null; then
+if curl -fsS http://127.0.0.1:3100/ready >/dev/null; then
   echo "loki: OK"
 else
   echo "loki: FAIL"
   ok=false
 fi
 
-if curl -fsS http://localhost:3001/api/health >/dev/null; then
+if curl -fsS http://127.0.0.1:3001/api/health >/dev/null; then
   echo "grafana: OK"
 else
   echo "grafana: FAIL"

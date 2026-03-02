@@ -98,6 +98,10 @@
 - Telegram topics production cutover completed: `TELEGRAM_CHAT_ID=-1003831799532` (forum supergroup), topics created (`command_center=3`, `inbox=4`, `ops=5`, `project_aipipeline=6`), bot send verified in all threads
 - Real multi-project onboarding validated: `sandbox` project added end-to-end (Linear project `1b1a74d7-e64d-491c-8b60-82887eb69ead`, Notion Inbox/Specs DB, Telegram topic `thread=13`, dashboard project tab/search/create verified).
 - `bootstrap-telegram-forum-topics.sh` now syncs topic mapping for all projects in `config/projects.json` (not only first entry), and writes updated `PROJECTS_CONFIG` to keyring.
+- Reboot/runtime status reliability fix:
+  - dashboard local probes use IPv4 loopback (`127.0.0.1`) to avoid false negatives on `localhost` IPv6 resolution;
+  - `stack-control full` now ensures cloudflared start (via `aipipeline-cloudflared.service` when installed);
+  - observability start is idempotent (`run-observability-stack.sh` no longer recreates containers on each watchdog tick; containers use `--restart unless-stopped`).
 
 ## Hardening Completed
 - `/status` protected with bearer auth + rate-limit + request-size guard
