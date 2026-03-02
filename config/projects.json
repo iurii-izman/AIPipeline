@@ -17,6 +17,24 @@
         "sentry": "https://aipipeline.sentry.io/projects/node/",
         "n8n": "http://localhost:5678"
       }
+    },
+    {
+      "key": "sandbox",
+      "label": "Sandbox",
+      "emoji": "🧪",
+      "linearTeamId": "d27ffe88-769f-4b73-8db9-fa11bd9bf915",
+      "linearProjectId": "1b1a74d7-e64d-491c-8b60-82887eb69ead",
+      "notionInboxDatabaseId": "f0dc65ab-03a3-457b-8123-0df0ae24c225",
+      "notionSpecsDatabaseId": "dd8cf10e-efa2-4fdb-ae0d-51e82c7a3a97",
+      "notionSpecTemplateId": "__NONE__",
+      "telegramThreadId": "13",
+      "links": {
+        "linear": "https://linear.app/aipipeline/project/sandbox-1654258d86e2",
+        "notion": "https://www.notion.so/dd8cf10eefa24fdbae0d51e82c7a3a97",
+        "github": "https://github.com/iurii-izman/AIPipeline",
+        "sentry": "https://aipipeline.sentry.io/projects/node/",
+        "n8n": "http://localhost:5678"
+      }
     }
   ]
 }

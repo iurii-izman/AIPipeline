@@ -84,6 +84,8 @@
   - local browser-friendly mode добавлен: `DASHBOARD_PUBLIC_LOCAL=true` (dashboard without bearer on loopback) + `DASHBOARD_ENABLE_ACTIONS=true` (UI controls);
   - введён project registry SSoT: `config/projects.json` + `node scripts/validate-projects-config.js`.
   - multi-project onboarding runbook добавлен: `docs/runbook-new-project.md`.
+  - `sandbox` (2-й проект) onboarded end-to-end: Linear+Notion+Telegram topic+dashboard action/search path.
+  - `bootstrap-telegram-forum-topics.sh` масштабирован на N проектов из registry.
   - тестовый baseline усилен: `tests/dashboard.test.ts`, `tests/project-registry.test.ts`, расширенные WF-5 callback graph invariants в `tests/e2e/workflow-fixtures.test.ts`.
   - rollout/rollback playbook добавлен: `docs/intake-dashboard-rollout-runbook.md`.
 

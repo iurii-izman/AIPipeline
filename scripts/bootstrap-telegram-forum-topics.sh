@@ -101,10 +101,8 @@ if [[ ! -f "$PROJECTS_FILE" ]]; then
   exit 1
 fi
 
-project_key="$(jq -r '.projects[0].key // ""' "$PROJECTS_FILE")"
-project_label="$(jq -r '.projects[0].label // ""' "$PROJECTS_FILE")"
-project_thread_existing="$(jq -r '.projects[0].telegramThreadId // ""' "$PROJECTS_FILE")"
-if [[ -z "$project_key" || -z "$project_label" ]]; then
+project_count="$(jq -r '.projects | length' "$PROJECTS_FILE")"
+if [[ "$project_count" -eq 0 ]]; then
   echo "config/projects.json must have at least one project with key+label" >&2
   exit 1
 fi
@@ -112,23 +110,33 @@ fi
 cmd_thread="$(create_topic_once "command_center" "${TG_TOPIC_COMMAND_CENTER:-00 — Command Center}")"
 inbox_thread="$(create_topic_once "inbox" "${TG_TOPIC_INBOX:-01 — Inbox}")"
 ops_thread="$(create_topic_once "ops" "${TG_TOPIC_OPS:-Ops — Deploy/Incidents}")"
-if [[ -n "$project_thread_existing" ]]; then
-  project_thread="$project_thread_existing"
-else
-  project_thread="$(create_topic_once "project_${project_key}" "${TG_TOPIC_PROJECT_PREFIX:-P-}${project_key^^} — ${project_label}")"
-fi
+declare -a project_lines=()
+while IFS= read -r line; do
+  project_lines+=("$line")
+done < <(jq -r '.projects[] | [.key, .label, (.telegramThreadId // "")] | @tsv' "$PROJECTS_FILE")
 
-node - "$PROJECTS_FILE" "$project_thread" <<'NODE'
-const fs = require("fs");
-const file = process.argv[2];
-const threadId = String(process.argv[3] || "");
-const parsed = JSON.parse(fs.readFileSync(file, "utf8"));
-if (!Array.isArray(parsed.projects) || !parsed.projects.length) {
-  throw new Error("projects array is empty");
-}
-parsed.projects[0].telegramThreadId = threadId;
-fs.writeFileSync(file, `${JSON.stringify(parsed, null, 2)}\n`);
-NODE
+declare -a project_summaries=()
+for row in "${project_lines[@]}"; do
+  key="$(printf "%s" "$row" | cut -f1)"
+  label="$(printf "%s" "$row" | cut -f2)"
+  existing="$(printf "%s" "$row" | cut -f3)"
+  if [[ -z "$key" || -z "$label" ]]; then
+    echo "Project entry has empty key/label in $PROJECTS_FILE" >&2
+    exit 1
+  fi
+
+  thread=""
+  if [[ "$existing" =~ ^[0-9]+$ ]] && [[ "$existing" -gt 0 ]]; then
+    thread="$existing"
+  else
+    thread="$(create_topic_once "project_${key}" "${TG_TOPIC_PROJECT_PREFIX:-P-}${key^^} — ${label}")"
+  fi
+
+  tmp="$(mktemp)"
+  jq --arg k "$key" --arg t "$thread" '.projects |= map(if (.key == $k) then .telegramThreadId=$t else . end)' "$PROJECTS_FILE" >"$tmp"
+  mv "$tmp" "$PROJECTS_FILE"
+  project_summaries+=("thread.project.${key}=${thread}")
+done
 
 projects_json_min="$(jq -c . "$PROJECTS_FILE")"
 printf "%s" "$projects_json_min" | secret-tool store --label="AIPipeline — Projects Config" server aipipeline.config user projects-config
@@ -142,7 +150,9 @@ echo "Forum bootstrap completed."
 echo "chat_id=${FORUM_CHAT_ID}"
 echo "thread.command_center=${cmd_thread}"
 echo "thread.inbox=${inbox_thread}"
-echo "thread.project.${project_key}=${project_thread}"
+for summary in "${project_summaries[@]}"; do
+  echo "$summary"
+done
 echo "thread.ops=${ops_thread}"
 echo "state=${TOPICS_STATE_FILE}"
 echo "config=${PROJECTS_FILE}"

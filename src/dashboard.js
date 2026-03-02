@@ -434,6 +434,13 @@ async function notionCreatePageWithFallback({ databaseId, projectKey, title, bod
     {
       parent: { database_id: normalizedDatabaseId },
       properties: {
+        Name: { title: [{ type: "text", text: { content: titleContent } }] },
+      },
+      ...(baseChildren.length ? { children: baseChildren } : {}),
+    },
+    {
+      parent: { database_id: normalizedDatabaseId },
+      properties: {
         Title: { title: [{ type: "text", text: { content: titleContent } }] },
       },
       ...(baseChildren.length ? { children: baseChildren } : {}),
@@ -481,6 +488,10 @@ async function notionUpdateStatusWithFallback(pageId, statusValue) {
     lastError = notionErrorDetail(response);
   }
 
+  const errorText = String(lastError || "");
+  if (/is not a property that exists|property .* does not exist|could not find property/i.test(errorText)) {
+    return { ok: true, updatedStatus: "unchanged", warning: `status property is missing; skipped status update (${statusValue})` };
+  }
   return { ok: false, error: `Notion update status failed: ${lastError}` };
 }
 

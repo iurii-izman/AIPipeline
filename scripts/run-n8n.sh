@@ -43,15 +43,25 @@ ensure_container_env_match() {
     return 0
   fi
 
-  local current_webhook
-  current_webhook="$(podman inspect "$CONTAINER_NAME" --format '{{range .Config.Env}}{{println .}}{{end}}' | sed -n 's/^WEBHOOK_URL=//p' | head -n 1)"
-  if [[ "$current_webhook" == "$WEBHOOK_URL_VALUE" ]]; then
+  local env_dump current_webhook current_projects current_default
+  env_dump="$(podman inspect "$CONTAINER_NAME" --format '{{range .Config.Env}}{{println .}}{{end}}')"
+  current_webhook="$(printf "%s\n" "$env_dump" | sed -n 's/^WEBHOOK_URL=//p' | head -n 1)"
+  current_projects="$(printf "%s\n" "$env_dump" | sed -n 's/^PROJECTS_CONFIG=//p' | head -n 1)"
+  current_default="$(printf "%s\n" "$env_dump" | sed -n 's/^DEFAULT_PROJECT_KEY=//p' | head -n 1)"
+
+  if [[ "$current_webhook" == "$WEBHOOK_URL_VALUE" && "${current_projects:-}" == "${PROJECTS_CONFIG:-}" && "${current_default:-}" == "${DEFAULT_PROJECT_KEY:-}" ]]; then
     return 0
   fi
 
-  echo "Container $CONTAINER_NAME webhook URL mismatch:"
+  echo "Container $CONTAINER_NAME env mismatch:"
   echo "  current: ${current_webhook:-<unset>}"
   echo "  target : $WEBHOOK_URL_VALUE"
+  if [[ "${current_projects:-}" != "${PROJECTS_CONFIG:-}" ]]; then
+    echo "  projects-config: drift detected"
+  fi
+  if [[ "${current_default:-}" != "${DEFAULT_PROJECT_KEY:-}" ]]; then
+    echo "  default-project-key: drift detected"
+  fi
   echo "Recreating container to apply webhook URL..."
   podman rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
 }
