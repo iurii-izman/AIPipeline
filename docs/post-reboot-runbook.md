@@ -13,7 +13,7 @@ cd /var/home/user/Projects/AIPipeline
 ./scripts/start-after-reboot.sh
 ```
 
-Поднимает профиль `full`: app + n8n + observability + cloudflared, затем проверяет `/health` и `/healthz`.  
+Поднимает профиль `full`: app + n8n + observability + cloudflared, затем проверяет `/health` и `/healthz`.
 Проверка статуса: `./scripts/stack-control.sh status full`.
 
 ---
