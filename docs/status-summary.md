@@ -30,6 +30,7 @@
 - Observability alerts probe: pass after stack warm-up
 - Synthetic probe aligned with `/status` auth policy (`scripts/synthetic-health-status-check.sh` sends bearer token when `STATUS_AUTH_TOKEN` is set)
 - GitHub controls sync: `./scripts/sync-github-repo-controls.sh` (deploy webhooks/tokens + parity secrets/vars + required checks)
+- GitHub PR-only enforcement available in sync script: `./scripts/sync-github-repo-controls.sh --strict-pr-flow` (removes ruleset bypass actors + enables strict required checks)
 - Backup retention timer: `aipipeline-backup-retention.timer` installed/enabled (`systemctl --user status aipipeline-backup-retention.timer`)
 - DR cadence timer: `aipipeline-dr-cadence.timer` installed/enabled (`systemctl --user status aipipeline-dr-cadence.timer`)
 - DR cadence last successful run: `2026-03-01T20:24:59+02:00` (`/var/home/user/Projects/AIPipeline/.out/drills/dr-restore-drill-20260301-202456.json`)
@@ -92,6 +93,8 @@
 - User-level stack autostart installer added: `scripts/install-stack-autostart-service.sh` (`core|extended|full`, optional `--enable-linger`)
 - Desktop dashboard browser autostart installer added: `scripts/install-dashboard-browser-autostart.sh` (`--disable` to remove)
 - User-level stack watchdog timer installer added: `scripts/install-stack-watchdog-timer.sh` (periodic `stack-control start`, self-heal on app drop)
+- Reboot/runtime triage note: WF-5 live executions confirm `/projects` arrives with `message_thread_id=3` in topic mode; delayed Telegram replies were correlated with post-reboot n8n availability/replay windows, not missing topic routing.
+- WF-5 live routing diagnostic helper added: `scripts/check-wf5-command-routing.sh` (shows recent commands, thread ids, and execution errors).
 - `stack-control` app bootstrap hardened: waits for `/health` readiness and prints last startup logs on failure.
 - `stack-control` app lifecycle hardened for mixed runtime modes: adopts external app PID when healthy and can stop adopted external process.
 - `load-env-from-keyring.sh` hardened with bounded secret lookups (`SECRET_LOOKUP_TIMEOUT_SEC`, default 2s) to avoid startup hangs when keyring backend is slow/locked.

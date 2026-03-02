@@ -13,15 +13,20 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 repo_arg=""
+strict_pr_flow="false"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --repo)
       repo_arg="${2:-}"
       shift 2
       ;;
+    --strict-pr-flow)
+      strict_pr_flow="true"
+      shift
+      ;;
     *)
       echo "Unknown argument: $1" >&2
-      echo "Usage: $0 [--repo owner/name]" >&2
+      echo "Usage: $0 [--repo owner/name] [--strict-pr-flow]" >&2
       exit 1
       ;;
   esac
@@ -89,18 +94,20 @@ ensure_required_checks() {
   gh api -H "Accept: application/vnd.github+json" "/repos/$repo/rulesets/$ruleset_id" > "$payload_file"
 
   jq '
-    . as $root
+    $strict as $strictFlag
+    | . as $root
     | {
         name: .name,
         target: .target,
         enforcement: .enforcement,
-        bypass_actors: (.bypass_actors // []),
+        bypass_actors: (if $strictFlag then [] else (.bypass_actors // []) end),
         conditions: .conditions,
         rules: (.rules | map(
           if .type == "required_status_checks" then
             .parameters.required_status_checks as $checks
+            | .parameters.strict_required_status_checks_policy = (if $strictFlag then true else (.parameters.strict_required_status_checks_policy // false) end)
             | .parameters.required_status_checks = (
-                ($checks + [
+                (($checks // []) + [
                   {
                     context: "eval-safety",
                     integration_id: (([$checks[]?.integration_id] | map(select(. != null)) | .[0]) // null)
@@ -131,7 +138,7 @@ ensure_required_checks() {
           else .
           end
         ))
-      }' "$payload_file" > "$update_file"
+      }' --argjson strict "$([ "$strict_pr_flow" = "true" ] && echo true || echo false)" "$payload_file" > "$update_file"
 
   gh api -X PUT \
     -H "Accept: application/vnd.github+json" \
@@ -139,7 +146,11 @@ ensure_required_checks() {
     --input "$update_file" >/dev/null
 
   rm -f "$payload_file" "$update_file"
-  echo "ruleset required checks: ensured (eval-safety, eval-v2, sbom, iac-validate, cost-governance, data-governance-policy)"
+  if [[ "$strict_pr_flow" = "true" ]]; then
+    echo "ruleset required checks: ensured + strict PR flow (no bypass actors, strict status checks)"
+  else
+    echo "ruleset required checks: ensured (eval-safety, eval-v2, sbom, iac-validate, cost-governance, data-governance-policy)"
+  fi
 }
 
 ruleset_has_context() {

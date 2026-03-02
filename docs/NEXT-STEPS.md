@@ -105,6 +105,8 @@
   - `./scripts/check-observability-stack.sh`
 - Проверка observability alerts:
   - `./scripts/check-observability-alerts.sh`
+- Диагностика routing Telegram topic/command в WF-5:
+  - `source scripts/load-env-from-keyring.sh && ./scripts/check-wf5-command-routing.sh --limit 15`
 - Сборка NotebookLM source-bundle:
   - `./scripts/notebooklm-build-source-bundle.sh`
 - Weekly NotebookLM refresh prep (bundle + checklist + evidence template):
@@ -139,6 +141,7 @@
    - Для пересборки baseline из registry использовать: `./scripts/bootstrap-intake-dashboard-keyring.sh`.
 2. Поддерживать актуальность repository ruleset/checks в GitHub (включая `build`, `integration`, `e2e-fixtures`, `eval-alpha`, `eval-safety`, `eval-v2`, `sbom`, `iac-validate`, `cost-governance`, `workflow-governance`, `docs-links`, `data-governance-policy`, `security-audit`, `CodeQL`) при изменениях CI.
    - Быстрая синхронизация vars/secrets из keyring: `./scripts/sync-github-repo-controls.sh`.
+   - PR-only strict mode (убрать bypass + strict checks): `./scripts/sync-github-repo-controls.sh --strict-pr-flow`.
    - Автоподготовка deploy webhook secrets (из `CLOUDFLARE_PUBLIC_BASE_URL`): `./scripts/bootstrap-deploy-webhooks.sh`.
 3. Поддерживать и расширять eval dataset (текущая база: 150 кейсов) + online telemetry sample перед rollout-изменениями `MODEL_CLASSIFIER_MODE=full_primary`.
    - Rollout policy зафиксирована в `docs/adr-001-full-primary-rollout.md`.
@@ -172,6 +175,10 @@
    - `npm run sbom:generate && npm run provenance:generate && npm run supply-chain:verify`;
    - проверять attestation upload в CI job `sbom`.
 11. NotebookLM: weekly UI upload source-bundle (manual-only), подготовка через `./scripts/notebooklm-weekly-refresh.sh`.
+12. Ручной Telegram UAT после reboot/rollout (живыми сообщениями в forum topics):
+   - `/projects` + callback `PROJECT_SET`;
+   - `/q task|spec|idea ...`;
+   - `/capture` + callbacks `Task/Spec/Idea/Move/Archive`.
 
 ## Рабочий цикл дальше
 
