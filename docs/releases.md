@@ -99,6 +99,7 @@
 
 14. **Beta RC package (recommended)**
    - RC notes + rollout window: [release-notes/v0.1.0-beta.1-rc.md](release-notes/v0.1.0-beta.1-rc.md)
+   - Next target RC prep: [release-notes/v0.1.0-beta.2-rc.md](release-notes/v0.1.0-beta.2-rc.md)
    - Release tag: `v0.1.0-beta.1` (prerelease)
    - После publish обновить evidence links в RC notes.
 

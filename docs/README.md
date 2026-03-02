@@ -56,6 +56,8 @@
 - [live-uat-telegram.md](live-uat-telegram.md)
 - [uat-evidence-2026-02-28.md](uat-evidence-2026-02-28.md)
 - [release-notes/v0.1.0-beta.1-rc.md](release-notes/v0.1.0-beta.1-rc.md)
+- [release-notes/v0.1.0-beta.2-rc.md](release-notes/v0.1.0-beta.2-rc.md)
+- [BETA2-READINESS.md](BETA2-READINESS.md)
 
 ## 7) Archived
 - [archive/README.md](archive/README.md)
