@@ -25,6 +25,7 @@ ensure_network() {
   if ! podman network exists "$NETWORK_NAME"; then
     podman network create "$NETWORK_NAME" >/dev/null
   fi
+  return 0
 }
 
 ensure_volume() {
@@ -32,16 +33,19 @@ ensure_volume() {
   if ! podman volume exists "$name"; then
     podman volume create "$name" >/dev/null
   fi
+  return 0
 }
 
 container_running() {
   local name="$1"
   podman ps --format '{{.Names}}' | grep -qx "$name"
+  return $?
 }
 
 container_exists() {
   local name="$1"
   podman container exists "$name" >/dev/null 2>&1
+  return $?
 }
 
 ensure_container_started() {
@@ -49,15 +53,16 @@ ensure_container_started() {
   shift
 
   if container_running "$name"; then
-    return
+    return 0
   fi
 
   if container_exists "$name"; then
     podman start "$name" >/dev/null
-    return
+    return 0
   fi
 
   podman run -d --name "$name" --restart unless-stopped "$@" >/dev/null
+  return 0
 }
 
 start_stack() {
@@ -95,15 +100,18 @@ start_stack() {
   echo "Grafana: http://localhost:3001 (admin/admin)"
   echo "Loki: http://localhost:3100/ready"
   echo "Runtime logs directory for Promtail: $LOG_DIR"
+  return 0
 }
 
 stop_stack() {
   podman rm -f "$GRAFANA_CONTAINER" "$PROMTAIL_CONTAINER" "$LOKI_CONTAINER" >/dev/null 2>&1 || true
   echo "Observability stack stopped."
+  return 0
 }
 
 status_stack() {
   podman ps --filter "name=aipipeline-" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+  return 0
 }
 
 logs_stack() {
@@ -112,9 +120,10 @@ logs_stack() {
     podman logs "$LOKI_CONTAINER" --tail 30 || true
     podman logs "$PROMTAIL_CONTAINER" --tail 30 || true
     podman logs "$GRAFANA_CONTAINER" --tail 30 || true
-    return
+    return 0
   fi
   podman logs "$target" --tail 100
+  return 0
 }
 
 cmd="${1:-status}"

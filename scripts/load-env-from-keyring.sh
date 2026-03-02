@@ -20,14 +20,16 @@ _load() {
   if [[ -n "$val" ]]; then
     export "$var=$val"
   fi
+  return 0
 }
 
 _lookup_secret() {
   if command -v timeout >/dev/null 2>&1; then
     timeout "${SECRET_LOOKUP_TIMEOUT_SEC:-2}s" secret-tool lookup "$@" 2>/dev/null || true
-    return
+    return 0
   fi
   secret-tool lookup "$@" 2>/dev/null || true
+  return 0
 }
 
 # MCP / Cursor

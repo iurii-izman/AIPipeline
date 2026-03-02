@@ -13,6 +13,7 @@ require_cmd() {
     echo "Required command not found: $1" >&2
     exit 1
   }
+  return 0
 }
 
 require_cmd secret-tool
@@ -22,11 +23,13 @@ require_cmd tr
 lookup_secret() {
   local server="$1" user="$2"
   secret-tool lookup server "$server" user "$user" 2>/dev/null || true
+  return 0
 }
 
 store_secret() {
   local label="$1" server="$2" user="$3" value="$4"
   printf "%s" "$value" | secret-tool store --label="$label" server "$server" user "$user"
+  return 0
 }
 
 ensure_secret() {
@@ -39,10 +42,12 @@ ensure_secret() {
   fi
   store_secret "$label" "$server" "$user" "$default_value"
   echo "CREATED $env_name"
+  return 0
 }
 
 rand_hex_32() {
   od -An -N32 -tx1 /dev/urandom | tr -d ' \n'
+  return 0
 }
 
 status_auth_token="$(rand_hex_32)"

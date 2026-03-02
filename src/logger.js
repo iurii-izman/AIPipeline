@@ -1,4 +1,4 @@
-const { randomUUID } = require("crypto");
+const { randomUUID } = require("node:crypto");
 const { context: otelContext, trace } = require("@opentelemetry/api");
 
 const REDACT_KEYS = new Set([

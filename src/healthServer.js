@@ -8,7 +8,7 @@ const http = require("http");
 const https = require("https");
 const fs = require("fs");
 const path = require("path");
-const crypto = require("crypto");
+const crypto = require("node:crypto");
 const { context: otelContext, trace, SpanStatusCode } = require("@opentelemetry/api");
 const { log, correlationIdFromRequest } = require("./logger.js");
 const {

@@ -13,6 +13,7 @@ require_cmd() {
     echo "Required command not found: $1" >&2
     exit 1
   }
+  return 0
 }
 
 require_cmd secret-tool
@@ -21,11 +22,13 @@ require_cmd node
 lookup_secret() {
   local server="$1" user="$2"
   secret-tool lookup server "$server" user "$user" 2>/dev/null || true
+  return 0
 }
 
 store_secret() {
   local label="$1" server="$2" user="$3" value="$4"
   printf "%s" "$value" | secret-tool store --label="$label" server "$server" user "$user"
+  return 0
 }
 
 ensure_secret() {
@@ -42,6 +45,7 @@ ensure_secret() {
   fi
   store_secret "$label" "$server" "$user" "$value"
   echo "CREATED $env_name"
+  return 0
 }
 
 CONFIG_FILE="${1:-config/projects.json}"

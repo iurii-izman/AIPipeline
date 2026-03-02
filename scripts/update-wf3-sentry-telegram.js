@@ -79,7 +79,7 @@ const workflow = {
       typeVersion: 2,
       position: [220, -200],
       parameters: {
-        jsCode: `const crypto = require('crypto');
+        jsCode: `const crypto = require('node:crypto');
 const headers = $json.headers || {};
 const secret = String($env.SENTRY_WEBHOOK_SECRET || '');
 if (!secret) {

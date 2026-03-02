@@ -19,6 +19,7 @@ start_server() {
   local actions_enabled="$2"
   STATUS_AUTH_TOKEN="$TOKEN" DASHBOARD_ENABLE_ACTIONS="$actions_enabled" DASHBOARD_PUBLIC_LOCAL="false" PORT="$port" node src/index.js >/tmp/dashboard-rollout-${port}.log 2>&1 &
   echo $!
+  return 0
 }
 
 wait_health() {
@@ -36,6 +37,7 @@ stop_server() {
   local pid="$1"
   kill "$pid" >/dev/null 2>&1 || true
   wait "$pid" >/dev/null 2>&1 || true
+  return 0
 }
 
 check_disabled() {
@@ -51,6 +53,7 @@ check_disabled() {
     cat /tmp/dashboard-rollout-disabled.json >&2 || true
     return 1
   }
+  return 0
 }
 
 check_enabled() {
@@ -66,6 +69,7 @@ check_enabled() {
     cat /tmp/dashboard-rollout-enabled.json >&2 || true
     return 1
   }
+  return 0
 }
 
 pid1="$(start_server "$PORT_BASE" "false")"

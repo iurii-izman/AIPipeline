@@ -77,7 +77,7 @@ const workflow = {
       typeVersion: 2,
       position: [220, -220],
       parameters: {
-        jsCode: `const crypto = require('crypto');
+        jsCode: `const crypto = require('node:crypto');
 const headers = $json.headers || {};
 const secret = String($env.GITHUB_WEBHOOK_SECRET || '');
 if (!secret) {

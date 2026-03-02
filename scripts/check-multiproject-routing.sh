@@ -20,6 +20,7 @@ require_cmd() {
     echo "Required command not found: $1" >&2
     exit 1
   }
+  return 0
 }
 
 require_cmd jq
@@ -59,6 +60,7 @@ check_workflow_file() {
     echo "$label: missing Telegram message_thread_id mapping" >&2
     exit 1
   }
+  return 0
 }
 
 check_workflow_file "$WF1_FILE" "WF-1"
