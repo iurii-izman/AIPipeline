@@ -256,6 +256,11 @@ function getIntakeStorageDir() {
 }
 
 function appendAuditEvent(action, status, details = {}) {
+  const normalizeDetails = (value) => {
+    if (value && typeof value === "object") return value;
+    if (value == null) return { value: "" };
+    return { value: String(value) };
+  };
   try {
     const logDir = path.resolve(process.cwd(), ".runtime-logs");
     const logFile = path.join(logDir, "audit.log");
@@ -266,7 +271,7 @@ function appendAuditEvent(action, status, details = {}) {
       action: String(action || "unknown_action"),
       status: String(status || "success"),
       actor: process.env.USER || process.env.USERNAME || "unknown",
-      details: details && typeof details === "object" ? details : { value: String(details || "") },
+      details: normalizeDetails(details),
     };
     fs.appendFileSync(logFile, `${JSON.stringify(payload)}\n`, "utf8");
   } catch (err) {

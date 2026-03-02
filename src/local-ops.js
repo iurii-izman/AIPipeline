@@ -82,7 +82,11 @@ async function getLocalRuntimeStatus() {
       n8n: { running: stackStatus.n8n && n8nHealth.ok, detail: n8nHealth.ok ? "healthy" : "unreachable" },
       loki: {
         running: lokiReady.ok || lokiReady.statusCode === 503,
-        detail: lokiReady.ok ? "ready" : lokiReady.statusCode === 503 ? "warming up" : "not ready",
+        detail: (() => {
+          if (lokiReady.ok) return "ready";
+          if (lokiReady.statusCode === 503) return "warming up";
+          return "not ready";
+        })(),
       },
       grafana: { running: grafanaHealth.ok, detail: grafanaHealth.ok ? "healthy" : "not ready" },
       cloudflared: { running: stackStatus.cloudflared, detail: stackStatus.cloudflared ? "running" : "stopped" },
